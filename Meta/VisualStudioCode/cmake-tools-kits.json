@@ -1,0 +1,9 @@
+[
+    {
+        "name": "GCC for i686-pc-serenity 10.1.0",
+        "compilers": {
+            "C": "Toolchain/Local/bin/i686-pc-serenity-gcc",
+            "CXX": "Toolchain/Local/bin/i686-pc-serenity-g++"
+        }
+    }
+]
