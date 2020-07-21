@@ -1,0 +1,12 @@
+{
+    "[cpp]": {
+        "editor.formatOnSave": true
+    },
+
+    "files.exclude": {
+        ".git/": true,
+        "build/": true
+    },
+
+    "files.insertFinalNewline": true,
+}
