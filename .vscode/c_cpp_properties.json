@@ -1,0 +1,77 @@
+{
+    "configurations": [
+        {
+            "name": "Userland",
+            "includePath": [
+                ".",
+                "Kernel",
+                "Userland/Libraries",
+                "Userland/Libraries/LibC",
+                "Userland/Libraries/LibPthread",
+                "Userland/Libraries/LibM",
+                "Userland/Services",
+                "Userland",
+                "Toolchain/Local/i686/i686-pc-serenity/include/c++/10.2.0",
+                "Toolchain/Local/i686/i686-pc-serenity/include/c++/10.2.0/i686-pc-serenity",
+                "Build",
+                "Build/Userland/Services",
+                "Build/Userland/Libraries"
+            ],
+            "browse": {
+                "limitSymbolsToIncludedHeaders": true,
+                "path": [
+                    "AK",
+                    "Userland",
+                    "Kernel"
+                ]
+            },
+            "defines": [
+                "USERLAND",
+                "__serenity__",
+                "SANITIZE_PTRS",
+                "DEBUG"
+            ],
+            "intelliSenseMode": "gcc-x86",
+            "compilerPath": "/home/me/dev/serenity/Toolchain/Local/i686/bin/i686-pc-serenity-gcc",
+            "cStandard": "c17",
+            "cppStandard": "c++20"
+        },
+        {
+            "name": "Kernel",
+            "includePath": [
+                ".",
+                "Kernel",
+                "Userland/Libraries",
+                "Userland/Libraries/LibC",
+                "Userland/Libraries/LibPthread",
+                "Userland/Libraries/LibM",
+                "Userland/Services",
+                "Userland",
+                "Toolchain/Local/i686/i686-pc-serenity/include/c++/10.2.0",
+                "Toolchain/Local/i686/i686-pc-serenity/include/c++/10.2.0/i686-pc-serenity",
+                "Build",
+                "Build/Userland/Services",
+                "Build/Userland/Libraries"
+            ],
+            "browse": {
+                "limitSymbolsToIncludedHeaders": true,
+                "path": [
+                    "AK",
+                    "Userland",
+                    "Kernel"
+                ]
+            },
+            "defines": [
+                "KERNEL",
+                "__serenity__",
+                "SANITIZE_PTRS",
+                "DEBUG"
+            ],
+            "intelliSenseMode": "gcc-x86",
+            "compilerPath": "/home/me/dev/serenity/Toolchain/Local/i686/bin/i686-pc-serenity-gcc",
+            "cStandard": "c17",
+            "cppStandard": "c++20"
+        }
+    ],
+    "version": 4
+}
