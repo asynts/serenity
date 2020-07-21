@@ -1,0 +1,47 @@
+{
+    "configurations": [
+        {
+            "name": "Serenity",
+            "includePath": [
+                ".",
+                "Kernel",
+                "Libraries",
+                "Libraries/LibC",
+                "Libraries/LibPthread",
+                "Libraries/LibM",
+                "Services",
+                "Toolchain/Local/i686-pc-serenity/include/c++/10.1.0",
+                "Toolchain/Local/i686-pc-serenity/include/c++/10.1.0/i686-pc-serenity",
+                "Build/Services",
+                "Build/Libraries"
+            ],
+            "browse": {
+                "limitSymbolsToIncludedHeaders": true,
+                "path": [
+                    "AK",
+                    "Applications",
+                    "Demos",
+                    "DevTools",
+                    "Games",
+                    "Kernel",
+                    "Libraries",
+                    "MenuApplets",
+                    "Services",
+                    "Shell",
+                    "Userland"
+                ]
+            },
+            "defines": [
+                "USERLAND",
+                "__serenity__",
+                "SANITIZE_PTRS",
+                "DEBUG"
+            ],
+            "intelliSenseMode": "gcc-x64",
+            "compilerPath": "/home/me/dev/serenity/Toolchain/Local/bin/i686-pc-serenity-gcc",
+            "cStandard": "c18",
+            "cppStandard": "c++20"
+        }
+    ],
+    "version": 4
+}
