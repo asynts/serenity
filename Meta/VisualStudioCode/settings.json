@@ -1,0 +1,19 @@
+{
+    "[cpp]": {
+        "editor.formatOnSave": true
+    },
+
+    "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
+
+    "cmake.configureOnOpen": true,
+    "cmake.buildDirectory": "${workspaceFolder}/build",
+    "cmake.sourceDirectory": "${workspaceFolder}/Meta/VisualStudioCode/CMakeLists.txt",
+    "cmake.preferredGenerators": [
+        "Ninja"
+    ],
+    "files.exclude": {
+        ".git/": true,
+        "Build/": true,
+        "build/": true
+    }
+}
