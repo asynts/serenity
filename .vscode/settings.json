@@ -1,0 +1,11 @@
+{
+    "[cpp]": {
+        "editor.formatOnSave": true
+    },
+
+    "files.exclude": {
+        ".git/": true,
+        "Build/": true,
+        "build/": true
+    }
+}
