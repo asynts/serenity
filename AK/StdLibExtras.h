@@ -469,6 +469,9 @@ template<typename T>
 struct __IsIntegral : public FalseType {
 };
 template<>
+struct __IsIntegral<bool> : public TrueType {
+};
+template<>
 struct __IsIntegral<u8> : public TrueType {
 };
 template<>
@@ -481,7 +484,7 @@ template<>
 struct __IsIntegral<u64> : public TrueType {
 };
 template<typename T>
-using IsIntegral = typename __IsIntegral<typename MakeUnsigned<typename RemoveCV<T>::Type>::Type>;
+using IsIntegral = __IsIntegral<typename MakeUnsigned<typename RemoveCV<T>::Type>::Type>;
 
 }
 
