@@ -26,6 +26,11 @@
 
 #pragma once
 
+typedef __UINT8_TYPE__ u8;
+typedef __UINT16_TYPE__ u16;
+typedef __UINT32_TYPE__ u32;
+typedef __UINT64_TYPE__ u64;
+
 #define UNUSED_PARAM(x) (void)x
 
 inline constexpr unsigned round_up_to_power_of_two(unsigned value, unsigned power_of_two)
@@ -459,6 +464,36 @@ template<typename ReferenceType, typename T>
 using CopyConst =
     typename Conditional<IsConst<ReferenceType>::value, typename AddConst<T>::Type, typename RemoveConst<T>::Type>::Type;
 
+template<typename T>
+struct __IsIntegral : public FalseType {
+};
+template<>
+struct __IsIntegral<u8> : public TrueType {
+};
+template<>
+struct __IsIntegral<u16> : public TrueType {
+};
+template<>
+struct __IsIntegral<u32> : public TrueType {
+};
+template<>
+struct __IsIntegral<u64> : public TrueType {
+};
+template<typename T>
+using IsIntegral = __IsIntegral<typename MakeUnsigned<typename RemoveCV<T>::Type>::Type>;
+
+template<typename T>
+struct __IsFloatingPoint : public FalseType {
+};
+template<>
+struct __IsFloatingPoint<float> : public TrueType {
+};
+template<>
+struct __IsFloatingPoint<double> : public TrueType {
+};
+template<typename T>
+using IsFloatingPoint = __IsFloatingPoint<typename RemoveCV<T>::Type>;
+
 }
 
 using AK::AddConst;
@@ -470,6 +505,8 @@ using AK::forward;
 using AK::IsBaseOf;
 using AK::IsClass;
 using AK::IsConst;
+using AK::IsFloatingPoint;
+using AK::IsIntegral;
 using AK::IsSame;
 using AK::IsUnion;
 using AK::IsVoid;
