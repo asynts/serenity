@@ -28,7 +28,7 @@ protected:
 
 }
 
-class IStream : public Detail::Stream {
+class IStream : public virtual Detail::Stream {
 public:
     virtual ~IStream() = 0;
 
@@ -42,7 +42,7 @@ public:
     }
 };
 
-class OStream : public Detail::Stream {
+class OStream : public virtual Detail::Stream {
 public:
     virtual ~OStream() = 0;
 
@@ -62,7 +62,6 @@ public:
     }
 };
 
-// FIXME: Do we have that multi-inheritence problem?
 class IOStream
     : public IStream
     , public OStream {
