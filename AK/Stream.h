@@ -39,6 +39,11 @@ namespace Detail {
 
 class Stream {
 public:
+    inline bool has_error() const
+    {
+        return !m_error.is_null();
+    }
+
     inline StringView error() const
     {
         return m_error;
