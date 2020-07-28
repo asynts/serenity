@@ -48,6 +48,9 @@ class URL;
 class FlyString;
 class Utf32View;
 class Utf8View;
+class IOStream;
+class IStream;
+class OStream;
 
 template<typename T>
 class Span;
@@ -129,7 +132,9 @@ using AK::Function;
 using AK::HashMap;
 using AK::HashTable;
 using AK::InlineLinkedList;
+using AK::IOStream;
 using AK::IPv4Address;
+using AK::IStream;
 using AK::JsonArray;
 using AK::JsonObject;
 using AK::JsonValue;
@@ -137,6 +142,7 @@ using AK::LogStream;
 using AK::NonnullOwnPtr;
 using AK::NonnullRefPtr;
 using AK::Optional;
+using AK::OStream;
 using AK::OwnPtr;
 using AK::ReadonlyBytes;
 using AK::RefPtr;

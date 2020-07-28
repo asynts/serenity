@@ -29,6 +29,7 @@
 #include <AK/Span.h>
 #include <AK/StdLibExtras.h>
 #include <AK/String.h>
+#include <AK/StringView.h>
 
 #include <string.h>
 
@@ -72,7 +73,7 @@ class OStream : public virtual Detail::Stream {
 public:
     virtual ~OStream() = 0;
 
-    virtual size_t write(ReadonlyBytes) = 0;
+    virtual void write(ReadonlyBytes) = 0;
 
     template<typename T, typename = typename EnableIf<IsIntegral<T>::value>::Type>
     inline OStream& operator<<(T value)
@@ -86,6 +87,12 @@ public:
         write({ value, strlen(value) });
         return *this;
     }
+
+    inline OStream& operator<<(ReadonlyBytes bytes)
+    {
+        write(bytes);
+        return *this;
+    }
 };
 
 class IOStream
@@ -94,5 +101,14 @@ class IOStream
 public:
     virtual ~IOStream() = 0;
 };
+
+inline OStream& operator<<(OStream& stream, const String& value)
+{
+    return stream << value.bytes();
+}
+inline OStream& operator<<(OStream& stream, const StringView& value)
+{
+    return stream << value.bytes();
+}
 
 }
