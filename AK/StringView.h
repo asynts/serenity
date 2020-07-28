@@ -31,6 +31,7 @@
 #include <AK/Forward.h>
 #include <AK/Span.h>
 #include <AK/StdLibExtras.h>
+#include <AK/Stream.h>
 #include <AK/StringUtils.h>
 
 namespace AK {
@@ -171,6 +172,11 @@ private:
     const char* m_characters { nullptr };
     size_t m_length { 0 };
 };
+
+inline OutputStream& operator<<(OutputStream& stream, const StringView& value)
+{
+    return stream << value.bytes();
+}
 
 }
 

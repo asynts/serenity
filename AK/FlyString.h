@@ -26,6 +26,7 @@
 
 #pragma once
 
+#include <AK/Stream.h>
 #include <AK/String.h>
 
 namespace AK {
@@ -110,6 +111,11 @@ template<>
 struct Traits<FlyString> : public GenericTraits<FlyString> {
     static unsigned hash(const FlyString& s) { return s.hash(); }
 };
+
+inline OutputStream& operator<<(OutputStream& stream, const FlyString& value)
+{
+    return stream << value.bytes();
+}
 
 }
 
