@@ -4,17 +4,17 @@
 #include <AK/String.h>
 #include <AK/StringView.h>
 
-OStream& OStream::operator<<(const String& value)
+OutputStream& OutputStream::operator<<(const String& value)
 {
     return *this << value.bytes();
 }
 
-OStream& OStream::operator<<(const StringView& value)
+OutputStream& OutputStream::operator<<(const StringView& value)
 {
     return *this << value.bytes();
 }
 
-OStream& OStream::operator<<(const ByteBuffer& value)
+OutputStream& OutputStream::operator<<(const ByteBuffer& value)
 {
     return *this << value.span();
 }
