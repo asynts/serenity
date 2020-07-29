@@ -31,7 +31,6 @@
 #include <AK/RefPtr.h>
 #include <AK/Span.h>
 #include <AK/StdLibExtras.h>
-#include <AK/Stream.h>
 #include <AK/Types.h>
 #include <AK/kmalloc.h>
 
@@ -317,11 +316,6 @@ inline const LogStream& operator<<(const LogStream& stream, const ByteBuffer& va
 {
     stream.write((const char*)value.data(), value.size());
     return stream;
-}
-
-inline OStream& operator<<(OStream& stream, const ByteBuffer& value)
-{
-    return stream << value.span();
 }
 
 }
