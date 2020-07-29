@@ -31,8 +31,6 @@
 #include <AK/String.h>
 #include <AK/StringView.h>
 
-#include <string.h>
-
 namespace AK {
 
 namespace Detail {
@@ -89,7 +87,7 @@ public:
 
     inline OStream& operator<<(const char* value)
     {
-        write({ value, strlen(value) });
+        write({ value, __builtin_strlen(value) });
         return *this;
     }
 
