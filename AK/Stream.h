@@ -66,6 +66,18 @@ public:
         read({ &value, sizeof(value) });
         return *this;
     }
+
+    inline InputStream& operator>>(OutputStream& other)
+    {
+        // FIXME: This buffer could be a lot larger, right?
+        u8 buffer[256];
+        int count = 0;
+        while ((count = read({ buffer, 256 }))) {
+            other.write({ buffer, count });
+        }
+
+        return *this;
+    }
 };
 
 class OutputStream : public virtual Detail::Stream {
@@ -105,6 +117,18 @@ public:
     inline OutputStream& operator<<(ReadonlyBytes bytes)
     {
         write(bytes);
+        return *this;
+    }
+
+    inline OutputStream& operator<<(InputStream& other)
+    {
+        // FIXME: This buffer could be a lot larger, right?
+        u8 buffer[256];
+        int count = 0;
+        while ((count = other.read({ buffer, 256 }))) {
+            write({ buffer, count });
+        }
+
         return *this;
     }
 };
