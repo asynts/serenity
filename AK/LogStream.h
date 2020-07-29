@@ -27,6 +27,7 @@
 #pragma once
 
 #include <AK/Forward.h>
+#include <AK/Stream.h>
 #include <AK/Types.h>
 #include <AK/kmalloc.h>
 #include <AK/kstdio.h>
@@ -40,7 +41,8 @@
 
 namespace AK {
 
-class LogStream {
+// FIXME: Remove this class?
+class LogStream : public OutputStream {
 public:
     LogStream()
 #if !defined(KERNEL)
@@ -50,9 +52,12 @@ public:
     }
     virtual ~LogStream() { }
 
+    // FIXME: Remove this overload.
+    // FIXME: Why is this method const?
     virtual void write(const char*, int) const = 0;
 
 private:
+// FIXME: Move this to Detail::Stream?
 #if !defined(KERNEL)
     ScopedValueRollback<int> m_errno_restorer;
 #endif
@@ -101,6 +106,13 @@ public:
             kfree(u.m_buffer);
     }
 
+    virtual void write(ReadonlyBytes bytes) override
+    {
+        write(reinterpret_cast<const char*>(bytes.data()), bytes.size());
+    }
+
+    // FIXME: Remove this overload.
+    // FIXME: Why is this method const?
     virtual void write(const char* str, int len) const override
     {
         size_t new_size = m_size + len;
@@ -125,6 +137,14 @@ public:
     {
     }
     virtual ~StdLogStream() override;
+
+    virtual void write(ReadonlyBytes bytes) override
+    {
+        write(reinterpret_cast<const char*>(bytes.data()), bytes.size());
+    }
+
+    // FIXME: Remove this overload.
+    // FIXME: Why is this method const?
     virtual void write(const char* characters, int length) const override;
 
 private:
@@ -142,46 +162,6 @@ public:
     virtual ~KernelLogStream() override;
 };
 #endif
-
-inline const LogStream& operator<<(const LogStream& stream, const char* value)
-{
-    if (!value)
-        return stream << "(null)";
-    int length = 0;
-    const char* p = value;
-    while (*(p++))
-        ++length;
-    stream.write(value, length);
-    return stream;
-}
-
-const LogStream& operator<<(const LogStream&, const FlyString&);
-const LogStream& operator<<(const LogStream&, const String&);
-const LogStream& operator<<(const LogStream&, const StringView&);
-const LogStream& operator<<(const LogStream&, int);
-const LogStream& operator<<(const LogStream&, long);
-const LogStream& operator<<(const LogStream&, unsigned);
-const LogStream& operator<<(const LogStream&, long long);
-const LogStream& operator<<(const LogStream&, unsigned long);
-const LogStream& operator<<(const LogStream&, unsigned long long);
-
-#if !defined(KERNEL)
-const LogStream& operator<<(const LogStream&, double);
-const LogStream& operator<<(const LogStream&, float);
-#endif
-
-const LogStream& operator<<(const LogStream&, const void*);
-
-inline const LogStream& operator<<(const LogStream& stream, char value)
-{
-    stream.write(&value, 1);
-    return stream;
-}
-
-inline const LogStream& operator<<(const LogStream& stream, bool value)
-{
-    return stream << (value ? "true" : "false");
-}
 
 DebugLogStream dbg();
 
