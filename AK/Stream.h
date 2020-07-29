@@ -56,8 +56,6 @@ class InputStream : public virtual Detail::Stream {
 public:
     virtual ~InputStream() = 0;
 
-    // FIXME: This function will be called very frequently, can we help
-    //        the compiler de-virtualize this call?
     virtual size_t read(Bytes) = 0;
 
     inline bool read_or_error(Bytes bytes)
@@ -75,8 +73,6 @@ class OutputStream : public virtual Detail::Stream {
 public:
     virtual ~OutputStream() = 0;
 
-    // FIXME: This function will be called very frequently, can we help
-    //        the compiler de-virtualize this call?
     virtual void write(ReadonlyBytes) = 0;
 };
 

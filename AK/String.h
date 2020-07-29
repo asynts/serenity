@@ -28,6 +28,7 @@
 
 #include <AK/Forward.h>
 #include <AK/RefPtr.h>
+#include <AK/Stream.h>
 #include <AK/StringImpl.h>
 #include <AK/StringUtils.h>
 #include <AK/Traits.h>
@@ -257,6 +258,11 @@ bool operator>(const char*, const String&);
 bool operator<=(const char*, const String&);
 
 String escape_html_entities(const StringView& html);
+
+inline OutputStream& operator<<(OutputStream& stream, const String& value)
+{
+    return stream << value.bytes();
+}
 
 }
 
