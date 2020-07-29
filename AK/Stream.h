@@ -29,10 +29,6 @@
 #include <AK/Span.h>
 #include <AK/StdLibExtras.h>
 
-// FIXME: Can we somehow remove these dependencies?
-#include <AK/String.h>
-#include <AK/StringView.h>
-
 namespace AK {
 
 namespace Detail {
