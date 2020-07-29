@@ -132,4 +132,24 @@ class NullStream final : public DuplexStream {
     }
 };
 
+class InputMemoryStream final : public InputStream {
+public:
+    inline InputMemoryStream(ReadonlyBytes bytes)
+        : m_data(bytes)
+    {
+    }
+
+    size_t read(Bytes bytes) override
+    {
+        const auto count = min(m_data.size() - m_offset, bytes.size());
+        __builtin_memcpy(bytes.data(), m_data.data(), count);
+        m_offset += count;
+        return count;
+    }
+
+private:
+    ReadonlyBytes m_data;
+    size_t m_offset { 0 };
+};
+
 }
