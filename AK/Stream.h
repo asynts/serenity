@@ -71,17 +71,7 @@ public:
         return *this;
     }
 
-    inline InputStream& operator>>(OutputStream& other)
-    {
-        // FIXME: This buffer could be a lot larger, right?
-        u8 buffer[256];
-        int count = 0;
-        while ((count = read({ buffer, 256 }))) {
-            other.write({ buffer, count });
-        }
-
-        return *this;
-    }
+    InputStream& operator>>(OutputStream&);
 };
 
 class OutputStream : public virtual Detail::Stream {
@@ -124,17 +114,7 @@ public:
         return *this;
     }
 
-    inline OutputStream& operator<<(InputStream& other)
-    {
-        // FIXME: This buffer could be a lot larger, right?
-        u8 buffer[256];
-        int count = 0;
-        while ((count = other.read({ buffer, 256 }))) {
-            write({ buffer, count });
-        }
-
-        return *this;
-    }
+    OutputStream& operator<<(InputStream&);
 };
 
 class DuplexStream
@@ -153,5 +133,29 @@ class NullStream final : public DuplexStream {
         return bytes.size();
     }
 };
+
+inline InputStream& InputStream::operator>>(OutputStream& other)
+{
+    // FIXME: This buffer could be a lot larger, right?
+    u8 buffer[256];
+    size_t count = 0;
+    while ((count = read({ buffer, 256 }))) {
+        other.write({ buffer, count });
+    }
+
+    return *this;
+}
+
+inline OutputStream& OutputStream::operator<<(InputStream& other)
+{
+    // FIXME: This buffer could be a lot larger, right?
+    u8 buffer[256];
+    size_t count = 0;
+    while ((count = other.read({ buffer, 256 }))) {
+        write({ buffer, count });
+    }
+
+    return *this;
+}
 
 }
