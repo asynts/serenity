@@ -157,7 +157,7 @@ private:
 
 class OutputMemoryStream final : public OutputStream {
 public:
-    inline OutputMemoryStream(Bytes bytes)
+    inline explicit OutputMemoryStream(Bytes bytes)
         : m_bytes(bytes)
     {
     }
