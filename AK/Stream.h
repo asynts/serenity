@@ -137,7 +137,7 @@ class NullStream final : public DuplexStream {
 
 class InputMemoryStream final : public InputStream {
 public:
-    inline InputMemoryStream(ReadonlyBytes bytes)
+    inline explicit InputMemoryStream(ReadonlyBytes bytes)
         : m_bytes(bytes)
     {
     }
