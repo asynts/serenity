@@ -152,4 +152,26 @@ private:
     size_t m_offset { 0 };
 };
 
+class OutputMemoryStream final : public OutputStream {
+public:
+    inline OutputMemoryStream(Bytes bytes)
+        : m_bytes(bytes)
+    {
+    }
+
+    void write(ReadonlyBytes bytes) override
+    {
+        if (bytes.size() > m_bytes.size() - m_offset) {
+            m_error = true;
+            return;
+        }
+        __builtin_memcpy(m_bytes.data(), bytes.data(), bytes.size());
+        m_offset += bytes.size();
+    }
+
+private:
+    Bytes m_bytes;
+    size_t m_offset { 0 };
+};
+
 }
