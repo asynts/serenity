@@ -28,6 +28,8 @@
 
 #include <AK/Span.h>
 #include <AK/StdLibExtras.h>
+
+// FIXME: Can we somehow remove these dependencies?
 #include <AK/String.h>
 #include <AK/StringView.h>
 
@@ -58,55 +60,55 @@ protected:
 
 }
 
-class IStream : public virtual Detail::Stream {
+class InputStream : public virtual Detail::Stream {
 public:
-    virtual ~IStream() = 0;
+    virtual ~InputStream() = 0;
 
     virtual size_t read(Bytes) = 0;
 
     template<typename T, typename = typename EnableIf<IsIntegral<T>::value>::Type>
-    inline IStream& operator>>(T& value)
+    inline InputStream& operator>>(T& value)
     {
         read({ &value, sizeof(value) });
         return *this;
     }
 };
 
-class OStream : public virtual Detail::Stream {
+class OutputStream : public virtual Detail::Stream {
 public:
-    virtual ~OStream() = 0;
+    virtual ~OutputStream() = 0;
 
     virtual void write(ReadonlyBytes) = 0;
 
     template<typename T, typename = typename EnableIf<IsIntegral<T>::value>::Type>
-    inline OStream& operator<<(T value)
+    inline OutputStream& operator<<(T value)
     {
         write({ &value, sizeof(value) });
         return *this;
     }
 
-    inline OStream& operator<<(const char* value)
+    inline OutputStream& operator<<(const char* value)
     {
         write({ value, __builtin_strlen(value) });
         return *this;
     }
 
-    inline OStream& operator<<(ReadonlyBytes bytes)
+    inline OutputStream& operator<<(ReadonlyBytes bytes)
     {
         write(bytes);
         return *this;
     }
 
-    OStream& operator<<(const ByteBuffer&);
-    OStream& operator<<(const String&);
-    OStream& operator<<(const StringView&);
+    OutputStream& operator<<(const ByteBuffer&);
+    OutputStream& operator<<(const String&);
+    OutputStream& operator<<(const StringView&);
 };
 
-class IOStream
-    : public IStream
-    , public OStream {
+class DuplexStream
+    : public InputStream
+    , public OutputStream {
 public:
-    virtual ~IOStream() = 0;
+    virtual ~DuplexStream() = 0;
 };
 
 }
