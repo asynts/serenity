@@ -469,9 +469,6 @@ template<typename T>
 struct __IsIntegral : public FalseType {
 };
 template<>
-struct __IsIntegral<bool> : public TrueType {
-};
-template<>
 struct __IsIntegral<u8> : public TrueType {
 };
 template<>
@@ -485,6 +482,18 @@ struct __IsIntegral<u64> : public TrueType {
 };
 template<typename T>
 using IsIntegral = __IsIntegral<typename MakeUnsigned<typename RemoveCV<T>::Type>::Type>;
+
+template<typename T>
+struct __IsFloatingPoint : public FalseType {
+};
+template<>
+struct __IsFloatingPoint<float> : public TrueType {
+};
+template<>
+struct __IsFloatingPoint<double> : public TrueType {
+};
+template<typename T>
+using IsFloatingPoint = __IsFloatingPoint<typename RemoveCV<T>::Type>;
 
 }
 
