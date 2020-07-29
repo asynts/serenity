@@ -26,10 +26,3 @@ OutputStream& OutputStream::operator<<(const FlyString& value)
 {
     return *this << value.bytes();
 }
-
-OutputStream& OutputStream::operator<<(const void* value)
-{
-    char buffer[32];
-    sprintf(buffer, "%p", value);
-    return *this << buffer;
-}

@@ -39,23 +39,12 @@ namespace Detail {
 
 class Stream {
 public:
-    inline bool has_error() const
-    {
-        return !m_error.is_null();
-    }
+    inline bool error() const { return m_error; }
 
-    inline StringView error() const
-    {
-        return m_error;
-    }
-
-    inline String handle_error()
-    {
-        return exchange(m_error, {});
-    }
+    inline bool handle_error() { return exchange(m_error, false); }
 
 protected:
-    String m_error;
+    bool m_error;
 };
 
 }
@@ -64,6 +53,8 @@ class InputStream : public virtual Detail::Stream {
 public:
     virtual ~InputStream() = 0;
 
+    // FIXME: This function will be called very frequently, can we help
+    //        the compiler de-virtualize this call?
     virtual size_t read(Bytes) = 0;
 
     template<typename T, typename = typename EnableIf<IsIntegral<T>::value>::Type>
@@ -84,25 +75,34 @@ class OutputStream : public virtual Detail::Stream {
 public:
     virtual ~OutputStream() = 0;
 
+    // FIXME: This function will be called very frequently, can we help
+    //        the compiler de-virtualize this call?
     virtual void write(ReadonlyBytes) = 0;
 
+#ifdef KERNEL
     template<typename T, typename = typename EnableIf<IsIntegral<T>::value>::Type>
     OutputStream& operator<<(T value)
     {
         write({ &value, sizeof(value) });
         return *this;
     }
+#else
+    template<typename T, typename = typename EnableIf<IsIntegral<T>::value || IsFloatingPoint<T>::value>::Type>
+    OutputStream& operator<<(T value)
+    {
+        write({ &value, sizeof(value) });
+        return *this;
+    }
+#endif
 
     inline OutputStream& operator<<(bool value)
     {
-        return *this << (value ? "true" : "false");
+        write({ &value, sizeof(value) });
+        return *this;
     }
 
     inline OutputStream& operator<<(const char* value)
     {
-        if (!value)
-            return *this << "(null)";
-
         write({ value, __builtin_strlen(value) });
         return *this;
     }
@@ -117,16 +117,6 @@ public:
     OutputStream& operator<<(const String&);
     OutputStream& operator<<(const StringView&);
     OutputStream& operator<<(const FlyString&);
-    OutputStream& operator<<(const void*);
-
-#ifndef KERNEL
-    template<typename T, typename = typename EnableIf<IsFloatingPoint<T>::value>::Type>
-    inline OutputStream& operator<<(T value)
-    {
-        write({ &value, sizeof(value) });
-        return *this;
-    }
-#endif
 };
 
 class DuplexStream
@@ -134,6 +124,16 @@ class DuplexStream
     , public OutputStream {
 public:
     virtual ~DuplexStream() = 0;
+};
+
+class NullStream final : public DuplexStream {
+    void write(ReadonlyBytes) override { }
+
+    size_t read(Bytes bytes) override
+    {
+        __builtin_memset(bytes.data(), 0, bytes.size());
+        return bytes.size();
+    }
 };
 
 }
