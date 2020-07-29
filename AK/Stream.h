@@ -86,13 +86,6 @@ public:
 
     virtual void write(ReadonlyBytes) = 0;
 
-    template<typename T, typename = typename EnableIf<IsIntegral<T>::value>::Type>
-    OutputStream& operator<<(T value)
-    {
-        write({ &value, sizeof(value) });
-        return *this;
-    }
-
     inline OutputStream& operator<<(bool value)
     {
         return *this << (value ? "true" : "false");
@@ -119,9 +112,16 @@ public:
     OutputStream& operator<<(const FlyString&);
     OutputStream& operator<<(const void*);
 
-#ifndef KERNEL
-    template<typename T, typename = typename EnableIf<IsFloatingPoint<T>::value>::Type>
-    inline OutputStream& operator<<(T value)
+#ifdef KERNEL
+    template<typename T, typename = typename EnableIf<IsIntegral<T>::value>::Type>
+    OutputStream& operator<<(T value)
+    {
+        write({ &value, sizeof(value) });
+        return *this;
+    }
+#else
+    template<typename T, typename = typename EnableIf<IsIntegral<T>::value || IsFloatingPoint<T>::value>::Type>
+    OutputStream& operator<<(T value)
     {
         write({ &value, sizeof(value) });
         return *this;
