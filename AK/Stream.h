@@ -67,7 +67,13 @@ public:
     virtual size_t read(Bytes) = 0;
 
     template<typename T, typename = typename EnableIf<IsIntegral<T>::value>::Type>
-    inline InputStream& operator>>(T& value)
+    InputStream& operator>>(T& value)
+    {
+        read({ &value, sizeof(value) });
+        return *this;
+    }
+
+    inline InputStream& operator>>(bool& value)
     {
         read({ &value, sizeof(value) });
         return *this;
@@ -81,14 +87,22 @@ public:
     virtual void write(ReadonlyBytes) = 0;
 
     template<typename T, typename = typename EnableIf<IsIntegral<T>::value>::Type>
-    inline OutputStream& operator<<(T value)
+    OutputStream& operator<<(T value)
     {
         write({ &value, sizeof(value) });
         return *this;
     }
 
+    inline OutputStream& operator<<(bool value)
+    {
+        return *this << (value ? "true" : "false");
+    }
+
     inline OutputStream& operator<<(const char* value)
     {
+        if (!value)
+            return *this << "(null)";
+
         write({ value, __builtin_strlen(value) });
         return *this;
     }
@@ -102,6 +116,17 @@ public:
     OutputStream& operator<<(const ByteBuffer&);
     OutputStream& operator<<(const String&);
     OutputStream& operator<<(const StringView&);
+    OutputStream& operator<<(const FlyString&);
+    OutputStream& operator<<(const void*);
+
+#ifndef KERNEL
+    template<typename T, typename = typename EnableIf<IsFloatingPoint<T>::value>::Type>
+    inline OutputStream& operator<<(T value)
+    {
+        write({ &value, sizeof(value) });
+        return *this;
+    }
+#endif
 };
 
 class DuplexStream
