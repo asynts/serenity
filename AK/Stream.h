@@ -52,8 +52,6 @@ class InputStream : public virtual Detail::Stream {
 public:
     virtual ~InputStream() = 0;
 
-    // FIXME: This function will be called very frequently, can we help
-    //        the compiler de-virtualize this call?
     virtual size_t read(Bytes) = 0;
 
     template<typename T, typename = typename EnableIf<IsIntegral<T>::value>::Type>
@@ -74,8 +72,6 @@ class OutputStream : public virtual Detail::Stream {
 public:
     virtual ~OutputStream() = 0;
 
-    // FIXME: This function will be called very frequently, can we help
-    //        the compiler de-virtualize this call?
     virtual void write(ReadonlyBytes) = 0;
 
 #ifdef KERNEL
@@ -133,48 +129,6 @@ class NullStream final : public DuplexStream {
         __builtin_memset(bytes.data(), 0, bytes.size());
         return bytes.size();
     }
-};
-
-class InputMemoryStream final : public InputStream {
-public:
-    inline explicit InputMemoryStream(ReadonlyBytes bytes)
-        : m_bytes(bytes)
-    {
-    }
-
-    size_t read(Bytes bytes) override
-    {
-        const auto count = min(m_bytes.size() - m_offset, bytes.size());
-        __builtin_memcpy(bytes.data(), m_bytes.data(), count);
-        m_offset += count;
-        return count;
-    }
-
-private:
-    ReadonlyBytes m_bytes;
-    size_t m_offset { 0 };
-};
-
-class OutputMemoryStream final : public OutputStream {
-public:
-    inline explicit OutputMemoryStream(Bytes bytes)
-        : m_bytes(bytes)
-    {
-    }
-
-    void write(ReadonlyBytes bytes) override
-    {
-        if (bytes.size() > m_bytes.size() - m_offset) {
-            m_error = true;
-            return;
-        }
-        __builtin_memcpy(m_bytes.data(), bytes.data(), bytes.size());
-        m_offset += bytes.size();
-    }
-
-private:
-    Bytes m_bytes;
-    size_t m_offset { 0 };
 };
 
 }
