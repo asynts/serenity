@@ -107,11 +107,6 @@ public:
         write(bytes);
         return *this;
     }
-
-    OutputStream& operator<<(const ByteBuffer&);
-    OutputStream& operator<<(const String&);
-    OutputStream& operator<<(const StringView&);
-    OutputStream& operator<<(const FlyString&);
 };
 
 class DuplexStream
