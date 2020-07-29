@@ -34,6 +34,10 @@ namespace AK {
 // Note that GCC can de-virtualize the calls to IStream::read() and OStream::write()
 // if -O2 is enabled. (https://godbolt.org/z/Mcb9bq)
 
+// FIXME: Delete copy constructor?
+
+// FIXME: Overload boolean operator?
+
 namespace Detail {
 
 class Stream {

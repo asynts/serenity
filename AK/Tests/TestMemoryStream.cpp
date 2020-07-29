@@ -24,61 +24,47 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#pragma once
+#include <AK/TestSuite.h>
 
-#include <AK/ByteBuffer.h>
-#include <AK/Stream.h>
+#include <AK/MemoryStream.h>
 
-namespace AK {
+/*
 
-class InputMemoryStream final : public InputStream {
-public:
-    inline explicit InputMemoryStream(ReadonlyBytes bytes)
-        : m_bytes(bytes)
-    {
-    }
+TEST_CASE(input_memory_stream)
+{
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+    u8 buffer[4] { 1, 2, 3, 4 };
+#else
+    u8 buffer[4] { 4, 3, 2, 1 };
+#endif
+    InputMemoryStream stream { { buffer, 32 } };
 
-    size_t read(Bytes bytes) override
-    {
-        const auto count = min(m_bytes.size() - m_offset, bytes.size());
-        __builtin_memcpy(bytes.data(), m_bytes.data(), count);
-        m_offset += count;
-        return count;
-    }
+    u32 value;
+    stream >> value;
 
-    inline size_t offset() const { return m_offset; }
-
-private:
-    ReadonlyBytes m_bytes;
-    size_t m_offset { 0 };
-};
-
-class OutputMemoryStream final : public OutputStream {
-public:
-    inline explicit OutputMemoryStream(ByteBuffer& buffer)
-        : m_buffer(buffer)
-    {
-    }
-
-    void write(ReadonlyBytes bytes) override
-    {
-        if (bytes.size() > m_buffer.size() - m_offset) {
-            // FIXME: It might be a good idea to allocate more memory speculatively.
-            m_buffer.grow(bytes.size() + m_offset);
-        }
-
-        __builtin_memcpy(m_bytes.data(), bytes.data(), bytes.size());
-        m_offset += bytes.size();
-    }
-
-    inline size_t offset() const { return m_offset; }
-
-private:
-    ByteBuffer& m_buffer;
-    size_t m_offset { 0 };
-};
-
+    EXPECT_EQ(value, 0x04030201);
 }
 
-using AK::InputMemoryStream;
-using AK::OutputMemoryStream;
+*/
+
+TEST_CASE(roundtrip)
+{
+    u8 expected[256];
+
+    for (int idx = 0; idx < 256; ++idx) {
+        expected[idx] = static_cast<u8>(idx);
+    }
+
+    auto actual = ByteBuffer::create_zeroed(128);
+
+    InputMemoryStream stream0 { { expected, 256 } };
+    OutputMemoryStream stream1 { actual };
+
+    stream0 >> stream1;
+
+    EXPECT(actual.size() >= 256);
+
+    for (int idx = 0; idx < 256; ++idx) {
+        EXPECT_EQ(expected[idx], actual[idx]);
+    }
+}
