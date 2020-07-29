@@ -52,8 +52,6 @@ class InputStream : public virtual Detail::Stream {
 public:
     virtual ~InputStream() = 0;
 
-    // FIXME: This function will be called very frequently, can we help
-    //        the compiler de-virtualize this call?
     virtual size_t read(Bytes) = 0;
 
     template<typename T, typename = typename EnableIf<IsIntegral<T>::value>::Type>
@@ -74,8 +72,6 @@ class OutputStream : public virtual Detail::Stream {
 public:
     virtual ~OutputStream() = 0;
 
-    // FIXME: This function will be called very frequently, can we help
-    //        the compiler de-virtualize this call?
     virtual void write(ReadonlyBytes) = 0;
 
 #ifdef KERNEL
@@ -111,11 +107,6 @@ public:
         write(bytes);
         return *this;
     }
-
-    OutputStream& operator<<(const ByteBuffer&);
-    OutputStream& operator<<(const String&);
-    OutputStream& operator<<(const StringView&);
-    OutputStream& operator<<(const FlyString&);
 };
 
 class DuplexStream
