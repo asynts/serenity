@@ -96,6 +96,10 @@ public:
         write(bytes);
         return *this;
     }
+
+    OStream& operator<<(const ByteBuffer&);
+    OStream& operator<<(const String&);
+    OStream& operator<<(const StringView&);
 };
 
 class IOStream
@@ -104,14 +108,5 @@ class IOStream
 public:
     virtual ~IOStream() = 0;
 };
-
-inline OStream& operator<<(OStream& stream, const String& value)
-{
-    return stream << value.bytes();
-}
-inline OStream& operator<<(OStream& stream, const StringView& value)
-{
-    return stream << value.bytes();
-}
 
 }
