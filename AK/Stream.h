@@ -36,15 +36,17 @@ namespace AK {
 
 // FIXME: Delete copy constructor?
 
-// FIXME: Overload boolean operator?
-
 namespace Detail {
 
 class Stream {
 public:
+    virtual ~Stream() = 0;
+
     inline bool error() const { return m_error; }
 
     inline bool handle_error() { return exchange(m_error, false); }
+
+    inline operator bool() const { return !m_error; }
 
 protected:
     bool m_error;
@@ -58,20 +60,15 @@ public:
 
     virtual size_t read(Bytes) = 0;
 
-    template<typename T, typename = typename EnableIf<IsIntegral<T>::value>::Type>
-    InputStream& operator>>(T& value)
+    inline bool read_or_error(Bytes bytes)
     {
-        read({ &value, sizeof(value) });
-        return *this;
-    }
+        if (read(bytes) < bytes.size()) {
+            m_error = true;
+            return false;
+        }
 
-    inline InputStream& operator>>(bool& value)
-    {
-        read({ &value, sizeof(value) });
-        return *this;
+        return true;
     }
-
-    InputStream& operator>>(OutputStream&);
 };
 
 class OutputStream : public virtual Detail::Stream {
@@ -79,42 +76,6 @@ public:
     virtual ~OutputStream() = 0;
 
     virtual void write(ReadonlyBytes) = 0;
-
-#ifdef KERNEL
-    template<typename T, typename = typename EnableIf<IsIntegral<T>::value>::Type>
-    OutputStream& operator<<(T value)
-    {
-        write({ &value, sizeof(value) });
-        return *this;
-    }
-#else
-    template<typename T, typename = typename EnableIf<IsIntegral<T>::value || IsFloatingPoint<T>::value>::Type>
-    OutputStream& operator<<(T value)
-    {
-        write({ &value, sizeof(value) });
-        return *this;
-    }
-#endif
-
-    inline OutputStream& operator<<(bool value)
-    {
-        write({ &value, sizeof(value) });
-        return *this;
-    }
-
-    inline OutputStream& operator<<(const char* value)
-    {
-        write({ value, __builtin_strlen(value) });
-        return *this;
-    }
-
-    inline OutputStream& operator<<(ReadonlyBytes bytes)
-    {
-        write(bytes);
-        return *this;
-    }
-
-    OutputStream& operator<<(InputStream&);
 };
 
 class DuplexStream
@@ -134,28 +95,81 @@ class NullStream final : public DuplexStream {
     }
 };
 
-inline InputStream& InputStream::operator>>(OutputStream& other)
+#ifdef KERNEL
+template<typename T, typename = typename EnableIf<IsIntegral<T>::value>::Type>
+InputStream& operator>>(InputStream& stream, T& value)
 {
-    // FIXME: This buffer could be a lot larger, right?
-    u8 buffer[256];
-    size_t count = 0;
-    while ((count = read({ buffer, 256 }))) {
-        other.write({ buffer, count });
-    }
+    stream.read_or_error({ &value, sizeof(value) });
+    return stream;
+}
+template<typename T, typename = typename EnableIf<IsIntegral<T>::value>::Type>
+OutputStream& operator<<(OutputStream& stream, T value)
+{
+    stream.write({ &value, sizeof(value) });
+    return stream;
+}
+#else
+template<typename T, typename = typename EnableIf<IsIntegral<T>::value || IsFloatingPoint<T>::value>::Type>
+InputStream& operator>>(InputStream& stream, T& value)
+{
+    stream.read_or_error({ &value, sizeof(value) });
+    return stream;
+}
+template<typename T, typename = typename EnableIf<IsIntegral<T>::value || IsFloatingPoint<T>::value>::Type>
+OutputStream& operator<<(OutputStream& stream, T value)
+{
+    stream.write({ &value, sizeof(value) });
+    return stream;
+}
+#endif
 
-    return *this;
+inline InputStream& operator>>(InputStream& stream, bool& value)
+{
+    stream.read_or_error({ &value, sizeof(value) });
+    return stream;
+}
+inline OutputStream& operator<<(OutputStream& stream, bool value)
+{
+    stream.write({ &value, sizeof(value) });
+    return stream;
 }
 
-inline OutputStream& OutputStream::operator<<(InputStream& other)
+inline InputStream& operator>>(InputStream& stream, Bytes bytes)
 {
-    // FIXME: This buffer could be a lot larger, right?
-    u8 buffer[256];
+    stream.read_or_error(bytes);
+    return stream;
+}
+inline OutputStream& operator<<(OutputStream& stream, ReadonlyBytes bytes)
+{
+    stream.write(bytes);
+    return stream;
+}
+
+inline InputStream& operator>>(InputStream& lhs, OutputStream& rhs)
+{
+    u8 buffer[1024];
     size_t count = 0;
-    while ((count = other.read({ buffer, 256 }))) {
-        write({ buffer, count });
+    while ((count = lhs.read({ buffer, sizeof(buffer) }))) {
+        rhs.write({ buffer, count });
     }
 
-    return *this;
+    return lhs;
+}
+inline OutputStream& operator<<(OutputStream& lhs, InputStream& rhs)
+{
+    u8 buffer[1024];
+    size_t count = 0;
+    while ((count = rhs.read({ buffer, sizeof(buffer) }))) {
+        lhs.write({ buffer, count });
+    }
+
+    return lhs;
+}
+
+inline OutputStream& operator<<(OutputStream& stream, const char* value)
+{
+    stream.write({ value, __builtin_strlen(value) });
+    return stream;
 }
 
 }
