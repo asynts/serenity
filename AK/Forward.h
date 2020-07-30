@@ -50,7 +50,9 @@ class Utf32View;
 class Utf8View;
 class DuplexStream;
 class InputStream;
+class InputMemoryStream;
 class OutputStream;
+class OutputMemoryStream;
 
 template<typename T>
 class Span;
@@ -133,6 +135,7 @@ using AK::Function;
 using AK::HashMap;
 using AK::HashTable;
 using AK::InlineLinkedList;
+using AK::InputMemoryStream;
 using AK::InputStream;
 using AK::IPv4Address;
 using AK::JsonArray;
@@ -142,6 +145,7 @@ using AK::LogStream;
 using AK::NonnullOwnPtr;
 using AK::NonnullRefPtr;
 using AK::Optional;
+using AK::OutputMemoryStream;
 using AK::OutputStream;
 using AK::OwnPtr;
 using AK::ReadonlyBytes;
