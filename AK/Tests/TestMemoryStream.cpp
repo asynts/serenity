@@ -68,3 +68,5 @@ TEST_CASE(roundtrip)
         EXPECT_EQ(expected[idx], actual[idx]);
     }
 }
+
+TEST_MAIN(MemoryStream)
