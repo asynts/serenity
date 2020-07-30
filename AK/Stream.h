@@ -44,7 +44,7 @@ public:
 
     inline bool handle_error() { return exchange(m_error, false); }
 
-    inline operator bool() const { return !m_error; }
+    // inline operator bool() const { return !m_error; }
 
 protected:
     bool m_error;
