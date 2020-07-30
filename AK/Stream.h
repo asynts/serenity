@@ -51,6 +51,7 @@ public:
 protected:
     bool m_error;
 };
+inline Stream::~Stream() { }
 
 }
 
@@ -70,6 +71,7 @@ public:
         return true;
     }
 };
+inline InputStream::~InputStream() { }
 
 class OutputStream : public virtual Detail::Stream {
 public:
@@ -77,6 +79,7 @@ public:
 
     virtual void write(ReadonlyBytes) = 0;
 };
+inline OutputStream::~OutputStream() { }
 
 class DuplexStream
     : public InputStream
@@ -84,6 +87,7 @@ class DuplexStream
 public:
     virtual ~DuplexStream() = 0;
 };
+inline DuplexStream::~DuplexStream() { }
 
 class NullStream final : public DuplexStream {
     void write(ReadonlyBytes) override { }
