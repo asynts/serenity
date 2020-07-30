@@ -67,7 +67,7 @@ public:
             m_buffer.grow(bytes.size() + m_offset);
         }
 
-        __builtin_memcpy(m_bytes.data(), bytes.data(), bytes.size());
+        m_buffer.append(bytes.data(), bytes.size());
         m_offset += bytes.size();
     }
 
