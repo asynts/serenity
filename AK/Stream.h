@@ -65,6 +65,9 @@ public:
 
         return true;
     }
+
+    template<typename Callback>
+    void for_each_chunk(Callback, size_t recommended_chunk_size = 1024);
 };
 inline InputStream::~InputStream() { }
 
@@ -171,6 +174,22 @@ inline OutputStream& operator<<(OutputStream& stream, const char* value)
 {
     stream.write({ value, __builtin_strlen(value) });
     return stream;
+}
+
+template<typename Callback>
+void InputStream::for_each_chunk(Callback callback, size_t recommended_chunk_size)
+{
+    u8 buffer[recommended_chunk_size];
+    Bytes bytes { buffer, sizeof(buffer) };
+    while (*this >> bytes) {
+        if (callback(bytes) == IterationDecision::Break)
+            return;
+    }
+
+    handle_error();
+
+    const auto size = read(bytes);
+    callback(bytes.slice(size));
 }
 
 }
