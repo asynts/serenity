@@ -97,34 +97,38 @@ class NullStream final : public DuplexStream {
     }
 };
 
+template<typename T, typename = void>
+InputStream& operator>>(InputStream&, T&);
+
+template<typename T, typename = void>
+OutputStream& operator<<(OutputStream&, T);
+
 #ifdef KERNEL
-// FIXME: Provide overloads for all integer types.
-inline InputStream& operator>>(InputStream& stream, u32& value)
+template<typename T>
+inline InputStream& operator>><T, typename EnableIf<IsIntegral<T>::value>::Type>(InputStream& stream, T&)
 {
     stream.read_or_error({ &value, sizeof(value) });
     return stream;
 }
-// FIXME: Provide overloads for all integer types.
-inline OutputStream& operator<<(OutputStream& stream, u32 value)
+template<typename T>
+inline OutputStream& operator<<<T, typename EnableIf<IsIntegral<T>::value>::Type>(OutputStream& stream, T)
 {
     stream.write({ &value, sizeof(value) });
     return stream;
 }
 #else
-// FIXME: Provide overloads for all integer types.
-inline InputStream& operator>>(InputStream& stream, u32& value)
+template<typename T>
+inline InputStream& operator>><T, typename EnableIf<IsIntegral<T>::value || IsFloatingPoint<T>::value>::Type>(InputStream& stream, T&)
 {
     stream.read_or_error({ &value, sizeof(value) });
     return stream;
 }
-// FIXME: Provide overloads for all integer types.
-inline OutputStream& operator<<(OutputStream& stream, u32 value)
+template<typename T>
+inline OutputStream& operator<<<T, typename EnableIf<IsIntegral<T>::value || IsFloatingPoint<T>::value>::Type>(OutputStream& stream, T)
 {
     stream.write({ &value, sizeof(value) });
     return stream;
 }
-
-// FIXME: Provide overloads for floating point numbers.
 #endif
 
 inline InputStream& operator>>(InputStream& stream, bool& value)
