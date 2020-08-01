@@ -144,6 +144,12 @@ public:
 
     ALWAYS_INLINE bool is_empty() const { return this->m_size == 0; }
 
+    ALWAYS_INLINE Span slice(size_t start) const
+    {
+        ASSERT(start < this->m_size);
+        return { this->m_values + start, this->m_size - start };
+    }
+
     ALWAYS_INLINE Span slice(size_t start, size_t size) const
     {
         ASSERT(start + size <= this->m_size);
