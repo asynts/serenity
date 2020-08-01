@@ -26,7 +26,6 @@
 
 #pragma once
 
-#include <AK/ByteBuffer.h>
 #include <AK/Stream.h>
 
 namespace AK {
@@ -55,26 +54,26 @@ private:
 
 class OutputMemoryStream final : public OutputStream {
 public:
-    inline explicit OutputMemoryStream(ByteBuffer& buffer)
-        : m_buffer(buffer)
+    inline explicit OutputMemoryStream(Bytes bytes)
+        : m_bytes(bytes)
     {
     }
 
     void write(ReadonlyBytes bytes) override
     {
-        if (bytes.size() > m_buffer.size() - m_offset) {
-            // FIXME: It might be a good idea to allocate more memory speculatively.
-            m_buffer.grow(bytes.size() + m_offset);
+        if (bytes.size() > m_bytes.size() - m_offset) {
+            m_error = true;
+            return;
         }
 
-        m_buffer.append(bytes.data(), bytes.size());
+        __builtin_memcpy(m_bytes.data() + m_offset, bytes.data(), bytes.size());
         m_offset += bytes.size();
     }
 
     inline size_t offset() const { return m_offset; }
 
 private:
-    ByteBuffer& m_buffer;
+    Bytes m_bytes;
     size_t m_offset { 0 };
 };
 
