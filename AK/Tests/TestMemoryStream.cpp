@@ -28,15 +28,31 @@
 
 #include <AK/MemoryStream.h>
 
-TEST_CASE(keep_byte_order)
+InputStream& operator>>(InputStream& stream, u8& value)
 {
-    const u32 expected = 0x01020304;
-    u32 actual;
+    stream.read_or_error({ &value, sizeof(value) });
+    return stream;
+}
 
-    InputMemoryStream stream { { &expected, sizeof(expected) } };
-    stream >> actual;
+TEST_CASE(input_memory_stream)
+{
+#if __BYTE_ORDER__ == __LITTLE_ENDIAN__
+    const u32 value = 0x04030201;
+#else
+    const u32 value = 0x01020304;
+#endif
 
-    // EXPECT_EQ(expected, actual);
+    InputMemoryStream stream { { &value, sizeof(value) } };
+
+    u8 byte0, byte1, byte2, byte3;
+    stream >> byte0 >> byte1 >> byte2 >> byte3;
+
+    EXPECT(!stream.error());
+
+    EXPECT_EQ(byte0, 1);
+    EXPECT_EQ(byte1, 2);
+    EXPECT_EQ(byte2, 3);
+    EXPECT_EQ(byte3, 4);
 }
 
 /*
@@ -54,6 +70,9 @@ TEST_CASE(roundtrip)
     OutputMemoryStream stream1 { actual };
 
     stream0 >> stream1;
+
+    EXPECT(!stream0.error());
+    EXPECT(!stream1.error());
 
     EXPECT(actual.size() >= 256);
 
