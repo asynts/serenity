@@ -31,9 +31,6 @@
 
 namespace AK {
 
-// Note that GCC can de-virtualize the calls to IStream::read() and OStream::write()
-// if -O2 is enabled. (https://godbolt.org/z/Mcb9bq)
-
 namespace Detail {
 
 class Stream {
@@ -44,10 +41,10 @@ public:
 
     inline bool handle_error() { return exchange(m_error, false); }
 
-    // inline operator bool() const { return !m_error; }
+    inline operator bool() const { return !m_error; }
 
 protected:
-    bool m_error;
+    bool m_error { false };
 };
 inline Stream::~Stream() { }
 
