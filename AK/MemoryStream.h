@@ -41,7 +41,7 @@ public:
     size_t read(Bytes bytes) override
     {
         const auto count = min(m_bytes.size() - m_offset, bytes.size());
-        __builtin_memcpy(bytes.data(), m_bytes.data(), count);
+        __builtin_memcpy(bytes.data(), m_bytes.data() + m_offset, count);
         m_offset += count;
         return count;
     }
