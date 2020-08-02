@@ -97,50 +97,121 @@ class NullStream final : public DuplexStream {
     }
 };
 
-template<typename T, typename = void>
-InputStream& operator>>(InputStream&, T&);
-
-template<typename T, typename = void>
-OutputStream& operator<<(OutputStream&, T);
-
-#ifdef KERNEL
-template<typename T>
-inline InputStream& operator>><T, typename EnableIf<IsIntegral<T>::value>::Type>(InputStream& stream, T&)
-{
-    stream.read_or_error({ &value, sizeof(value) });
-    return stream;
-}
-template<typename T>
-inline OutputStream& operator<<<T, typename EnableIf<IsIntegral<T>::value>::Type>(OutputStream& stream, T)
+inline OutputStream& operator<<(OutputStream& stream, bool value)
 {
     stream.write({ &value, sizeof(value) });
     return stream;
 }
-#else
-template<typename T>
-inline InputStream& operator>><T, typename EnableIf<IsIntegral<T>::value || IsFloatingPoint<T>::value>::Type>(InputStream& stream, T&)
-{
-    stream.read_or_error({ &value, sizeof(value) });
-    return stream;
-}
-template<typename T>
-inline OutputStream& operator<<<T, typename EnableIf<IsIntegral<T>::value || IsFloatingPoint<T>::value>::Type>(OutputStream& stream, T)
+inline OutputStream& operator<<(OutputStream& stream, i8 value)
 {
     stream.write({ &value, sizeof(value) });
     return stream;
 }
-#endif
+inline OutputStream& operator<<(OutputStream& stream, u8 value)
+{
+    stream.write({ &value, sizeof(value) });
+    return stream;
+}
+inline OutputStream& operator<<(OutputStream& stream, i16 value)
+{
+    stream.write({ &value, sizeof(value) });
+    return stream;
+}
+inline OutputStream& operator<<(OutputStream& stream, u16 value)
+{
+    stream.write({ &value, sizeof(value) });
+    return stream;
+}
+inline OutputStream& operator<<(OutputStream& stream, i32 value)
+{
+    stream.write({ &value, sizeof(value) });
+    return stream;
+}
+inline OutputStream& operator<<(OutputStream& stream, u32 value)
+{
+    stream.write({ &value, sizeof(value) });
+    return stream;
+}
+inline OutputStream& operator<<(OutputStream& stream, i64 value)
+{
+    stream.write({ &value, sizeof(value) });
+    return stream;
+}
+inline OutputStream& operator<<(OutputStream& stream, u64 value)
+{
+    stream.write({ &value, sizeof(value) });
+    return stream;
+}
 
 inline InputStream& operator>>(InputStream& stream, bool& value)
 {
     stream.read_or_error({ &value, sizeof(value) });
     return stream;
 }
-inline OutputStream& operator<<(OutputStream& stream, bool value)
+inline InputStream& operator>>(InputStream& stream, i8& value)
+{
+    stream.read_or_error({ &value, sizeof(value) });
+    return stream;
+}
+inline InputStream& operator>>(InputStream& stream, u8& value)
+{
+    stream.read_or_error({ &value, sizeof(value) });
+    return stream;
+}
+inline InputStream& operator>>(InputStream& stream, i16& value)
+{
+    stream.read_or_error({ &value, sizeof(value) });
+    return stream;
+}
+inline InputStream& operator>>(InputStream& stream, u16& value)
+{
+    stream.read_or_error({ &value, sizeof(value) });
+    return stream;
+}
+inline InputStream& operator>>(InputStream& stream, i32& value)
+{
+    stream.read_or_error({ &value, sizeof(value) });
+    return stream;
+}
+inline InputStream& operator>>(InputStream& stream, u32& value)
+{
+    stream.read_or_error({ &value, sizeof(value) });
+    return stream;
+}
+inline InputStream& operator>>(InputStream& stream, i64& value)
+{
+    stream.read_or_error({ &value, sizeof(value) });
+    return stream;
+}
+inline InputStream& operator>>(InputStream& stream, u64& value)
+{
+    stream.read_or_error({ &value, sizeof(value) });
+    return stream;
+}
+
+#ifndef KERNEL
+inline OutputStream& operator<<(OutputStream& stream, float value)
 {
     stream.write({ &value, sizeof(value) });
     return stream;
 }
+inline OutputStream& operator<<(OutputStream& stream, double value)
+{
+    stream.write({ &value, sizeof(value) });
+    return stream;
+}
+
+inline InputStream& operator>>(InputStream& stream, float& value)
+{
+    stream.read_or_error({ &value, sizeof(value) });
+    return stream;
+}
+inline InputStream& operator>>(InputStream& stream, double& value)
+{
+    stream.read_or_error({ &value, sizeof(value) });
+    return stream;
+}
+#endif
 
 inline InputStream& operator>>(InputStream& stream, Bytes bytes)
 {
