@@ -111,6 +111,9 @@ public:
 
     inline size_t offset() const { return m_offset; }
 
+    inline ReadonlyBytes span() const { return { data(), m_offset }; }
+    inline Bytes span() { return { data(), m_offset }; }
+
 private:
     u8* data() { return m_bytes.has_value() ? m_bytes->data() : m_buffer->data(); }
     const u8* data() const { return m_bytes.has_value() ? m_bytes->data() : m_buffer->data(); }
