@@ -26,7 +26,9 @@
 
 #include <AK/Bitmap.h>
 #include <AK/BufferStream.h>
+#include <AK/FixedArray.h>
 #include <AK/HashMap.h>
+#include <AK/MemoryStream.h>
 #include <AK/StdLibExtras.h>
 #include <AK/StringView.h>
 #include <Kernel/Devices/BlockDevice.h>
@@ -277,14 +279,15 @@ bool Ext2FS::write_block_list_for_inode(InodeIndex inode_index, ext2_inode& e2in
         remaining_blocks -= new_shape.indirect_blocks;
         output_block_index += new_shape.indirect_blocks;
     } else {
-        auto block_contents = ByteBuffer::create_uninitialized(block_size());
-        BufferStream stream(block_contents);
+        FixedArray<u8> block_contents { block_size() };
+        OutputMemoryStream stream { block_contents.span() };
+
         ASSERT(new_shape.indirect_blocks <= entries_per_block);
         for (unsigned i = 0; i < new_shape.indirect_blocks; ++i) {
             stream << blocks[output_block_index++];
             --remaining_blocks;
         }
-        stream.fill_to_end(0);
+        stream.fill_until_end(0);
         bool success = write_block(e2inode.i_block[EXT2_IND_BLOCK], block_contents.data(), block_size());
         ASSERT(success);
     }
@@ -884,26 +887,27 @@ bool Ext2FSInode::write_directory(const Vector<FS::DirectoryEntry>& entries)
 {
     LOCKER(m_lock);
 
-    int directory_size = 0;
+    size_t directory_size = 0;
     for (auto& entry : entries)
         directory_size += EXT2_DIR_REC_LEN(entry.name_length);
 
     auto block_size = fs().block_size();
 
-    int blocks_needed = ceil_div(static_cast<size_t>(directory_size), block_size);
-    int occupied_size = blocks_needed * block_size;
+    auto blocks_needed = ceil_div(directory_size, block_size);
+    auto occupied_size = blocks_needed * block_size;
 
 #ifdef EXT2_DEBUG
     dbg() << "Ext2FS: New directory inode " << identifier() << " contents to write (size " << directory_size << ", occupied " << occupied_size << "):";
 #endif
 
-    auto directory_data = ByteBuffer::create_uninitialized(occupied_size);
+    FixedArray<u8> directory_data { occupied_size };
 
-    BufferStream stream(directory_data);
+    OutputMemoryStream stream { directory_data.span() };
+
     for (size_t i = 0; i < entries.size(); ++i) {
         auto& entry = entries[i];
 
-        int record_length = EXT2_DIR_REC_LEN(entry.name_length);
+        u16 record_length = EXT2_DIR_REC_LEN(entry.name_length);
         if (i == entries.size() - 1)
             record_length += occupied_size - directory_size;
 
@@ -926,7 +930,7 @@ bool Ext2FSInode::write_directory(const Vector<FS::DirectoryEntry>& entries)
             stream << u8(0);
     }
 
-    stream.fill_to_end(0);
+    stream.fill_until_end(0);
 
     ssize_t nwritten = write_bytes(0, directory_data.size(), directory_data.data(), nullptr);
     if (nwritten < 0)
