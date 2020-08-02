@@ -86,6 +86,9 @@ public:
         return m_elements;
     }
 
+    Span<const T> span() const { return { data(), size() }; }
+    Span<T> span() { return { data(), size() }; }
+
     T& operator[](size_t index)
     {
         ASSERT(index < m_size);
