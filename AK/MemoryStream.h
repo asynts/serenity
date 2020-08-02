@@ -26,6 +26,7 @@
 
 #pragma once
 
+#include <AK/ByteBuffer.h>
 #include <AK/Stream.h>
 
 namespace AK {
@@ -65,6 +66,11 @@ private:
 
 class OutputMemoryStream final : public OutputStream {
 public:
+    inline explicit OutputMemoryStream(ByteBuffer& buffer)
+        : m_buffer(&buffer)
+    {
+    }
+
     inline explicit OutputMemoryStream(Bytes bytes)
         : m_bytes(bytes)
     {
@@ -77,31 +83,42 @@ public:
 
     inline void write(ReadonlyBytes bytes) override
     {
-        if (bytes.size() > m_bytes.size() - m_offset) {
-            m_error = true;
-            return;
+        if (bytes.size() > size() - m_offset) {
+            if (m_bytes.has_value()) {
+                m_error = true;
+                return;
+            } else {
+                // FIXME: Allocate more memory speculatively.
+                m_buffer->grow(m_buffer->size() + m_offset + bytes.size());
+            }
         }
 
-        __builtin_memcpy(m_bytes.data() + m_offset, bytes.data(), bytes.size());
+        __builtin_memcpy(data() + m_offset, bytes.data(), bytes.size());
         m_offset += bytes.size();
     }
 
     inline void seek(size_t offset)
     {
-        ASSERT(offset < m_bytes.size());
+        ASSERT(offset < size());
         m_offset = offset;
     }
 
     inline void fill_until_end(u8 fill)
     {
-        __builtin_memset(m_bytes.data() + m_offset, fill, m_bytes.size() - m_offset);
-        m_offset = m_bytes.size();
+        __builtin_memset(data() + m_offset, fill, size() - m_offset);
+        m_offset = size();
     }
 
     inline size_t offset() const { return m_offset; }
 
 private:
-    Bytes m_bytes;
+    u8* data() { return m_bytes.has_value() ? m_bytes->data() : m_buffer->data(); }
+    const u8* data() const { return m_bytes.has_value() ? m_bytes->data() : m_buffer->data(); }
+
+    size_t size() const { return m_bytes.has_value() ? m_bytes->size() : m_buffer->size(); }
+
+    ByteBuffer* m_buffer { nullptr };
+    Optional<Bytes> m_bytes;
     size_t m_offset { 0 };
 };
 
