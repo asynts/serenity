@@ -49,7 +49,7 @@ TEST_CASE(output_memory_stream)
     u8 buffer[] { 0, 0 };
     OutputMemoryStream stream { { buffer, sizeof(buffer) } };
 
-    stream << static_cast<u8>(1) << static_cast<u8>(2);
+    stream << u8(1) << u8(2);
 
     EXPECT(!stream.error());
 
@@ -75,7 +75,7 @@ TEST_CASE(roundtrip)
     u8 actual[256];
 
     for (int idx = 0; idx < 256; ++idx) {
-        expected[idx] = static_cast<u8>(idx);
+        expected[idx] = u8(idx);
         actual[idx] = 0;
     }
 
