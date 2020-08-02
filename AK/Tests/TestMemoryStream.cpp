@@ -28,17 +28,6 @@
 
 #include <AK/MemoryStream.h>
 
-InputStream& operator>>(InputStream& stream, u8& value)
-{
-    stream.read_or_error({ &value, sizeof(value) });
-    return stream;
-}
-OutputStream& operator<<(OutputStream& stream, u8 value)
-{
-    stream.write({ &value, sizeof(value) });
-    return stream;
-}
-
 TEST_CASE(input_memory_stream)
 {
     const u8 buffer[] { 1, 2, 3, 4 };
@@ -66,6 +55,18 @@ TEST_CASE(output_memory_stream)
 
     EXPECT_EQ(buffer[0], 1);
     EXPECT_EQ(buffer[1], 2);
+}
+
+TEST_CASE(keeps_byte_order)
+{
+    const u32 expected = 0x01020304;
+
+    InputMemoryStream stream { { &expected, sizeof(expected) } };
+
+    u32 actual = 0;
+    stream >> actual;
+
+    EXPECT_EQ(expected, actual);
 }
 
 TEST_CASE(roundtrip)
