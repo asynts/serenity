@@ -25,7 +25,6 @@
  */
 
 #include <AK/Bitmap.h>
-#include <AK/BufferStream.h>
 #include <AK/FixedArray.h>
 #include <AK/HashMap.h>
 #include <AK/MemoryStream.h>
