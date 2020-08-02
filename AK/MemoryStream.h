@@ -92,6 +92,12 @@ public:
         m_offset = offset;
     }
 
+    inline void fill_until_end(u8 fill)
+    {
+        __builtin_memset(m_bytes.data() + m_offset, fill, m_bytes.size() - m_offset);
+        m_offset = m_bytes.size();
+    }
+
     inline size_t offset() const { return m_offset; }
 
 private:
