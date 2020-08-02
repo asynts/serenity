@@ -67,6 +67,18 @@ const static void* bitap_bitwise(const void* haystack, size_t haystack_length, c
 }
 }
 
+void copy_to_user(Bytes dest, ReadonlyBytes src)
+{
+    ASSERT(dest.size() >= src.size());
+    copy_to_user(dest.data(), src.data(), src.size());
+}
+
+void copy_from_user(Bytes dest, ReadonlyBytes src)
+{
+    ASSERT(dest.size() >= src.size());
+    copy_from_user(dest.data(), src.data(), src.size());
+}
+
 extern "C" {
 
 void copy_to_user(void* dest_ptr, const void* src_ptr, size_t n)
