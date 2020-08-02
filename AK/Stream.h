@@ -41,7 +41,7 @@ public:
 
     inline bool handle_error() { return exchange(m_error, false); }
 
-    inline operator bool() const { return !m_error; }
+    inline explicit operator bool() const { return !m_error; }
 
 protected:
     bool m_error { false };
@@ -195,15 +195,15 @@ inline OutputStream& operator<<(OutputStream& stream, float value)
     stream.write({ &value, sizeof(value) });
     return stream;
 }
-inline OutputStream& operator<<(OutputStream& stream, double value)
-{
-    stream.write({ &value, sizeof(value) });
-    return stream;
-}
-
 inline InputStream& operator>>(InputStream& stream, float& value)
 {
     stream.read_or_error({ &value, sizeof(value) });
+    return stream;
+}
+
+inline OutputStream& operator<<(OutputStream& stream, double value)
+{
+    stream.write({ &value, sizeof(value) });
     return stream;
 }
 inline InputStream& operator>>(InputStream& stream, double& value)
@@ -213,33 +213,33 @@ inline InputStream& operator>>(InputStream& stream, double& value)
 }
 #endif
 
-inline InputStream& operator>>(InputStream& stream, Bytes bytes)
-{
-    stream.read_or_error(bytes);
-    return stream;
-}
 inline OutputStream& operator<<(OutputStream& stream, ReadonlyBytes bytes)
 {
     stream.write(bytes);
     return stream;
 }
-
-inline InputStream& operator>>(InputStream& lhs, OutputStream& rhs)
+inline InputStream& operator>>(InputStream& stream, Bytes bytes)
 {
-    u8 buffer[1024];
-    size_t count = 0;
-    while ((count = lhs.read({ buffer, sizeof(buffer) }))) {
-        rhs.write({ buffer, count });
-    }
-
-    return lhs;
+    stream.read_or_error(bytes);
+    return stream;
 }
+
 inline OutputStream& operator<<(OutputStream& lhs, InputStream& rhs)
 {
     u8 buffer[1024];
     size_t count = 0;
     while ((count = rhs.read({ buffer, sizeof(buffer) }))) {
         lhs.write({ buffer, count });
+    }
+
+    return lhs;
+}
+inline InputStream& operator>>(InputStream& lhs, OutputStream& rhs)
+{
+    u8 buffer[1024];
+    size_t count = 0;
+    while ((count = lhs.read({ buffer, sizeof(buffer) }))) {
+        rhs.write({ buffer, count });
     }
 
     return lhs;
