@@ -37,17 +37,23 @@ public:
     {
     }
 
-    ~InputMemoryStream()
+    inline ~InputMemoryStream()
     {
         ASSERT(!error());
     }
 
-    size_t read(Bytes bytes) override
+    inline size_t read(Bytes bytes) override
     {
         const auto count = min(m_bytes.size() - m_offset, bytes.size());
         __builtin_memcpy(bytes.data(), m_bytes.data() + m_offset, count);
         m_offset += count;
         return count;
+    }
+
+    inline void seek(size_t offset)
+    {
+        ASSERT(offset < m_bytes.size());
+        m_offset = offset;
     }
 
     inline size_t offset() const { return m_offset; }
@@ -64,12 +70,12 @@ public:
     {
     }
 
-    ~OutputMemoryStream()
+    inline ~OutputMemoryStream()
     {
         ASSERT(!error());
     }
 
-    void write(ReadonlyBytes bytes) override
+    inline void write(ReadonlyBytes bytes) override
     {
         if (bytes.size() > m_bytes.size() - m_offset) {
             m_error = true;
@@ -78,6 +84,12 @@ public:
 
         __builtin_memcpy(m_bytes.data() + m_offset, bytes.data(), bytes.size());
         m_offset += bytes.size();
+    }
+
+    inline void seek(size_t offset)
+    {
+        ASSERT(offset < m_bytes.size());
+        m_offset = offset;
     }
 
     inline size_t offset() const { return m_offset; }
