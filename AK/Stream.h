@@ -103,7 +103,7 @@ public:
 
     inline size_t read(Bytes bytes) override
     {
-        const auto count = min(bytes.size(), m_bytes.size() - m_offset);
+        const auto count = min(bytes.size(), remaining());
         __builtin_memcpy(bytes.data(), m_bytes.data() + m_offset, count);
         m_offset += count;
         return count;
@@ -111,7 +111,7 @@ public:
 
     inline bool read_or_error(Bytes bytes) override
     {
-        if (m_bytes.size() - m_offset < bytes.size()) {
+        if (remaining() < bytes.size()) {
             m_error = true;
             return false;
         }
@@ -190,6 +190,7 @@ public:
 
     inline ReadonlyBytes bytes() const { return m_bytes; }
     inline size_t offset() const { return m_offset; }
+    inline size_t remaining() const { return m_bytes.size() - m_offset; }
 
 private:
     ReadonlyBytes m_bytes;
