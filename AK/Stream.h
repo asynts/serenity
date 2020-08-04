@@ -44,6 +44,8 @@ public:
 
     inline bool handle_error() { return exchange(m_error, false); }
 
+    inline operator bool() const { return !m_error && !m_fatal; }
+
 protected:
     mutable bool m_error { false };
     mutable bool m_fatal { false };
@@ -58,6 +60,7 @@ public:
     virtual size_t read(Bytes) = 0;
     virtual bool read_or_error(Bytes) = 0;
     virtual bool eof() const = 0;
+    virtual bool discard_or_error(size_t count) = 0;
 };
 
 // clang-format off
@@ -93,6 +96,8 @@ InputStream& operator>>(InputStream& stream, Bytes bytes)
 }
 
 class InputMemoryStream final : public InputStream {
+    friend InputMemoryStream& operator>>(InputMemoryStream& stream, String& string);
+
 public:
     InputMemoryStream(ReadonlyBytes bytes)
         : m_bytes(bytes)
@@ -118,6 +123,17 @@ public:
 
         __builtin_memcpy(bytes.data(), m_bytes.data() + m_offset, bytes.size());
         m_offset += bytes.size();
+        return true;
+    }
+
+    inline bool discard_or_error(size_t count) override
+    {
+        if (remaining() < count) {
+            m_error = true;
+            return false;
+        }
+
+        m_offset += count;
         return true;
     }
 
@@ -187,6 +203,8 @@ public:
 
         return true;
     }
+
+    inline u8 peek_or_null() const { return eof() ? 0 : m_bytes[m_offset]; }
 
     inline ReadonlyBytes bytes() const { return m_bytes; }
     inline size_t offset() const { return m_offset; }

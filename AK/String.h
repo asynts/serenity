@@ -28,6 +28,7 @@
 
 #include <AK/Forward.h>
 #include <AK/RefPtr.h>
+#include <AK/Stream.h>
 #include <AK/StringImpl.h>
 #include <AK/StringUtils.h>
 #include <AK/Traits.h>
@@ -196,6 +197,12 @@ public:
         return *this;
     }
 
+    String& operator=(std::nullptr_t)
+    {
+        m_impl = nullptr;
+        return *this;
+    }
+
     u32 hash() const
     {
         if (!m_impl)
@@ -257,6 +264,28 @@ bool operator>(const char*, const String&);
 bool operator<=(const char*, const String&);
 
 String escape_html_entities(const StringView& html);
+
+InputMemoryStream& operator>>(InputMemoryStream& stream, String& string)
+{
+    // FIXME: There was some talking about a generic lexer class?
+
+    const auto start = stream.offset();
+
+    while (!stream.eof() && stream.m_bytes[stream.m_offset]) {
+        ++stream.m_offset;
+    }
+
+    if (stream.eof()) {
+        stream.m_error = true;
+        stream.m_offset = start;
+        string = nullptr;
+    } else {
+        string = String { stream.bytes().slice(start, stream.offset() - start) };
+        ++stream.m_offset;
+    }
+
+    return stream;
+}
 
 }
 

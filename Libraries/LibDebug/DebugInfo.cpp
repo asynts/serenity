@@ -26,6 +26,7 @@
 
 #include "DebugInfo.h"
 #include <AK/QuickSort.h>
+#include <AK/Stream.h>
 #include <LibDebug/Dwarf/CompilationUnit.h>
 #include <LibDebug/Dwarf/DwarfInfo.h>
 #include <LibDebug/Dwarf/Expression.h>
@@ -104,10 +105,10 @@ void DebugInfo::prepare_lines()
         return;
 
     auto buffer = section.wrapping_byte_buffer();
-    BufferStream stream(buffer);
+    InputMemoryStream stream { buffer.span() };
 
     Vector<LineProgram::LineInfo> all_lines;
-    while (!stream.at_end()) {
+    while (!stream.eof()) {
         LineProgram program(stream);
         all_lines.append(program.lines());
     }
