@@ -132,7 +132,7 @@ public:
 
 private:
     ReadonlyBytes m_bytes;
-    size_t m_offset;
+    size_t m_offset { 0 };
 };
 
 }
