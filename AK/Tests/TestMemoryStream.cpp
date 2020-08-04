@@ -28,16 +28,84 @@
 
 #include <AK/Stream.h>
 
+bool compare(ReadonlyBytes lhs, ReadonlyBytes rhs)
+{
+    if (lhs.size() != rhs.size())
+        return false;
+
+    for (size_t idx = 0; idx < lhs.size(); ++idx) {
+        if (lhs[idx] != rhs[idx])
+            return false;
+    }
+
+    return true;
+}
+
 TEST_CASE(read_an_integer)
 {
-    int expected = 0x01020304, actual = 0;
+    u32 expected = 0x01020304, actual;
 
     InputMemoryStream stream { { &expected, sizeof(expected) } };
     stream >> actual;
 
-    EXPECT(!stream.error());
-    EXPECT(!stream.fatal());
+    EXPECT(!stream.error() && !stream.fatal() && stream.eof());
     EXPECT_EQ(expected, actual);
+}
+
+TEST_CASE(recoverable_error)
+{
+    u32 expected = 0x01020304, actual = 0;
+    u64 to_large_value = 0;
+
+    InputMemoryStream stream { { &expected, sizeof(expected) } };
+
+    EXPECT(!stream.error() && !stream.fatal() && !stream.eof());
+    stream >> to_large_value;
+    EXPECT(stream.error() && !stream.fatal() && !stream.eof());
+
+    EXPECT(stream.handle_error());
+    EXPECT(!stream.error() && !stream.fatal() && !stream.eof());
+
+    stream >> actual;
+    EXPECT(!stream.error() && !stream.fatal() && stream.eof());
+    EXPECT_EQ(expected, actual);
+}
+
+TEST_CASE(chain_stream_operator)
+{
+    u8 expected[] { 0, 1, 2, 3 }, actual[4];
+
+    InputMemoryStream stream { { expected, sizeof(expected) } };
+
+    stream >> actual[0] >> actual[1] >> actual[2] >> actual[3];
+    EXPECT(!stream.error() && !stream.fatal() && stream.eof());
+
+    EXPECT(compare({ expected, sizeof(expected) }, { actual, sizeof(actual) }));
+}
+
+TEST_CASE(seeking_slicing_offset)
+{
+    u8 input[] { 0, 1, 2, 3, 4, 5, 6, 7 },
+        expected0[] { 0, 1, 2, 3 },
+        expected1[] { 4, 5, 6, 7 },
+        expected2[] { 1, 2, 3, 4 },
+        actual0[4], actual1[4], actual2[4];
+
+    InputMemoryStream stream { { input, sizeof(input) } };
+
+    stream >> Bytes { actual0, sizeof(actual0) };
+    EXPECT(!stream.error() && !stream.fatal() && !stream.eof());
+    EXPECT(compare({ expected0, sizeof(expected0) }, { actual0, sizeof(actual0) }));
+
+    stream.seek(4);
+    stream >> Bytes { actual1, sizeof(actual1) };
+    EXPECT(!stream.error() && !stream.fatal() && stream.eof());
+    EXPECT(compare({ expected1, sizeof(expected1) }, { actual1, sizeof(actual1) }));
+
+    stream.seek(1);
+    stream >> Bytes { actual2, sizeof(actual2) };
+    EXPECT(!stream.error() && !stream.fatal() && !stream.eof());
+    EXPECT(compare({ expected2, sizeof(expected2) }, { actual2, sizeof(actual2) }));
 }
 
 TEST_MAIN(MemoryStream)

@@ -99,7 +99,7 @@ public:
     {
     }
 
-    inline bool eof() const override { return m_offset < m_bytes.size(); }
+    inline bool eof() const override { return m_offset >= m_bytes.size(); }
 
     inline size_t read(Bytes bytes) override
     {
