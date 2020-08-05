@@ -14,7 +14,6 @@ file(GLOB_RECURSE GAMES_SOURCES "../../Games/*.cpp")
 file(GLOB_RECURSE KERNEL_SOURCES "../../Kernel/*.cpp")
 file(GLOB_RECURSE LIBRARIES_SOURCES "../../Libraries/*.cpp")
 file(GLOB_RECURSE MENU_APPLETS_SOURCES "../../MenuApplets/*.cpp")
-file(GLOB_RECURSE PORTS_SOURCES "../../Ports/*.cpp")
 file(GLOB_RECURSE SERVERS_SOURCES "../../Services/*.cpp")
 file(GLOB_RECURSE SHELL_SOURCES "../../Shell/*.cpp")
 file(GLOB_RECURSE TESTS_SOURCES "../../Tests/*.cpp")
@@ -38,7 +37,6 @@ add_library(serenity
     ${KERNEL_SOURCES}
     ${LIBRARIES_SOURCES}
     ${MENU_APPLETS_SOURCES}
-    ${PORTS_SOURCES}
     ${SERVERS_SOURCES}
     ${SHELL_SOURCES}
     ${TESTS_SOURCES}
