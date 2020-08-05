@@ -25,7 +25,6 @@
  */
 #include "Expression.h"
 
-#include <AK/BufferStream.h>
 #include <AK/Stream.h>
 
 #include <sys/arch/i386/regs.h>
