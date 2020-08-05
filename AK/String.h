@@ -84,6 +84,11 @@ public:
     {
     }
 
+    inline explicit String(ReadonlyBytes bytes, ShouldChomp shouldChomp = NoChomp)
+        : m_impl(StringImpl::create(bytes, shouldChomp))
+    {
+    }
+
     String(const StringImpl& impl)
         : m_impl(const_cast<StringImpl&>(impl))
     {
@@ -200,6 +205,12 @@ public:
     String& operator=(std::nullptr_t)
     {
         m_impl = nullptr;
+        return *this;
+    }
+
+    inline String& operator=(ReadonlyBytes bytes)
+    {
+        m_impl = StringImpl::create(bytes);
         return *this;
     }
 
