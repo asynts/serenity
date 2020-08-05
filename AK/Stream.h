@@ -154,8 +154,7 @@ public:
         return m_bytes[m_offset];
     }
 
-    // FIXME: Duplicated from AK::BufferStream::read_LEB128_unsigned.
-    // LEB128 is a variable-length encoding for integers
+    // FIXME: Verify the correctness of this implementation and clean up a bit.
     inline bool read_LEB128_unsigned(size_t& result)
     {
         const auto backup = m_offset;
@@ -182,8 +181,7 @@ public:
         return true;
     }
 
-    // FIXME: Duplicated from AK::BufferStream::read_LEB128_signed.
-    // LEB128 is a variable-length encoding for integers
+    // FIXME: Verify the correctness of this implementation and clean up a bit.
     inline bool read_LEB128_signed(ssize_t& result)
     {
         const auto backup = m_offset;
