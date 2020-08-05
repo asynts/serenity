@@ -27,6 +27,7 @@
 #pragma once
 
 #include <AK/Stream.h>
+#include <AK/String.h>
 #include <AK/Vector.h>
 
 class LineProgram {
