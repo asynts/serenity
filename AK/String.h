@@ -276,7 +276,7 @@ bool operator<=(const char*, const String&);
 
 String escape_html_entities(const StringView& html);
 
-InputMemoryStream& operator>>(InputMemoryStream& stream, String& string)
+inline InputMemoryStream& operator>>(InputMemoryStream& stream, String& string)
 {
     // FIXME: There was some talking about a generic lexer class?
 
