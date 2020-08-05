@@ -27,6 +27,7 @@
 #pragma once
 
 #include <AK/Concepts.h>
+#include <AK/Forward.h>
 #include <AK/Span.h>
 #include <AK/StdLibExtras.h>
 
@@ -83,13 +84,13 @@ InputStream& operator>>(InputStream& stream, FloatingPoint& value)
 
 // clang-format on
 
-InputStream& operator>>(InputStream& stream, bool& value)
+inline InputStream& operator>>(InputStream& stream, bool& value)
 {
     stream.read_or_error({ &value, sizeof(value) });
     return stream;
 }
 
-InputStream& operator>>(InputStream& stream, Bytes bytes)
+inline InputStream& operator>>(InputStream& stream, Bytes bytes)
 {
     stream.read_or_error(bytes);
     return stream;
@@ -99,7 +100,7 @@ class InputMemoryStream final : public InputStream {
     friend InputMemoryStream& operator>>(InputMemoryStream& stream, String& string);
 
 public:
-    InputMemoryStream(ReadonlyBytes bytes)
+    inline InputMemoryStream(ReadonlyBytes bytes)
         : m_bytes(bytes)
     {
     }
@@ -145,7 +146,7 @@ public:
 
     // FIXME: Duplicated from AK::BufferStream::read_LEB128_unsigned.
     // LEB128 is a variable-length encoding for integers
-    bool read_LEB128_unsigned(size_t& result)
+    inline bool read_LEB128_unsigned(size_t& result)
     {
         const auto backup = m_offset;
 
@@ -173,7 +174,7 @@ public:
 
     // FIXME: Duplicated from AK::BufferStream::read_LEB128_signed.
     // LEB128 is a variable-length encoding for integers
-    bool read_LEB128_signed(ssize_t& result)
+    inline bool read_LEB128_signed(ssize_t& result)
     {
         const auto backup = m_offset;
 
