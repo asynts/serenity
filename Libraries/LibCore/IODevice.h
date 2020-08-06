@@ -27,11 +27,13 @@
 #pragma once
 
 #include <AK/Forward.h>
+#include <AK/Stream.h>
 #include <LibCore/Object.h>
 
 namespace Core {
 
-class IODevice : public Object {
+class IODevice : public Object
+    , public InputStream {
     C_OBJECT_ABSTRACT(IODevice)
 public:
     enum OpenMode {
@@ -61,6 +63,11 @@ public:
     ByteBuffer read(size_t max_size);
     ByteBuffer read_line(size_t max_size);
     ByteBuffer read_all();
+
+    size_t read(Bytes) final;
+    bool read_or_error(Bytes) final;
+    bool eof() const { return m_eof; }
+    bool discard_or_error(size_t count) final;
 
     bool write(const u8*, int size);
     bool write(const StringView&);

@@ -54,11 +54,47 @@ const char* IODevice::error_string() const
 
 int IODevice::read(u8* buffer, int length)
 {
+    // FIXME: Don't do a heap allocation.
     auto read_buffer = read(length);
     if (read_buffer.is_null())
         return 0;
     memcpy(buffer, read_buffer.data(), length);
     return read_buffer.size();
+}
+
+size_t IODevice::read(Bytes bytes)
+{
+    if (fatal())
+        return 0;
+
+    return static_cast<size_t>(read(bytes.data(), bytes.size()));
+}
+
+bool IODevice::read_or_error(Bytes bytes)
+{
+    if (fatal())
+        return false;
+
+    const auto count = read(bytes);
+
+    if (count < bytes.size()) {
+        const auto previous_size = m_buffered_data.size();
+        m_buffered_data.grow(previous_size + count);
+
+        memmove(m_buffered_data.data() + count, m_buffered_data.data(), previous_size);
+        memcpy(m_buffered_data.data(), bytes.data(), count);
+
+        m_error = true;
+        return false;
+    }
+
+    return true;
+}
+
+bool IODevice::discard_or_error(size_t count)
+{
+    auto buffer = ByteBuffer::create_uninitialized(count);
+    return read_or_error(buffer.span());
 }
 
 ByteBuffer IODevice::read(size_t max_size)
