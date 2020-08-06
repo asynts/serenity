@@ -34,6 +34,8 @@ namespace Core {
 class IODevice : public Object {
     C_OBJECT_ABSTRACT(IODevice)
 public:
+    friend class InputDeviceStream;
+
     enum OpenMode {
         NotOpen = 0,
         ReadOnly = 1,

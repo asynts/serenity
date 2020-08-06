@@ -28,8 +28,8 @@
 #include <AK/NumericLimits.h>
 #include <AK/OwnPtr.h>
 #include <LibAudio/WavLoader.h>
+#include <LibCore/DeviceStream.h>
 #include <LibCore/File.h>
-#include <LibCore/IODeviceStreamReader.h>
 
 namespace Audio {
 
@@ -80,11 +80,11 @@ void WavLoader::reset()
 
 bool WavLoader::parse_header()
 {
-    Core::IODeviceStreamReader stream(*m_file);
+    Core::InputDeviceStream stream(*m_file);
 
 #define CHECK_OK(msg)                                                           \
     do {                                                                        \
-        if (stream.handle_read_failure()) {                                     \
+        if (stream.handle_error()) {                                            \
             m_error_string = String::format("Premature stream EOF at %s", msg); \
             return {};                                                          \
         }                                                                       \
@@ -187,9 +187,6 @@ bool WavLoader::parse_header()
 
     int bytes_per_sample = (m_bits_per_sample / 8) * m_num_channels;
     m_total_samples = data_sz / bytes_per_sample;
-
-    // Just make sure we're good before we read the data...
-    ASSERT(!stream.handle_read_failure());
 
     return true;
 }

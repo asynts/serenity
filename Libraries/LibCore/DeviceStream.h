@@ -26,36 +26,61 @@
 
 #pragma once
 
-#include <AK/StdLibExtras.h>
+#include <AK/Stream.h>
 #include <LibCore/IODevice.h>
 
 namespace Core {
 
-class IODeviceStreamReader {
+class InputDeviceStream final : public InputStream {
 public:
-    IODeviceStreamReader(IODevice& device)
+    InputDeviceStream(IODevice& device)
         : m_device(device)
     {
     }
 
-    bool handle_read_failure()
+    size_t read(Bytes bytes) override
     {
-        return exchange(m_had_failure, false);
+        int nread = m_device.read(bytes.data(), bytes.size());
+
+        ASSERT(TypeBoundsChecker<size_t>::is_within_range(nread));
+        return static_cast<size_t>(nread);
     }
 
-    template<typename T>
-    IODeviceStreamReader& operator>>(T& value)
+    bool read_or_error(Bytes bytes) override
     {
-        int nread = m_device.read((u8*)&value, sizeof(T));
-        ASSERT(nread == sizeof(T));
-        if (nread != sizeof(T))
-            m_had_failure = true;
-        return *this;
+        const auto nread = read(bytes);
+
+        if (nread < bytes.size()) {
+            const auto previous_size = m_device.m_buffered_data.size();
+            m_device.m_buffered_data.grow_capacity(previous_size + nread);
+            memmove(m_device.m_buffered_data.data() + nread, m_device.m_buffered_data.data(), previous_size);
+            memcpy(m_device.m_buffered_data.data(), bytes.data(), nread);
+
+            m_error = true;
+            return false;
+        }
+
+        return true;
     }
+
+    bool discard_or_error(size_t count)
+    {
+        const auto previously_in_buffer = m_device.m_buffered_data.size();
+        if (count >= previously_in_buffer) {
+            m_device.m_buffered_data.clear();
+
+            auto buffer = ByteBuffer::create_uninitialized(count - previously_in_buffer);
+            return read_or_error(buffer.span());
+        }
+
+        auto buffer = ByteBuffer::create_uninitialized(count);
+        return read_or_error(buffer.span());
+    }
+
+    bool eof() const override { return m_device.eof(); }
 
 private:
     IODevice& m_device;
-    bool m_had_failure { false };
 };
 
 }
