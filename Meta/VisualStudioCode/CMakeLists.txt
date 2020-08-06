@@ -21,6 +21,7 @@ file(GLOB_RECURSE USERLAND_SOURCES "../../Userland/*.cpp")
 
 set(INCLUDE_DIRS
     "../.."
+    "../../AK"
     "../../Kernel"
     "../../Libraries"
     "../../Libraries/LibC"
