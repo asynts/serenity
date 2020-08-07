@@ -26,6 +26,7 @@
 
 #pragma once
 
+#include <AK/Assertions.h>
 #include <AK/Stream.h>
 #include <LibCore/IODevice.h>
 
@@ -42,7 +43,8 @@ public:
     {
         int nread = m_device.read(bytes.data(), bytes.size());
 
-        ASSERT(TypeBoundsChecker<size_t>::is_within_range(nread));
+        // FIXME: Is there a narrow_cast<>?
+        ASSERT(AK::TypeBoundsChecker<size_t, int>::is_within_range(nread));
         return static_cast<size_t>(nread);
     }
 
