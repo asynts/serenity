@@ -44,6 +44,10 @@ public:
 
     bool handle_error() { return exchange(m_error, false); }
 
+    // Whether the input stream returns into a well defined state if
+    // handle_error is called.
+    virtual bool are_errors_recoverable() const = 0;
+
 protected:
     mutable bool m_error { false };
 };
@@ -96,6 +100,8 @@ public:
         : m_bytes(bytes)
     {
     }
+
+    bool are_errors_recoverable() const override { return true; }
 
     bool eof() const override { return m_offset >= m_bytes.size(); }
 
