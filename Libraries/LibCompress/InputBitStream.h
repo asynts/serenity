@@ -26,7 +26,9 @@
 
 #pragma once
 
+#include <AK/FixedArray.h>
 #include <AK/Span.h>
+#include <AK/StdLibExtras.h>
 #include <AK/Stream.h>
 
 namespace Compress {
@@ -42,17 +44,15 @@ public:
 
     size_t read(Bytes bytes) override
     {
-        const auto nbytes_from_buffer = min(bytes.size(), m_buffered_data_length);
+        const auto nbytes_from_buffer = min(bytes.size(), m_buffer_size);
 
-        ReadonlyBytes { m_buffered_data, nbytes_from_buffer }.copy_to(bytes);
-
-        ReadonlyBytes { m_buffered_data + nbytes_from_buffer, m_buffered_data_length - nbytes_from_buffer }
-            .move_to(Bytes { m_buffered_data, sizeof(m_buffered_data) });
+        m_buffer.slice(0, nbytes_from_buffer).copy_to(bytes);
+        m_buffer.slice(nbytes_from_buffer, m_buffer_size - nbytes_from_buffer).move_to(m_buffer);
 
         m_bit_offset = 0;
-        m_buffered_data_length -= nbytes_from_buffer;
+        m_buffer_size -= nbytes_from_buffer;
 
-        return nbytes_from_buffer + m_stream.read(bytes.slice(nbytes_from_buffer));
+        return nbytes_from_buffer + m_stream.read(m_buffer.bytes().slice(nbytes_from_buffer));
     }
 
     bool read_or_error(Bytes bytes) override
@@ -65,12 +65,12 @@ public:
         return true;
     }
 
-    bool eof() const override { return m_buffered_data_length == 0 && m_stream.eof(); }
+    bool eof() const override { return m_buffer_size == 0 && m_stream.eof(); }
 
     bool discard_or_error(size_t count) override
     {
-        const auto discarded_from_buffer = min(count, m_buffered_data_length);
-        m_buffered_data_length = 0;
+        const auto discarded_from_buffer = min(count, m_buffer_size);
+        m_buffer_size -= discarded_from_buffer;
 
         return discard_or_error(count - discarded_from_buffer);
     }
@@ -79,26 +79,18 @@ public:
     {
         ASSERT(count <= 32);
 
-        const auto nbits_buffered = m_buffered_data_length * 8 - m_bit_offset;
+        // How many bytes do I need.
 
-        if (nbits_buffered >= count) {
-            ReadonlyBytes { m_buffered_data, m_buffered_data_length }
-                .copy_trimmed_to({ &value, sizeof(value) });
+        // Make sure that many bytes are in the buffer.
 
-            value = value >> m_bit_offset;
-
-            // FIXME: Don't move the buffer over but use m_bit_offset * 8 instead.
-
-            // FIXME: Move the buffer over.
-
-            m_bit_offset += count;
-        }
+        // Make sure to copy with the correct bit order.
+        TODO();
     }
 
 private:
+    FixedArray<u8> m_buffer { 8 };
+    size_t m_buffer_size { 0 };
     size_t m_bit_offset { 0 };
-    u8 m_buffered_data[8];
-    u8 m_buffered_data_length { 0 };
     InputStream& m_stream;
 };
 
