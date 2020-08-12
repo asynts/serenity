@@ -156,6 +156,28 @@ public:
         return this->m_values + start;
     }
 
+    ALWAYS_INLINE void copy_to(Bytes bytes) const
+    {
+        ASSERT(bytes.size() >= size());
+        __builtin_memcpy(bytes.data(), data(), size());
+    }
+
+    ALWAYS_INLINE void copy_trimmed_to(Bytes bytes) const
+    {
+        __builtin_memcpy(bytes.data(), data(), min(size(), bytes.size()));
+    }
+
+    ALWAYS_INLINE void move_to(Bytes bytes) const
+    {
+        ASSERT(bytes.size() >= size());
+        __builtin_memmove(bytes.data(), data(), size());
+    }
+
+    ALWAYS_INLINE void move_trimmed_to(Bytes bytes) const
+    {
+        __builtin_memmove(bytes.data(), data(), min(size(), bytes.size()));
+    }
+
     ALWAYS_INLINE const T& at(size_t index) const
     {
         ASSERT(index < this->m_size);
