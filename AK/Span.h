@@ -156,26 +156,26 @@ public:
         return this->m_values + start;
     }
 
-    ALWAYS_INLINE void copy_to(Bytes bytes) const
+    ALWAYS_INLINE void copy_to(Span other) const
     {
-        ASSERT(bytes.size() >= size());
-        __builtin_memcpy(bytes.data(), data(), size());
+        ASSERT(other.size() >= size());
+        __builtin_memcpy(other.data(), data(), sizeof(T) * size());
     }
 
-    ALWAYS_INLINE void copy_trimmed_to(Bytes bytes) const
+    ALWAYS_INLINE void copy_trimmed_to(Span other) const
     {
-        __builtin_memcpy(bytes.data(), data(), min(size(), bytes.size()));
+        __builtin_memcpy(other.data(), data(), sizeof(T) * min(size(), other.size()));
     }
 
-    ALWAYS_INLINE void move_to(Bytes bytes) const
+    ALWAYS_INLINE void copy_to(Span other) const
     {
-        ASSERT(bytes.size() >= size());
-        __builtin_memmove(bytes.data(), data(), size());
+        ASSERT(other.size() >= size());
+        __builtin_memmove(other.data(), data(), sizeof(T) * size());
     }
 
-    ALWAYS_INLINE void move_trimmed_to(Bytes bytes) const
+    ALWAYS_INLINE void copy_trimmed_to(Span other) const
     {
-        __builtin_memmove(bytes.data(), data(), min(size(), bytes.size()));
+        __builtin_memmove(other.data(), data(), sizeof(T) * min(size(), other.size()));
     }
 
     ALWAYS_INLINE const T& at(size_t index) const
