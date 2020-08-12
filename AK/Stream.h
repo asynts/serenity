@@ -37,10 +37,10 @@ class Stream {
 public:
     virtual ~Stream()
     {
-        ASSERT(!error());
+        ASSERT(!is_error());
     }
 
-    bool error() const { return m_error; }
+    bool is_error() const { return m_error; }
 
     bool handle_error() { return exchange(m_error, false); }
 
