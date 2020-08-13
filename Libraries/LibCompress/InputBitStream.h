@@ -38,6 +38,7 @@ public:
     InputBitStream(InputStream& stream)
         : m_stream(stream)
     {
+        m_buffer.bytes().fill(0);
     }
 
     bool are_errors_recoverable() const override { return false; }
@@ -46,8 +47,8 @@ public:
     {
         const auto nbytes_from_buffer = min(bytes.size(), m_buffer_size);
 
-        m_buffer.slice(0, nbytes_from_buffer).copy_to(bytes);
-        m_buffer.slice(nbytes_from_buffer, m_buffer_size - nbytes_from_buffer).move_to(m_buffer);
+        m_buffer.bytes().slice(0, nbytes_from_buffer).copy_to(bytes);
+        m_buffer.bytes().slice(nbytes_from_buffer, m_buffer_size - nbytes_from_buffer).move_to(m_buffer);
 
         m_bit_offset = 0;
         m_buffer_size -= nbytes_from_buffer;
@@ -79,15 +80,29 @@ public:
     {
         ASSERT(count <= 32);
 
-        // How many bytes do I need.
+        ensure_bits_buffered(count);
 
-        // Make sure that many bytes are in the buffer.
+        // FIXME: Do we have the correct bit order here?
+        m_buffer.bytes().copy_trimmed_to({ &value, 4 });
+        value = (value >> m_bit_offset % 8) & static_cast<u32>((1ul << count) - 1);
 
-        // Make sure to copy with the correct bit order.
-        TODO();
+        m_bit_offset += count;
+
+        const auto bytes_consumed = m_bit_offset / 8;
+        m_buffer.bytes().slice(bytes_consumed).move_to(m_buffer);
+        m_bit_offset %= 8;
     }
 
 private:
+    void ensure_bits_buffered(size_t count)
+    {
+        if (m_buffer_size * 8 - m_bit_offset < count) {
+            m_buffer_size += m_stream.read(m_buffer.bytes().slice(m_buffer_size));
+        }
+
+        ASSERT(m_buffer_size * 8 - m_bit_offset >= count);
+    }
+
     FixedArray<u8> m_buffer { 8 };
     size_t m_buffer_size { 0 };
     size_t m_bit_offset { 0 };
