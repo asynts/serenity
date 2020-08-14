@@ -31,8 +31,12 @@
 #include <AK/StdLibExtras.h>
 #include <AK/Stream.h>
 
-namespace Compress {
+namespace AK {
 
+// Extends InputStream with functionallity to read indivitual bits. Behaves just like
+// the underlying stream, but consumes one byte from the stream when eight bits are
+// read indivitually. Partially read bits are considered untouched and will still be
+// considered by InputBitStream::read(Bytes).
 class InputBitStream final : public InputStream {
 public:
     InputBitStream(InputStream& stream)
@@ -82,9 +86,9 @@ public:
 
         ensure_bits_buffered(count);
 
-        // FIXME: Do we have the correct bit order here?
-        m_buffer.bytes().copy_trimmed_to({ &value, 4 });
-        value = (value >> m_bit_offset % 8) & static_cast<u32>((1ul << count) - 1);
+        // FIXME: Do we have the correct bit/byte order here?
+        u64 tmp = *reinterpret_cast<u64*>(m_buffer.data());
+        value = static_cast<u32>((tmp >> m_bit_offset % 8) & ((1ul << count) - 1));
 
         m_bit_offset += count;
 

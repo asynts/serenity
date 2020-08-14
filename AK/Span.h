@@ -150,6 +150,12 @@ public:
         return { this->m_values + start, size };
     }
 
+    ALWAYS_INLINE Span slice(size_t start) const
+    {
+        ASSERT(start < this->m_size);
+        return { this->m_values + start, this->m_size - start };
+    }
+
     ALWAYS_INLINE T* offset(size_t start) const
     {
         ASSERT(start < this->m_size);
@@ -167,13 +173,13 @@ public:
         __builtin_memcpy(other.data(), data(), sizeof(T) * min(size(), other.size()));
     }
 
-    ALWAYS_INLINE void copy_to(Span other) const
+    ALWAYS_INLINE void move_to(Span other) const
     {
         ASSERT(other.size() >= size());
         __builtin_memmove(other.data(), data(), sizeof(T) * size());
     }
 
-    ALWAYS_INLINE void copy_trimmed_to(Span other) const
+    ALWAYS_INLINE void move_trimmed_to(Span other) const
     {
         __builtin_memmove(other.data(), data(), sizeof(T) * min(size(), other.size()));
     }
