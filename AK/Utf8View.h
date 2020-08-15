@@ -67,8 +67,7 @@ public:
     Utf8CodepointIterator begin() const;
     Utf8CodepointIterator end() const;
 
-    ReadonlyBytes bytes() const { return { begin_ptr(), byte_length() }; }
-
+    const unsigned char* bytes() const { return begin_ptr(); }
     int byte_length() const { return m_string.length(); }
     int byte_offset_of(const Utf8CodepointIterator&) const;
     Utf8View substring_view(int byte_offset, int byte_length) const;
