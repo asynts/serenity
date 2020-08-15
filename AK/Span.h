@@ -162,6 +162,19 @@ public:
         return this->m_values + start;
     }
 
+    ALWAYS_INLINE bool is_equivalent_to(Span other) const
+    {
+        if (other.size() != size())
+            return false;
+
+        for (size_t idx = 0; idx < size(); ++idx) {
+            if (other[idx] != *this[idx])
+                return false;
+        }
+
+        return true;
+    }
+
     ALWAYS_INLINE void copy_to(Span other) const
     {
         ASSERT(other.size() >= size());

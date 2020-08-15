@@ -160,8 +160,8 @@ public:
 
     RSA(const ByteBuffer& publicKeyPEM, const ByteBuffer& privateKeyPEM)
     {
-        import_public_key(publicKeyPEM.span());
-        import_private_key(privateKeyPEM.span());
+        import_public_key(publicKeyPEM.bytes());
+        import_private_key(privateKeyPEM.bytes());
     }
 
     RSA(const StringView& privKeyPEM)
