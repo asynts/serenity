@@ -995,11 +995,11 @@ void Painter::draw_text(const IntRect& rect, const StringView& raw_text, const F
     Utf8View text { raw_text };
     Vector<Utf8View, 32> lines;
 
-    int start_of_current_line = 0;
+    size_t start_of_current_line = 0;
     for (auto it = text.begin(); it != text.end(); ++it) {
         u32 code_point = *it;
         if (code_point == '\n') {
-            int byte_offset = text.byte_offset_of(it);
+            const auto byte_offset = text.byte_offset_of(it);
             Utf8View line = text.substring_view(start_of_current_line, byte_offset - start_of_current_line);
             lines.append(line);
             start_of_current_line = byte_offset + 1;
@@ -1345,7 +1345,7 @@ void Painter::draw_quadratic_bezier_curve(const IntPoint& control_point, const I
 
 void Painter::for_each_line_segment_on_elliptical_arc(const FloatPoint& p1, const FloatPoint& p2, const FloatPoint& center, const FloatPoint radii, float x_axis_rotation, float theta_1, float theta_delta, Function<void(const FloatPoint&, const FloatPoint&)>& callback)
 {
-    if (can_approximate_elliptical_arc(p1, p2, center, radii, x_axis_rotation, theta_1, theta_delta))  {
+    if (can_approximate_elliptical_arc(p1, p2, center, radii, x_axis_rotation, theta_1, theta_delta)) {
         callback(p1, p2);
     } else {
         split_elliptical_arc(p1, p2, center, radii, x_axis_rotation, theta_1, theta_delta, callback);
