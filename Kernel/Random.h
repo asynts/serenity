@@ -69,7 +69,7 @@ public:
         typename CipherType::CTRMode cipher(m_key, KeySize);
 
         Bytes buffer_span { buffer, n };
-        auto counter_span = m_counter.span();
+        auto counter_span = m_counter.bytes();
         cipher.key_stream(buffer_span, counter_span, &counter_span);
 
         // Extract a new key from the prng stream.
