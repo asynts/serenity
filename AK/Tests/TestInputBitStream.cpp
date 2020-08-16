@@ -94,13 +94,13 @@ TEST_CASE(read_bits_individually)
 
     u32 value;
 
-    stream1.read_bits(value, 3);
+    value = stream1.read_bits(3);
     ASSERT(value == 0b111 && stream0.offset() == 0);
 
-    stream1.read_bits(value, 6);
+    value = stream1.read_bits(6);
     ASSERT(value == 0b011110 && stream0.offset() == 1);
 
-    stream1.read_bits(value, 2);
+    value = stream1.read_bits(2);
     ASSERT(value == 0b01 && stream0.offset() == 1);
 
     FixedArray<u8> output1 { 3 };

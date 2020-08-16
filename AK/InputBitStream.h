@@ -80,20 +80,22 @@ public:
         return discard_or_error(count - discarded_from_buffer);
     }
 
-    void read_bits(u32& value, size_t count)
+    u32 read_bits(size_t count)
     {
         ASSERT(count <= 32);
 
         ensure_bits_buffered(count);
 
-        u64 tmp = *reinterpret_cast<u64*>(m_buffer.data());
-        value = static_cast<u32>((tmp >> m_bit_offset % 8) & ((1ul << count) - 1));
+        u64 value = *reinterpret_cast<u64*>(m_buffer.data());
+        value = (value >> m_bit_offset % 8) & ((1ul << count) - 1);
 
         m_bit_offset += count;
 
         const auto bytes_consumed = m_bit_offset / 8;
         m_buffer.bytes().slice(bytes_consumed).move_to(m_buffer);
         m_bit_offset %= 8;
+
+        return static_cast<u32>(value);
     }
 
 private:
