@@ -27,6 +27,7 @@
 #pragma once
 
 #include <AK/InputBitStream.h>
+#include <AK/LogStream.h>
 #include <AK/Stream.h>
 
 namespace Compress {
@@ -48,7 +49,50 @@ public:
     bool discard_or_error(size_t count) override;
 
 private:
+    enum class BlockType {
+        Uncompressed = 0b00,
+        FixedCompression = 0b01,
+        DynamicCompression = 0b10,
+        Reserved = 0b11
+    };
+
+    struct Block {
+        BlockType type;
+        bool is_open { false };
+        bool is_final_block { false };
+    };
+
+    void open_block()
+    {
+        ASSERT(!m_block.is_final_block);
+
+        m_block.is_open = true;
+        m_block.is_final_block = m_stream.read_bits(1);
+        m_block.type = static_cast<BlockType>(m_stream.read_bits(2));
+        m_stream.discard_or_error(1);
+
+        switch (m_block.type) {
+        case BlockType::Uncompressed:
+        case BlockType::FixedCompression:
+        case BlockType::DynamicCompression:
+            break;
+        case BlockType::Reserved:
+            dbg() << "Invalid deflate block, reserved type.";
+            m_error = true;
+            break;
+        default:
+            dbg() << "Invalid deflate block, unknown type.";
+            m_error = true;
+        }
+    }
+
+    void close_block()
+    {
+        m_block.is_open = false;
+    }
+
     AK::InputBitStream m_stream;
+    Block m_block;
 };
 
 }
