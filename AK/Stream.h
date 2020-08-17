@@ -63,7 +63,7 @@ public:
 class OutputStream : public virtual AK::Detail::Stream {
 public:
     virtual size_t write(ReadonlyBytes) = 0;
-    virtual void write_or_error(ReadonlyBytes) = 0;
+    virtual bool write_or_error(ReadonlyBytes) = 0;
 };
 
 class DuplexStream
@@ -271,45 +271,36 @@ private:
 
 class DuplexMemoryStream final : public DuplexStream {
 public:
-    // Invariant: There is always at least one chunk that is not completely filled.
+    bool eof() const override { return eof(0); }
 
-    DuplexMemoryStream()
+    bool eof(size_t count) const
     {
-        m_chunks.append(ByteBuffer::create_uninitialized(chunk_size));
+        return m_write_offset - m_read_offset > count;
     }
 
-    bool eof() const override { return m_write_offset == m_read_offset; }
+    bool discard_or_error(size_t count) override
+    {
+        if (m_write_offset - m_read_offset < count) {
+            m_error = true;
+            return false;
+        }
 
-    bool discard_or_error(size_t count) override { TODO(); }
+        m_read_offset += count;
+        try_discard_chunks();
+        return true;
+    }
 
     size_t read(Bytes bytes) override
     {
-        auto first_chunk_bytes = m_chunks.first().bytes().slice(m_read_offset % chunk_size).trim(m_write_offset - m_read_offset);
-        auto nread = first_chunk_bytes.copy_trimmed_to(bytes);
-
-        if (m_read_offset + nread == m_write_offset) {
-            m_read_offset += nread;
-            return nread;
-        }
-
-        if ((m_read_offset + nread) % chunk_size == 0) {
-            m_chunks.take_first();
-        }
-
-        while (bytes.size() - nread >= chunk_size) {
-            if (m_write_offset - (m_read_offset + nread) < chunk_size)
-                break;
-
-            nread += m_chunks.take_first().bytes().copy_to(bytes.slice(nread));
-        }
-
-        if (m_chunks.size() == 0) {
-            m_chunks.append(ByteBuffer::create_uninitialized(chunk_size));
-        } else {
-            nread += m_chunks.first().bytes().slice((m_read_offset + nread) % chunk_size).trim(m_write_offset - (m_read_offset + nread)).copy_trimmed_to(bytes.slice(nread));
+        size_t nread = 0;
+        while (bytes.size() - nread > 0 && !eof(nread)) {
+            const auto chunk_index = (m_read_offset - m_base_offset) / chunk_size;
+            const auto chunk_bytes = m_chunks[chunk_index].bytes().slice(m_read_offset % chunk_size).trim(m_write_offset - m_read_offset);
+            nread += chunk_bytes.copy_to(bytes.slice(nread));
         }
 
         m_read_offset += nread;
+        try_discard_chunks();
         return nread;
     }
 
@@ -326,36 +317,40 @@ public:
 
     size_t write(ReadonlyBytes bytes) override
     {
-        auto last_chunk_bytes = m_chunks.last().bytes().slice(m_write_offset); // FIXME: Fatal mistake.
-        auto nwritten = bytes.copy_trimmed_to(last_chunk_bytes);
+        size_t nwritten = 0;
+        while (bytes.size() - nwritten > 0) {
+            if ((m_write_offset + nwritten) % chunk_size == 0)
+                m_chunks.append(ByteBuffer::create_uninitialized(chunk_size));
 
-        while (bytes.size() - nwritten >= chunk_size) {
-            auto buffer = ByteBuffer::create_uninitialized(chunk_size);
-            nwritten += bytes.slice(nwritten).copy_trimmed_to(buffer);
-            m_chunks.append(move(buffer));
-        }
-
-        if ((m_write_offset + nwritten) % chunk_size >= 0) {
-            auto buffer = ByteBuffer::create_uninitialized(chunk_size);
-            nwritten += bytes.slice(nwritten).copy_to(buffer);
-            m_chunks.append(move(buffer));
+            nwritten += bytes.copy_trimmed_to(m_chunks.last().bytes().slice(m_write_offset % chunk_size));
         }
 
         m_write_offset += nwritten;
         return nwritten;
     }
 
-    void write_or_error(ReadonlyBytes bytes) override
+    bool write_or_error(ReadonlyBytes bytes) override
     {
         write(bytes);
+        return true;
     }
 
 private:
     static constexpr size_t chunk_size = 4096;
+    static constexpr size_t history_size = 65536;
+
+    void try_discard_chunks()
+    {
+        while (m_read_offset - m_base_offset >= chunk_size) {
+            m_chunks.take_first();
+            m_base_offset += chunk_size;
+        }
+    }
 
     Vector<ByteBuffer> m_chunks;
     size_t m_write_offset { 0 };
     size_t m_read_offset { 0 };
+    size_t m_base_offset { 0 };
 };
 }
 
