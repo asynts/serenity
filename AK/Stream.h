@@ -326,7 +326,7 @@ public:
 
     size_t write(ReadonlyBytes bytes) override
     {
-        auto last_chunk_bytes = m_chunks.last().bytes().slice(m_write_offset);
+        auto last_chunk_bytes = m_chunks.last().bytes().slice(m_write_offset); // FIXME: Fatal mistake.
         auto nwritten = bytes.copy_trimmed_to(last_chunk_bytes);
 
         while (bytes.size() - nwritten >= chunk_size) {
@@ -351,7 +351,7 @@ public:
     }
 
 private:
-    static constexpr size_t chunk_size = 1024;
+    static constexpr size_t chunk_size = 4096;
 
     Vector<ByteBuffer> m_chunks;
     size_t m_write_offset { 0 };
@@ -359,5 +359,6 @@ private:
 };
 }
 
+using AK::DuplexMemoryStream;
 using AK::InputMemoryStream;
 using AK::InputStream;
