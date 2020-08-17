@@ -166,9 +166,11 @@ public:
         __builtin_memmove(other.data(), data(), sizeof(T) * size());
     }
 
-    ALWAYS_INLINE void copy_trimmed_to(Span other) const
+    ALWAYS_INLINE size_t copy_trimmed_to(Span other) const
     {
-        __builtin_memmove(other.data(), data(), sizeof(T) * min(size(), other.size()));
+        auto count = min(size(), other.size());
+        __builtin_memmove(other.data(), data(), sizeof(T) * count);
+        return count;
     }
 
     ALWAYS_INLINE void fill(const T& value)
