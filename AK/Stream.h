@@ -284,8 +284,8 @@ public:
 
     size_t read(Bytes bytes) override
     {
-        // FIXME: Slice write offset?
-        auto first_chunk_bytes = m_chunks.first().bytes().slice(m_read_offset % chunk_size);
+        auto first_chunk_bytes = m_chunks.first().bytes().slice(m_read_offset % chunk_size).slice(0, m_write_offset - m_read_offset);
+
         auto nread = first_chunk_bytes.copy_trimmed_to(bytes);
 
         if (nread == bytes.size() || nread + m_read_offset == m_write_offset) {
@@ -293,18 +293,14 @@ public:
             return nread;
         }
 
-        m_chucks.take_first();
+        m_chunks.take_first();
 
-        while (bytes.size() - nread >= chunk_size) {
+        const auto full_chunks = min(bytes.size() - nread / chunk_size, m_chunks.size() - 1);
+        for (size_t idx = 0; idx < full_chunks; ++idx) {
             nread += m_chunks.take_first().bytes().copy_to(bytes.slice(nread));
         }
 
-        if (nread + m_read_offset == m_write_offset) {
-            m_read_offset += nread;
-            return nread;
-        }
-
-        nread += m_chunks.first().bytes().copy_trimmed_to(bytes.slice(nread));
+        nread += m_chunks.first().bytes().slice(0, /* TODO */).copy_trimmed_to(bytes.slice(nread));
 
         m_read_offset += nread;
         return nread;

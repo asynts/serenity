@@ -28,6 +28,7 @@
 
 #include <AK/Assertions.h>
 #include <AK/Checked.h>
+#include <AK/NumericLimits.h>
 #include <AK/Types.h>
 
 namespace AK {
@@ -142,16 +143,10 @@ public:
 
     ALWAYS_INLINE bool is_empty() const { return this->m_size == 0; }
 
-    ALWAYS_INLINE Span slice(size_t start, size_t size) const
+    ALWAYS_INLINE Span slice(size_t start, size_t length = NumericLimits<size_t>::max()) const
     {
-        ASSERT(start + size <= this->m_size);
-        return { this->m_values + start, size };
-    }
-
-    ALWAYS_INLINE Span slice(size_t start) const
-    {
-        ASSERT(start < this->m_size);
-        return { this->m_values + start, this->m_size - start };
+        ASSERT(start < size());
+        return { data() + start, min(length, size() - start) };
     }
 
     ALWAYS_INLINE T* offset(size_t start) const
@@ -160,10 +155,11 @@ public:
         return this->m_values + start;
     }
 
-    ALWAYS_INLINE void copy_to(Span other) const
+    ALWAYS_INLINE size_t copy_to(Span other) const
     {
         ASSERT(other.size() >= size());
         __builtin_memmove(other.data(), data(), sizeof(T) * size());
+        return size();
     }
 
     ALWAYS_INLINE size_t copy_trimmed_to(Span other) const
