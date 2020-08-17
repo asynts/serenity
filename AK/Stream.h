@@ -271,6 +271,8 @@ private:
 
 class DuplexMemoryStream final : public DuplexStream {
 public:
+    // Invariant: There is always at least one chunk that is not completely filled.
+
     DuplexMemoryStream()
     {
         m_chunks.append(ByteBuffer::create_uninitialized(chunk_size));
@@ -282,23 +284,30 @@ public:
 
     size_t read(Bytes bytes) override
     {
-        auto first_chunk_bytes = m_chunks.first().bytes().slice(m_read_offset % chunk_size).slice(0, m_write_offset - m_read_offset);
-
+        auto first_chunk_bytes = m_chunks.first().bytes().slice(m_read_offset % chunk_size).trim(m_write_offset - m_read_offset);
         auto nread = first_chunk_bytes.copy_trimmed_to(bytes);
 
-        if (nread == bytes.size() || nread + m_read_offset == m_write_offset) {
+        if (m_read_offset + nread == m_write_offset) {
             m_read_offset += nread;
             return nread;
         }
 
-        m_chunks.take_first();
+        if ((m_read_offset + nread) % chunk_size == 0) {
+            m_chunks.take_first();
+        }
 
-        const auto full_chunks = min(bytes.size() - nread / chunk_size, m_chunks.size() - 1);
-        for (size_t idx = 0; idx < full_chunks; ++idx) {
+        while (bytes.size() - nread >= chunk_size) {
+            if (m_write_offset - (m_read_offset + nread) < chunk_size)
+                break;
+
             nread += m_chunks.take_first().bytes().copy_to(bytes.slice(nread));
         }
 
-        nread += m_chunks.first().bytes().slice(0, /* TODO */).copy_trimmed_to(bytes.slice(nread));
+        if (m_chunks.size() == 0) {
+            m_chunks.append(ByteBuffer::create_uninitialized(chunk_size));
+        } else {
+            nread += m_chunks.first().bytes().slice((m_read_offset + nread) % chunk_size).trim(m_write_offset - (m_read_offset + nread)).copy_trimmed_to(bytes.slice(nread));
+        }
 
         m_read_offset += nread;
         return nread;
@@ -326,7 +335,7 @@ public:
             m_chunks.append(move(buffer));
         }
 
-        if (m_write_offset + nwritten % chunk_size > 0) {
+        if ((m_write_offset + nwritten) % chunk_size >= 0) {
             auto buffer = ByteBuffer::create_uninitialized(chunk_size);
             nwritten += bytes.slice(nwritten).copy_to(buffer);
             m_chunks.append(move(buffer));
@@ -342,7 +351,7 @@ public:
     }
 
 private:
-    constexpr size_t chunk_size = 1024;
+    static constexpr size_t chunk_size = 1024;
 
     Vector<ByteBuffer> m_chunks;
     size_t m_write_offset { 0 };
