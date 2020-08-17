@@ -52,12 +52,23 @@ protected:
 
 namespace AK {
 
-class InputStream : public AK::Detail::Stream {
+class InputStream : public virtual AK::Detail::Stream {
 public:
     virtual size_t read(Bytes) = 0;
     virtual bool read_or_error(Bytes) = 0;
     virtual bool eof() const = 0;
     virtual bool discard_or_error(size_t count) = 0;
+};
+
+class OutputStream : public virtual AK::Detail::Stream {
+public:
+    virtual size_t write(ReadonlyBytes) = 0;
+    virtual void write_or_error(ReadonlyBytes) = 0;
+};
+
+class DuplexStream
+    : public InputStream
+    , public OutputStream {
 };
 
 #if defined(__cpp_concepts) && !defined(__COVERITY__)
@@ -71,16 +82,38 @@ InputStream& operator>>(InputStream& stream, Integral& value)
     return stream;
 }
 
+#if defined(__cpp_concepts) && !defined(__COVERITY__)
+template<Concepts::Integral Integral>
+#else
+template<typename Integral, typename EnableIf<IsIntegral<Integral>::value, int>::Type = 0>
+#endif
+OutputStream& operator<<(OutputStream& stream, Integral value)
+{
+    stream.write_or_error({ &value, sizeof(value) });
+    return stream;
+}
+
 #ifndef KERNEL
 
-#if defined(__cpp_concepts) && !defined(__COVERITY__)
+#    if defined(__cpp_concepts) && !defined(__COVERITY__)
 template<Concepts::FloatingPoint FloatingPoint>
-#else
+#    else
 template<typename FloatingPoint, typename EnableIf<IsFloatingPoint<FloatingPoint>::value, int>::Type = 0>
-#endif
+#    endif
 InputStream& operator>>(InputStream& stream, FloatingPoint& value)
 {
     stream.read_or_error({ &value, sizeof(value) });
+    return stream;
+}
+
+#    if defined(__cpp_concepts) && !defined(__COVERITY__)
+template<Concepts::FloatingPoint FloatingPoint>
+#    else
+template<typename FloatingPoint, typename EnableIf<IsFloatingPoint<FloatingPoint>::value, int>::Type = 0>
+#    endif
+OutputStream& operator<<(OutputStream& stream, FloatingPoint value)
+{
+    stream.write_or_error({ &value, sizeof(value) });
     return stream;
 }
 
@@ -92,9 +125,21 @@ inline InputStream& operator>>(InputStream& stream, bool& value)
     return stream;
 }
 
+inline OutputStream& operator<<(OutputStream& stream, bool value)
+{
+    stream.write_or_error({ &value, sizeof(value) });
+    return stream;
+}
+
 inline InputStream& operator>>(InputStream& stream, Bytes bytes)
 {
     stream.read_or_error(bytes);
+    return stream;
+}
+
+inline OutputStream& operator<<(OutputStream& stream, ReadonlyBytes bytes)
+{
+    stream.write_or_error(bytes);
     return stream;
 }
 
@@ -226,6 +271,89 @@ private:
     size_t m_offset { 0 };
 };
 
+class DuplexMemoryStream final : public DuplexStream {
+public:
+    DuplexMemoryStream()
+    {
+        m_chunks.append(ByteBuffer::create_uninitialized(chunk_size));
+    }
+
+    bool eof() const override { return m_write_offset == m_read_offset; }
+
+    bool discard_or_error(size_t count) override { TODO(); }
+
+    size_t read(Bytes bytes) override
+    {
+        // FIXME: Slice write offset?
+        auto first_chunk_bytes = m_chunks.first().bytes().slice(m_read_offset % chunk_size);
+        auto nread = first_chunk_bytes.copy_trimmed_to(bytes);
+
+        if (nread == bytes.size() || nread + m_read_offset == m_write_offset) {
+            m_read_offset += nread;
+            return nread;
+        }
+
+        m_chucks.take_first();
+
+        while (bytes.size() - nread >= chunk_size) {
+            nread += m_chunks.take_first().bytes().copy_to(bytes.slice(nread));
+        }
+
+        if (nread + m_read_offset == m_write_offset) {
+            m_read_offset += nread;
+            return nread;
+        }
+
+        nread += m_chunks.first().bytes().copy_trimmed_to(bytes.slice(nread));
+
+        m_read_offset += nread;
+        return nread;
+    }
+
+    bool read_or_error(Bytes bytes) override
+    {
+        if (m_write_offset - m_read_offset < bytes.size()) {
+            m_error = true;
+            return false;
+        }
+
+        read(bytes);
+        return true;
+    }
+
+    size_t write(ReadonlyBytes bytes) override
+    {
+        auto last_chunk_bytes = m_chunks.last().bytes().slice(m_write_offset);
+        auto nwritten = bytes.copy_trimmed_to(last_chunk_bytes);
+
+        while (bytes.size() - nwritten >= chunk_size) {
+            auto buffer = ByteBuffer::create_uninitialized(chunk_size);
+            nwritten += bytes.slice(nwritten).copy_trimmed_to(buffer);
+            m_chunks.append(move(buffer));
+        }
+
+        if (m_write_offset + nwritten % chunk_size > 0) {
+            auto buffer = ByteBuffer::create_uninitialized(chunk_size);
+            nwritten += bytes.slice(nwritten).copy_to(buffer);
+            m_chunks.append(move(buffer));
+        }
+
+        m_write_offset += nwritten;
+        return nwritten;
+    }
+
+    void write_or_error(ReadonlyBytes bytes) override
+    {
+        write(bytes);
+    }
+
+private:
+    constexpr size_t chunk_size = 1024;
+
+    Vector<ByteBuffer> m_chunks;
+    size_t m_write_offset { 0 };
+    size_t m_read_offset { 0 };
+};
 }
 
 using AK::InputMemoryStream;
