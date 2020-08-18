@@ -149,7 +149,7 @@ public:
     }
     ALWAYS_INLINE Span slice(size_t start) const
     {
-        ASSERT(start < size());
+        ASSERT(start <= size());
         return { this->m_values + start, size() - start };
     }
 
