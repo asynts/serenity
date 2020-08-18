@@ -164,13 +164,14 @@ public:
         return this->m_values + start;
     }
 
-    ALWAYS_INLINE void copy_to(Span other) const
+    ALWAYS_INLINE size_t copy_to(Span<typename RemoveConst<T>::Type> other) const
     {
         ASSERT(other.size() >= size());
         __builtin_memmove(other.data(), data(), sizeof(T) * size());
+        return size();
     }
 
-    ALWAYS_INLINE size_t copy_trimmed_to(Span other) const
+    ALWAYS_INLINE size_t copy_trimmed_to(Span<typename RemoveConst<T>::Type> other) const
     {
         auto count = min(size(), other.size());
         __builtin_memmove(other.data(), data(), sizeof(T) * count);
