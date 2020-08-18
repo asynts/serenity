@@ -28,6 +28,7 @@
 
 #include <AK/CircularQueue.h>
 #include <AK/Span.h>
+#include <AK/Stream.h>
 #include <AK/Types.h>
 #include <AK/Vector.h>
 #include <cstring>
@@ -95,4 +96,86 @@ private:
     CanonicalCode m_literal_length_codes;
     CanonicalCode m_fixed_distance_codes;
 };
+
+// Implements a DEFLATE decompressor according to RFC 1951.
+class DeflateStream final
+    : public InputStream
+    , public Deflate {
+public:
+    size_t read(Bytes bytes) override
+    {
+        if (!m_intermediate_stream.eof())
+            return m_intermediate_stream.read(bytes);
+
+        if (read_next_block())
+            return m_intermediate_stream.read(bytes);
+
+        return 0;
+    }
+
+    bool read_or_error(Bytes bytes) override
+    {
+        if (m_intermediate_stream.remaining() >= bytes.size()) {
+            read(bytes);
+            return true;
+        }
+
+        while (read_next_block()) {
+            if (m_intermediate_stream.remaining() >= bytes.size()) {
+                read(bytes);
+                return true;
+            }
+        }
+
+        m_error = true;
+        return false;
+    }
+
+    bool eof() const override
+    {
+        if (!m_intermediate_stream.eof())
+            return false;
+
+        while (read_next_block()) {
+            if (!m_intermediate_stream.eof())
+                return false;
+        }
+
+        return true;
+    }
+
+    bool discard_or_error(size_t count) override
+    {
+        if (m_intermediate_stream.remaining() >= bytes.size()) {
+            m_intermediate_stream.discard_or_error(count);
+            return true;
+        }
+
+        while (read_next_block()) {
+            if (m_intermediate_stream.remaining() >= bytes.size()) {
+                m_intermediate_stream.discard_or_error(count);
+                return true;
+            }
+        }
+
+        m_error = true;
+        return false;
+    }
+
+private:
+    // FIXME: Blocks can be arbitrary large, reading a single block could exhaust the
+    //        avaliable memory. When C++20 coroutines have good compiler support, this
+    //        should be changed to a generator.
+    bool read_next_block()
+    {
+        if (m_read_last_block)
+            return false;
+
+        TODO();
+    }
+
+    mutable bool m_read_last_block { false; }
+    mutable DuplexMemoryStream m_intermediate_stream;
+};
+
 }
