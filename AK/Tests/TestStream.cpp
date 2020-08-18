@@ -26,6 +26,7 @@
 
 #include <AK/TestSuite.h>
 
+#include <AK/FixedArray.h>
 #include <AK/Stream.h>
 
 static bool compare(ReadonlyBytes lhs, ReadonlyBytes rhs)
@@ -106,6 +107,56 @@ TEST_CASE(seeking_slicing_offset)
     stream >> Bytes { actual2, sizeof(actual2) };
     EXPECT(!stream.has_error() && !stream.eof());
     EXPECT(compare({ expected2, sizeof(expected2) }, { actual2, sizeof(actual2) }));
+}
+
+TEST_CASE(duplex_simple)
+{
+    DuplexMemoryStream stream;
+
+    EXPECT(stream.eof());
+    stream << 42;
+    EXPECT(!stream.eof());
+
+    int value;
+    stream >> value;
+    EXPECT_EQ(value, 42);
+    EXPECT(stream.eof());
+}
+
+TEST_CASE(duplex_seek_into_history)
+{
+    DuplexMemoryStream stream;
+
+    FixedArray<u8> one_kibibyte { 1024 };
+
+    EXPECT_EQ(stream.remaining(), 0ul);
+
+    for (size_t idx = 0; idx < 256; ++idx) {
+        stream << one_kibibyte;
+    }
+
+    EXPECT_EQ(stream.remaining(), 256 * 1024ul);
+
+    for (size_t idx = 0; idx < 128; ++idx) {
+        stream >> one_kibibyte;
+    }
+
+    /*
+    EXPECT_EQ(stream.remaining(), 128 * 1024ul);
+
+    // We now have 128KiB on the stream. Because the stream has a
+    // history size of 64KiB, we should be able to seek to 64KiB.
+    static_assert(DuplexMemoryStream::history_size == 64 * 1024);
+    stream.seek(64 * 1024);
+
+    EXPECT_EQ(stream.remaining(), 192 * 1024ul);
+
+    for (size_t idx = 0; idx < 192; ++idx) {
+        stream >> one_kibibyte;
+    }
+
+    EXPECT(stream.eof());
+    */
 }
 
 TEST_MAIN(Stream)
