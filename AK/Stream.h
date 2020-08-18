@@ -26,10 +26,12 @@
 
 #pragma once
 
+#include <AK/ByteBuffer.h>
 #include <AK/Concepts.h>
 #include <AK/Forward.h>
 #include <AK/Span.h>
 #include <AK/StdLibExtras.h>
+#include <AK/Vector.h>
 
 namespace AK::Detail {
 
@@ -341,7 +343,7 @@ private:
 
     void try_discard_chunks()
     {
-        while (m_read_offset - m_base_offset >= chunk_size) {
+        while (m_read_offset - m_base_offset >= history_size + chunk_size) {
             m_chunks.take_first();
             m_base_offset += chunk_size;
         }
