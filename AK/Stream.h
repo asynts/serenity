@@ -273,12 +273,10 @@ private:
 
 class DuplexMemoryStream final : public DuplexStream {
 public:
-    bool eof() const override { return eof(0); }
+    static constexpr size_t chunk_size = 4 * 1024;
+    static constexpr size_t history_size = 64 * 1024;
 
-    bool eof(size_t count) const
-    {
-        return m_write_offset - m_read_offset > count;
-    }
+    bool eof() const override { return m_write_offset == m_read_offset; }
 
     bool discard_or_error(size_t count) override
     {
@@ -295,7 +293,8 @@ public:
     size_t read(Bytes bytes) override
     {
         size_t nread = 0;
-        while (bytes.size() - nread > 0 && !eof(nread)) {
+        // FIXME: I changed something here, did I break it?
+        while (bytes.size() - nread > 0 && m_write_offset - m_read_offset - nread > 0) {
             const auto chunk_index = (m_read_offset - m_base_offset) / chunk_size;
             const auto chunk_bytes = m_chunks[chunk_index].bytes().slice(m_read_offset % chunk_size).trim(m_write_offset - m_read_offset);
             nread += chunk_bytes.copy_to(bytes.slice(nread));
@@ -337,10 +336,18 @@ public:
         return true;
     }
 
-private:
-    static constexpr size_t chunk_size = 4096;
-    static constexpr size_t history_size = 65536;
+    void seek(size_t offset)
+    {
+        ASSERT(offset >= m_base_offset);
+        ASSERT(offset <= m_write_offset);
+        m_read_offset = offset;
+    }
 
+    size_t offset() const { return m_read_offset; }
+
+    size_t remaining() const { return m_write_offset - m_read_offset; }
+
+private:
     void try_discard_chunks()
     {
         while (m_read_offset - m_base_offset >= history_size + chunk_size) {
