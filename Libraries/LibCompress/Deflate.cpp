@@ -67,38 +67,6 @@ bool DeflateStream::read_next_block() const
     return true;
 }
 
-Vector<u8> Deflate::decompress()
-{
-    bool is_final_block = false;
-
-    do {
-        is_final_block = m_reader.read();
-        auto block_type = m_reader.read_bits(2);
-
-        switch (block_type) {
-        case 0:
-            decompress_uncompressed_block();
-            break;
-        case 1:
-            decompress_static_block();
-            break;
-        case 2:
-            decompress_dynamic_block();
-            break;
-        case 3:
-            dbg() << "Block contains reserved block type...";
-            ASSERT_NOT_REACHED();
-            break;
-        default:
-            dbg() << "Invalid block type was read...";
-            ASSERT_NOT_REACHED();
-            break;
-        }
-    } while (!is_final_block);
-
-    return m_output_buffer;
-}
-
 void Deflate::decompress_uncompressed_block() const
 {
     // Align to the next byte boundary.

@@ -77,8 +77,6 @@ public:
     {
     }
 
-    Vector<u8> decompress();
-
 protected:
     void decompress_uncompressed_block() const;
     void decompress_static_block() const;
