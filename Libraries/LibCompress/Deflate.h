@@ -77,24 +77,24 @@ public:
 
     Vector<u8> decompress();
 
-private:
-    void decompress_uncompressed_block();
-    void decompress_static_block();
-    void decompress_dynamic_block();
-    void decompress_huffman_block(CanonicalCode&, CanonicalCode*);
-    Vector<CanonicalCode> decode_huffman_codes();
-    void copy_from_history(u32, u32);
-    u32 decode_run_length(u32);
-    u32 decode_distance(u32);
-    Vector<u8> generate_literal_length_codes();
-    Vector<u8> generate_fixed_distance_codes();
+protected:
+    void decompress_uncompressed_block() const;
+    void decompress_static_block() const;
+    void decompress_dynamic_block() const;
+    void decompress_huffman_block(CanonicalCode&, CanonicalCode*) const;
+    Vector<CanonicalCode> decode_huffman_codes() const;
+    void copy_from_history(u32, u32) const;
+    u32 decode_run_length(u32) const;
+    u32 decode_distance(u32) const;
+    Vector<u8> generate_literal_length_codes() const;
+    Vector<u8> generate_fixed_distance_codes() const;
 
-    BitStreamReader m_reader;
-    CircularQueue<u8, 32 * 1024> m_history_buffer;
-    Vector<u8, 256> m_output_buffer;
+    mutable BitStreamReader m_reader;
+    mutable CircularQueue<u8, 32 * 1024> m_history_buffer;
+    mutable Vector<u8, 256> m_output_buffer;
 
-    CanonicalCode m_literal_length_codes;
-    CanonicalCode m_fixed_distance_codes;
+    mutable CanonicalCode m_literal_length_codes;
+    mutable CanonicalCode m_fixed_distance_codes;
 };
 
 // Implements a DEFLATE decompressor according to RFC 1951.
@@ -102,11 +102,34 @@ class DeflateStream final
     : public InputStream
     , public Deflate {
 public:
+    // FIXME: This should really return a ByteBuffer.
+    // FIXME: This is horribly inefficent.
+    static Vector<u8> decompress_all(ReadonlyBytes bytes)
+    {
+        DeflateStream stream { bytes };
+        while (stream.read_next_block()) {
+        }
+
+        Vector<u8> vector;
+        vector.grow_capacity(stream.m_intermediate_stream.remaining());
+        stream >> vector;
+
+        return vector;
+    }
+
+    DeflateStream(ReadonlyBytes bytes)
+        : Deflate(bytes)
+    {
+    }
+
+    // FIXME: Accept an InputStream.
+
     size_t read(Bytes bytes) override
     {
         if (!m_intermediate_stream.eof())
             return m_intermediate_stream.read(bytes);
 
+        // FIXME: We should read additional blocks if a lot of data was requested.
         if (read_next_block())
             return m_intermediate_stream.read(bytes);
 
@@ -166,13 +189,7 @@ private:
     // FIXME: Theoretically, blocks can be extremly large, reading a single block could
     //        exhaust memory. But that's not trivial to implement and could really benefit
     //        from C++20 generators (which don't really have compiler support yet.)
-    bool read_next_block() const
-    {
-        if (m_read_last_block)
-            return false;
-
-        TODO();
-    }
+    bool read_next_block() const;
 
     mutable bool m_read_last_block { false };
     mutable DuplexMemoryStream m_intermediate_stream;

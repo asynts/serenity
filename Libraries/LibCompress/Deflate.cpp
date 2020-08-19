@@ -33,6 +33,39 @@
 
 namespace Compress {
 
+bool DeflateStream::read_next_block() const
+{
+    if (m_read_last_block)
+        return false;
+
+    auto block_type = m_reader.read_bits(2);
+
+    switch (block_type) {
+    case 0:
+        decompress_uncompressed_block();
+        break;
+    case 1:
+        decompress_static_block();
+        break;
+    case 2:
+        decompress_dynamic_block();
+        break;
+    case 3:
+        dbg() << "Block contains reserved block type...";
+        ASSERT_NOT_REACHED();
+        break;
+    default:
+        dbg() << "Invalid block type was read...";
+        ASSERT_NOT_REACHED();
+        break;
+    }
+
+    m_intermediate_stream << m_output_buffer;
+    m_output_buffer.clear_with_capacity();
+
+    return true;
+}
+
 Vector<u8> Deflate::decompress()
 {
     bool is_final_block = false;
@@ -65,7 +98,7 @@ Vector<u8> Deflate::decompress()
     return m_output_buffer;
 }
 
-void Deflate::decompress_uncompressed_block()
+void Deflate::decompress_uncompressed_block() const
 {
     // Align to the next byte boundary.
     while (m_reader.get_bit_byte_offset() != 0) {
@@ -92,12 +125,12 @@ void Deflate::decompress_uncompressed_block()
     }
 }
 
-void Deflate::decompress_static_block()
+void Deflate::decompress_static_block() const
 {
     decompress_huffman_block(m_literal_length_codes, &m_fixed_distance_codes);
 }
 
-void Deflate::decompress_dynamic_block()
+void Deflate::decompress_dynamic_block() const
 {
     auto codes = decode_huffman_codes();
     if (codes.size() == 2) {
@@ -107,7 +140,7 @@ void Deflate::decompress_dynamic_block()
     }
 }
 
-void Deflate::decompress_huffman_block(CanonicalCode& length_codes, CanonicalCode* distance_codes)
+void Deflate::decompress_huffman_block(CanonicalCode& length_codes, CanonicalCode* distance_codes) const
 {
     for (;;) {
         u32 symbol = length_codes.next_symbol(m_reader);
@@ -144,7 +177,7 @@ void Deflate::decompress_huffman_block(CanonicalCode& length_codes, CanonicalCod
     }
 }
 
-Vector<CanonicalCode> Deflate::decode_huffman_codes()
+Vector<CanonicalCode> Deflate::decode_huffman_codes() const
 {
     // FIXME: This path is not tested.
     Vector<CanonicalCode> result;
@@ -244,7 +277,7 @@ Vector<CanonicalCode> Deflate::decode_huffman_codes()
     return result;
 }
 
-u32 Deflate::decode_run_length(u32 symbol)
+u32 Deflate::decode_run_length(u32 symbol) const
 {
     if (symbol <= 264) {
         return symbol - 254;
@@ -263,7 +296,7 @@ u32 Deflate::decode_run_length(u32 symbol)
     ASSERT_NOT_REACHED();
 }
 
-u32 Deflate::decode_distance(u32 symbol)
+u32 Deflate::decode_distance(u32 symbol) const
 {
     if (symbol <= 3) {
         return symbol + 1;
@@ -278,7 +311,7 @@ u32 Deflate::decode_distance(u32 symbol)
     ASSERT_NOT_REACHED();
 }
 
-void Deflate::copy_from_history(u32 distance, u32 run)
+void Deflate::copy_from_history(u32 distance, u32 run) const
 {
     auto head_index = (m_history_buffer.head_index() + m_history_buffer.size()) % m_history_buffer.capacity();
     auto read_index = (head_index - distance + m_history_buffer.capacity()) % m_history_buffer.capacity();
@@ -335,7 +368,7 @@ u32 BitStreamReader::read_bits(u8 count)
     return result;
 }
 
-Vector<u8> Deflate::generate_literal_length_codes()
+Vector<u8> Deflate::generate_literal_length_codes() const
 {
     Vector<u8> ll_codes;
     ll_codes.resize(288);
@@ -346,7 +379,7 @@ Vector<u8> Deflate::generate_literal_length_codes()
     return ll_codes;
 }
 
-Vector<u8> Deflate::generate_fixed_distance_codes()
+Vector<u8> Deflate::generate_fixed_distance_codes() const
 {
     Vector<u8> fd_codes;
     fd_codes.resize(32);
