@@ -96,26 +96,27 @@ public:
 
     size_t read(Bytes bytes) override
     {
-        if (!m_intermediate_stream.eof())
-            return m_intermediate_stream.read(bytes);
+        if (m_intermediate_stream.remaining() >= bytes.size())
+            return m_intermediate_stream.read_or_error(bytes);
 
-        // FIXME: We should read additional blocks if a lot of data was requested.
-        if (read_next_block())
-            return m_intermediate_stream.read(bytes);
+        while (read_next_block()) {
+            if (m_intermediate_stream.remaining() >= bytes.size())
+                return m_intermediate_stream.read_or_error(bytes);
+        }
 
-        return 0;
+        return m_intermediate_stream.read(bytes);
     }
 
     bool read_or_error(Bytes bytes) override
     {
         if (m_intermediate_stream.remaining() >= bytes.size()) {
-            read(bytes);
+            m_intermediate_stream.read_or_error(bytes);
             return true;
         }
 
         while (read_next_block()) {
             if (m_intermediate_stream.remaining() >= bytes.size()) {
-                read(bytes);
+                m_intermediate_stream.read_or_error(bytes);
                 return true;
             }
         }
@@ -160,10 +161,13 @@ private:
     void decompress_static_block() const;
     void decompress_dynamic_block() const;
     void decompress_huffman_block(CanonicalCode&, CanonicalCode*) const;
+
     Vector<CanonicalCode> decode_huffman_codes() const;
-    void copy_from_history(u32, u32) const;
     u32 decode_run_length(u32) const;
     u32 decode_distance(u32) const;
+
+    void copy_from_history(u32, u32) const;
+
     Vector<u8> generate_literal_length_codes() const;
     Vector<u8> generate_fixed_distance_codes() const;
 
