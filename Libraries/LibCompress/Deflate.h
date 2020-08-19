@@ -146,13 +146,13 @@ public:
 
     bool discard_or_error(size_t count) override
     {
-        if (m_intermediate_stream.remaining() >= bytes.size()) {
+        if (m_intermediate_stream.remaining() >= count) {
             m_intermediate_stream.discard_or_error(count);
             return true;
         }
 
         while (read_next_block()) {
-            if (m_intermediate_stream.remaining() >= bytes.size()) {
+            if (m_intermediate_stream.remaining() >= count) {
                 m_intermediate_stream.discard_or_error(count);
                 return true;
             }
@@ -163,10 +163,10 @@ public:
     }
 
 private:
-    // FIXME: Blocks can be arbitrary large, reading a single block could exhaust the
-    //        avaliable memory. When C++20 coroutines have good compiler support, this
-    //        should be changed to a generator.
-    bool read_next_block()
+    // FIXME: Theoretically, blocks can be extremly large, reading a single block could
+    //        exhaust memory. But that's not trivial to implement and could really benefit
+    //        from C++20 generators (which don't really have compiler support yet.)
+    bool read_next_block() const
     {
         if (m_read_last_block)
             return false;
@@ -174,7 +174,7 @@ private:
         TODO();
     }
 
-    mutable bool m_read_last_block { false; }
+    mutable bool m_read_last_block { false };
     mutable DuplexMemoryStream m_intermediate_stream;
 };
 
