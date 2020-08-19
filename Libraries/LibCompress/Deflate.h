@@ -168,7 +168,6 @@ private:
     Vector<u8> generate_fixed_distance_codes() const;
 
     mutable BitStreamReader m_reader;
-    mutable CircularQueue<u8, 32 * 1024> m_history_buffer;
 
     mutable CanonicalCode m_literal_length_codes;
     mutable CanonicalCode m_fixed_distance_codes;

@@ -87,8 +87,6 @@ void DeflateStream::decompress_uncompressed_block() const
         }
 
         m_intermediate_stream << byte;
-
-        m_history_buffer.enqueue(byte);
     }
 }
 
@@ -119,7 +117,6 @@ void DeflateStream::decompress_huffman_block(CanonicalCode& length_codes, Canoni
 
         // literal byte.
         if (symbol < 256) {
-            m_history_buffer.enqueue(symbol);
             m_intermediate_stream << static_cast<u8>(symbol);
             continue;
         }
@@ -280,13 +277,11 @@ u32 DeflateStream::decode_distance(u32 symbol) const
 
 void DeflateStream::copy_from_history(u32 distance, u32 run) const
 {
-    auto head_index = (m_history_buffer.head_index() + m_history_buffer.size()) % m_history_buffer.capacity();
-    auto read_index = (head_index - distance + m_history_buffer.capacity()) % m_history_buffer.capacity();
-
     for (size_t i = 0; i < run; i++) {
-        auto data = m_history_buffer.at(read_index++);
-        m_intermediate_stream << data;
-        m_history_buffer.enqueue(data);
+        u8 byte;
+
+        m_intermediate_stream.read({ &byte, sizeof(byte) }, m_intermediate_stream.woffset() - distance);
+        m_intermediate_stream << byte;
     }
 }
 
