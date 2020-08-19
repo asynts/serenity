@@ -38,6 +38,7 @@ bool DeflateStream::read_next_block() const
     if (m_read_last_block)
         return false;
 
+    m_read_last_block = m_reader.read_bits(1);
     auto block_type = m_reader.read_bits(2);
 
     switch (block_type) {

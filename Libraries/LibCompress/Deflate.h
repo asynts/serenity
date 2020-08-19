@@ -33,6 +33,8 @@
 #include <AK/Vector.h>
 #include <cstring>
 
+#include <AK/String.h>
+
 namespace Compress {
 
 // Reads one bit at a time starting with the rightmost bit
@@ -103,7 +105,6 @@ class DeflateStream final
     , public Deflate {
 public:
     // FIXME: This should really return a ByteBuffer.
-    // FIXME: This is horribly inefficent.
     static Vector<u8> decompress_all(ReadonlyBytes bytes)
     {
         DeflateStream stream { bytes };
@@ -111,7 +112,7 @@ public:
         }
 
         Vector<u8> vector;
-        vector.grow_capacity(stream.m_intermediate_stream.remaining());
+        vector.resize(stream.m_intermediate_stream.remaining());
         stream >> vector;
 
         return vector;
