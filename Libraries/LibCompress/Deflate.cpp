@@ -67,7 +67,7 @@ bool DeflateStream::read_next_block() const
     return true;
 }
 
-void Deflate::decompress_uncompressed_block() const
+void DeflateStream::decompress_uncompressed_block() const
 {
     // Align to the next byte boundary.
     while (m_reader.get_bit_byte_offset() != 0) {
@@ -94,12 +94,12 @@ void Deflate::decompress_uncompressed_block() const
     }
 }
 
-void Deflate::decompress_static_block() const
+void DeflateStream::decompress_static_block() const
 {
     decompress_huffman_block(m_literal_length_codes, &m_fixed_distance_codes);
 }
 
-void Deflate::decompress_dynamic_block() const
+void DeflateStream::decompress_dynamic_block() const
 {
     auto codes = decode_huffman_codes();
     if (codes.size() == 2) {
@@ -109,7 +109,7 @@ void Deflate::decompress_dynamic_block() const
     }
 }
 
-void Deflate::decompress_huffman_block(CanonicalCode& length_codes, CanonicalCode* distance_codes) const
+void DeflateStream::decompress_huffman_block(CanonicalCode& length_codes, CanonicalCode* distance_codes) const
 {
     for (;;) {
         u32 symbol = length_codes.next_symbol(m_reader);
@@ -146,7 +146,7 @@ void Deflate::decompress_huffman_block(CanonicalCode& length_codes, CanonicalCod
     }
 }
 
-Vector<CanonicalCode> Deflate::decode_huffman_codes() const
+Vector<CanonicalCode> DeflateStream::decode_huffman_codes() const
 {
     // FIXME: This path is not tested.
     Vector<CanonicalCode> result;
@@ -246,7 +246,7 @@ Vector<CanonicalCode> Deflate::decode_huffman_codes() const
     return result;
 }
 
-u32 Deflate::decode_run_length(u32 symbol) const
+u32 DeflateStream::decode_run_length(u32 symbol) const
 {
     if (symbol <= 264) {
         return symbol - 254;
@@ -265,7 +265,7 @@ u32 Deflate::decode_run_length(u32 symbol) const
     ASSERT_NOT_REACHED();
 }
 
-u32 Deflate::decode_distance(u32 symbol) const
+u32 DeflateStream::decode_distance(u32 symbol) const
 {
     if (symbol <= 3) {
         return symbol + 1;
@@ -280,7 +280,7 @@ u32 Deflate::decode_distance(u32 symbol) const
     ASSERT_NOT_REACHED();
 }
 
-void Deflate::copy_from_history(u32 distance, u32 run) const
+void DeflateStream::copy_from_history(u32 distance, u32 run) const
 {
     auto head_index = (m_history_buffer.head_index() + m_history_buffer.size()) % m_history_buffer.capacity();
     auto read_index = (head_index - distance + m_history_buffer.capacity()) % m_history_buffer.capacity();
@@ -337,7 +337,7 @@ u32 BitStreamReader::read_bits(u8 count)
     return result;
 }
 
-Vector<u8> Deflate::generate_literal_length_codes() const
+Vector<u8> DeflateStream::generate_literal_length_codes() const
 {
     Vector<u8> ll_codes;
     ll_codes.resize(288);
@@ -348,7 +348,7 @@ Vector<u8> Deflate::generate_literal_length_codes() const
     return ll_codes;
 }
 
-Vector<u8> Deflate::generate_fixed_distance_codes() const
+Vector<u8> DeflateStream::generate_fixed_distance_codes() const
 {
     Vector<u8> fd_codes;
     fd_codes.resize(32);
@@ -425,4 +425,5 @@ u32 CanonicalCode::next_symbol(BitStreamReader& reader)
         }
     }
 }
+
 }
