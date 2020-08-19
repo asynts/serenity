@@ -280,6 +280,12 @@ void DeflateStream::copy_from_history(u32 distance, u32 run) const
     for (size_t i = 0; i < run; i++) {
         u8 byte;
 
+        // FIXME: In many cases we can read more than one byte at a time, this should
+        //        be refactored into a while loop. Beware, edge case:
+        //
+        //            // The first four bytes are on the stream already, the other four
+        //            // are written by copy_from_history() itself.
+        //            copy_from_history(4, 8);
         m_intermediate_stream.read({ &byte, sizeof(byte) }, m_intermediate_stream.woffset() - distance);
         m_intermediate_stream << byte;
     }
