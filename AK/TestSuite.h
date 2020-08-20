@@ -42,17 +42,54 @@
 #include <AK/Function.h>
 #include <AK/NonnullRefPtrVector.h>
 #include <AK/String.h>
-#include <chrono>
+
+#ifdef __serenity__
+#    include <sys/time.h>
+#else
+#    include <chrono>
+#endif
 
 namespace AK {
 
+#ifdef __serenity__
+class TestElapsedTimer {
+public:
+    TestElapsedTimer() { restart(); }
+
+    void restart()
+    {
+        if (gettimeofday(&m_started, nullptr)) {
+            dbg() << "gettimeofday() returned non zero.";
+            ASSERT_NOT_REACHED();
+        }
+    }
+
+    u64 elapsed_milliseconds()
+    {
+        struct timeval now;
+
+        if (gettimeofday(&now, nullptr)) {
+            dbg() << "gettimeofday() returned non zero.";
+            ASSERT_NOT_REACHED();
+        }
+
+        struct timeval delta;
+        timersub(&now, &m_started, &delta);
+
+        return delta.tv_sec * 1000 + delta.tv_usec / 1000;
+    }
+
+private:
+    struct timeval m_started;
+};
+#else
 class TestElapsedTimer {
     typedef std::chrono::high_resolution_clock clock;
 
 public:
     TestElapsedTimer() { restart(); }
     void restart() { m_started = clock::now(); }
-    int64_t elapsed()
+    int64_t elapsed_milliseconds()
     {
         auto end = clock::now();
         auto elapsed = end - m_started;
@@ -62,6 +99,7 @@ public:
 private:
     std::chrono::time_point<clock> m_started;
 };
+#endif
 
 typedef AK::Function<void()> TestFunction;
 
@@ -182,7 +220,7 @@ void TestSuite::run(const NonnullRefPtrVector<TestCase>& tests)
         dbg() << "START Running " << (t.is_benchmark() ? "benchmark" : "test") << " " << t.name();
         TestElapsedTimer timer;
         t.func();
-        auto time = timer.elapsed();
+        auto time = timer.elapsed_milliseconds();
         fprintf(stderr, "\033[32;1mPASS\033[0m: %d ms running %s %s\n", (int)time, (t.is_benchmark() ? "benchmark" : "test"), t.name().characters());
         if (t.is_benchmark()) {
             m_benchtime += time;
@@ -192,8 +230,8 @@ void TestSuite::run(const NonnullRefPtrVector<TestCase>& tests)
             test_count++;
         }
     }
-    dbg() << "Finished " << test_count << " tests and " << benchmark_count << " benchmarks in " << (int)global_timer.elapsed() << " ms ("
-          << (int)m_testtime << " tests, " << (int)m_benchtime << " benchmarks, " << int(global_timer.elapsed() - (m_testtime + m_benchtime)) << " other)";
+    dbg() << "Finished " << test_count << " tests and " << benchmark_count << " benchmarks in " << (int)global_timer.elapsed_milliseconds() << " ms ("
+          << (int)m_testtime << " tests, " << (int)m_benchtime << " benchmarks, " << int(global_timer.elapsed_milliseconds() - (m_testtime + m_benchtime)) << " other)";
 }
 
 }
