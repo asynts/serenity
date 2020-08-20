@@ -77,7 +77,7 @@ public:
         }
 
         Vector<u8> vector;
-        vector.resize(stream.m_intermediate_stream.remaining());
+        vector.resize(stream.m_output_stream.remaining());
         stream >> vector;
 
         return vector;
@@ -94,27 +94,27 @@ public:
 
     size_t read(Bytes bytes) override
     {
-        if (m_intermediate_stream.remaining() >= bytes.size())
-            return m_intermediate_stream.read_or_error(bytes);
+        if (m_output_stream.remaining() >= bytes.size())
+            return m_output_stream.read_or_error(bytes);
 
         while (read_next_block()) {
-            if (m_intermediate_stream.remaining() >= bytes.size())
-                return m_intermediate_stream.read_or_error(bytes);
+            if (m_output_stream.remaining() >= bytes.size())
+                return m_output_stream.read_or_error(bytes);
         }
 
-        return m_intermediate_stream.read(bytes);
+        return m_output_stream.read(bytes);
     }
 
     bool read_or_error(Bytes bytes) override
     {
-        if (m_intermediate_stream.remaining() >= bytes.size()) {
-            m_intermediate_stream.read_or_error(bytes);
+        if (m_output_stream.remaining() >= bytes.size()) {
+            m_output_stream.read_or_error(bytes);
             return true;
         }
 
         while (read_next_block()) {
-            if (m_intermediate_stream.remaining() >= bytes.size()) {
-                m_intermediate_stream.read_or_error(bytes);
+            if (m_output_stream.remaining() >= bytes.size()) {
+                m_output_stream.read_or_error(bytes);
                 return true;
             }
         }
@@ -125,11 +125,11 @@ public:
 
     bool eof() const override
     {
-        if (!m_intermediate_stream.eof())
+        if (!m_output_stream.eof())
             return false;
 
         while (read_next_block()) {
-            if (!m_intermediate_stream.eof())
+            if (!m_output_stream.eof())
                 return false;
         }
 
@@ -138,14 +138,14 @@ public:
 
     bool discard_or_error(size_t count) override
     {
-        if (m_intermediate_stream.remaining() >= count) {
-            m_intermediate_stream.discard_or_error(count);
+        if (m_output_stream.remaining() >= count) {
+            m_output_stream.discard_or_error(count);
             return true;
         }
 
         while (read_next_block()) {
-            if (m_intermediate_stream.remaining() >= count) {
-                m_intermediate_stream.discard_or_error(count);
+            if (m_output_stream.remaining() >= count) {
+                m_output_stream.discard_or_error(count);
                 return true;
             }
         }
@@ -179,7 +179,7 @@ private:
     bool read_next_block() const;
 
     mutable bool m_read_last_block { false };
-    mutable DuplexMemoryStream m_intermediate_stream;
+    mutable DuplexMemoryStream m_output_stream;
 };
 
 }

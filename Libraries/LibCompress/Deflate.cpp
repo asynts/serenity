@@ -86,7 +86,7 @@ void DeflateStream::decompress_uncompressed_block() const
             ASSERT_NOT_REACHED();
         }
 
-        m_intermediate_stream << byte;
+        m_output_stream << byte;
     }
 }
 
@@ -117,7 +117,7 @@ void DeflateStream::decompress_huffman_block(CanonicalCode& length_codes, Canoni
 
         // literal byte.
         if (symbol < 256) {
-            m_intermediate_stream << static_cast<u8>(symbol);
+            m_output_stream << static_cast<u8>(symbol);
             continue;
         }
 
@@ -286,8 +286,8 @@ void DeflateStream::copy_from_history(u32 distance, u32 run) const
         //            // The first four bytes are on the stream already, the other four
         //            // are written by copy_from_history() itself.
         //            copy_from_history(4, 8);
-        m_intermediate_stream.read({ &byte, sizeof(byte) }, m_intermediate_stream.woffset() - distance);
-        m_intermediate_stream << byte;
+        m_output_stream.read({ &byte, sizeof(byte) }, m_output_stream.woffset() - distance);
+        m_output_stream << byte;
     }
 }
 
