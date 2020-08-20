@@ -98,6 +98,11 @@ public:
         return static_cast<u32>(value);
     }
 
+    void align_to_byte_boundary()
+    {
+        discard_or_error(ceil_div(m_bit_offset, 8ul));
+    }
+
 private:
     void ensure_bits_buffered(size_t count)
     {

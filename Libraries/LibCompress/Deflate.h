@@ -26,6 +26,7 @@
 
 #pragma once
 
+#include <AK/BitStream.h>
 #include <AK/CircularQueue.h>
 #include <AK/Span.h>
 #include <AK/Stream.h>
@@ -35,31 +36,10 @@
 
 namespace Compress {
 
-// Reads one bit at a time starting with the rightmost bit
-class BitStreamReader {
-public:
-    BitStreamReader(ReadonlyBytes data)
-        : m_data(data)
-    {
-    }
-
-    i8 read();
-    i8 read_byte();
-    u32 read_bits(u8);
-    u8 get_bit_byte_offset();
-
-private:
-    ReadonlyBytes m_data;
-    size_t m_data_index { 0 };
-
-    i8 m_current_byte { 0 };
-    u8 m_remaining_bits { 0 };
-};
-
 class CanonicalCode {
 public:
     CanonicalCode(Vector<u8>);
-    u32 next_symbol(BitStreamReader&);
+    u32 next_symbol(InputBitStream&);
 
 private:
     Vector<u32> m_symbol_codes;
@@ -72,7 +52,8 @@ public:
     // FIXME: This should really return a ByteBuffer.
     static Vector<u8> decompress_all(ReadonlyBytes bytes)
     {
-        DeflateStream stream { bytes };
+        InputMemoryStream stream0 { bytes };
+        DeflateStream stream { stream0 };
         while (stream.read_next_block()) {
         }
 
@@ -83,14 +64,12 @@ public:
         return vector;
     }
 
-    DeflateStream(ReadonlyBytes data)
-        : m_reader(data)
+    DeflateStream(InputStream& stream)
+        : m_input_stream(stream)
         , m_literal_length_codes(generate_literal_length_codes())
         , m_fixed_distance_codes(generate_fixed_distance_codes())
     {
     }
-
-    // FIXME: Accept an InputStream.
 
     size_t read(Bytes bytes) override
     {
@@ -169,17 +148,16 @@ private:
     Vector<u8> generate_literal_length_codes() const;
     Vector<u8> generate_fixed_distance_codes() const;
 
-    mutable BitStreamReader m_reader;
-
-    mutable CanonicalCode m_literal_length_codes;
-    mutable CanonicalCode m_fixed_distance_codes;
-
     // FIXME: Theoretically, blocks can be extremly large, reading a single block could
     //        exhaust memory. Maybe wait for C++20 coroutines?
     bool read_next_block() const;
 
     mutable bool m_read_last_block { false };
     mutable DuplexMemoryStream m_output_stream;
+    mutable InputBitStream m_input_stream;
+
+    mutable CanonicalCode m_literal_length_codes;
+    mutable CanonicalCode m_fixed_distance_codes;
 };
 
 }
