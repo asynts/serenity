@@ -51,6 +51,7 @@ class Utf8View;
 class InputStream;
 class InputMemoryStream;
 class DuplexMemoryStream;
+class InputBitStream;
 
 template<typename T>
 class Span;
@@ -133,6 +134,7 @@ using AK::Function;
 using AK::HashMap;
 using AK::HashTable;
 using AK::InlineLinkedList;
+using AK::InputBitStream;
 using AK::InputMemoryStream;
 using AK::InputStream;
 using AK::IPv4Address;
