@@ -153,30 +153,25 @@ void TestSuite::main(const String& suite_name, int argc, char** argv)
     bool do_tests_only = false;
     bool do_benchmarks_only = false;
     bool do_list_cases = false;
-    const char* search_string = nullptr;
+    const char* search_string = "*";
 
     args_parser.add_option(do_tests_only, "Only run tests.", "tests", 0);
-    args_parser.add_option(do_benchmarks_only, "Only run benchmarks.", "benchmarks", 0);
+    args_parser.add_option(do_benchmarks_only, "Only run benchmarks.", "bench", 0);
     args_parser.add_option(do_list_cases, "List avaliable test cases.", "list", 0);
-    args_parser.add_positional_argument(search_string, "Only run matching cases.", "search", Core::ArgsParser::Required::No);
+    args_parser.add_positional_argument(search_string, "Only run matching cases.", "pattern", Core::ArgsParser::Required::No);
     args_parser.parse(argc, argv);
 
-    const auto& matches = find_cases(search_string, !do_benchmarks_only, !do_tests_only);
+    const auto& matching_tests = find_cases(search_string, !do_benchmarks_only, !do_tests_only);
 
     if (do_list_cases) {
-        out() << "Available tests for " << suite_name << ":";
-        const auto& tests = find_cases("*", true, false);
-        for (const auto& t : tests) {
-            out() << "    " << t.name();
-        }
-        out() << "Available benchmarks for " << suite_name << ":";
-        const auto& benchmarks = find_cases("*", false, true);
-        for (const auto& t : benchmarks) {
-            out() << "    " << t.name();
+        out() << "Avaliable cases for " << suite_name << ":";
+        for (const auto& test : matching_tests) {
+            out() << "    " << test.name();
         }
     } else {
-        out() << "Running " << matches.size() << " cases out of " << m_cases.size();
-        run(matches);
+        out() << "Running " << matching_tests.size() << " cases out of " << m_cases.size();
+
+        run(matching_tests);
     }
 }
 
