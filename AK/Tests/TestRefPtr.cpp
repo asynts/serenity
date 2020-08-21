@@ -37,59 +37,59 @@ TEST_CASE(basics)
 {
     RefPtr<Object> object = adopt(*new Object);
     EXPECT(object.ptr() != nullptr);
-    EXPECT_EQ(object->ref_count(), 1u);
+    EXPECT_EQ(object->ref_count(), 1);
     object->ref();
-    EXPECT_EQ(object->ref_count(), 2u);
+    EXPECT_EQ(object->ref_count(), 2);
     object->unref();
-    EXPECT_EQ(object->ref_count(), 1u);
+    EXPECT_EQ(object->ref_count(), 1);
 
     {
         NonnullRefPtr another = *object;
-        EXPECT_EQ(object->ref_count(), 2u);
+        EXPECT_EQ(object->ref_count(), 2);
     }
 
-    EXPECT_EQ(object->ref_count(), 1u);
+    EXPECT_EQ(object->ref_count(), 1);
 }
 
 TEST_CASE(assign_reference)
 {
     RefPtr<Object> object = adopt(*new Object);
-    EXPECT_EQ(object->ref_count(), 1u);
+    EXPECT_EQ(object->ref_count(), 1);
     object = *object;
-    EXPECT_EQ(object->ref_count(), 1u);
+    EXPECT_EQ(object->ref_count(), 1);
 }
 
 TEST_CASE(assign_ptr)
 {
     RefPtr<Object> object = adopt(*new Object);
-    EXPECT_EQ(object->ref_count(), 1u);
+    EXPECT_EQ(object->ref_count(), 1);
     object = object.ptr();
-    EXPECT_EQ(object->ref_count(), 1u);
+    EXPECT_EQ(object->ref_count(), 1);
 }
 
 TEST_CASE(assign_moved_self)
 {
     RefPtr<Object> object = adopt(*new Object);
-    EXPECT_EQ(object->ref_count(), 1u);
+    EXPECT_EQ(object->ref_count(), 1);
     object = move(object);
-    EXPECT_EQ(object->ref_count(), 1u);
+    EXPECT_EQ(object->ref_count(), 1);
 }
 
 TEST_CASE(assign_copy_self)
 {
     RefPtr<Object> object = adopt(*new Object);
-    EXPECT_EQ(object->ref_count(), 1u);
+    EXPECT_EQ(object->ref_count(), 1);
 
-    #ifdef __clang__
-    #pragma clang diagnostic push
-    #pragma clang diagnostic ignored "-Wself-assign-overloaded"
-    #endif
-        object = object;
-    #ifdef __clang__
-    #pragma clang diagnostic pop
-    #endif
+#ifdef __clang__
+#    pragma clang diagnostic push
+#    pragma clang diagnostic ignored "-Wself-assign-overloaded"
+#endif
+    object = object;
+#ifdef __clang__
+#    pragma clang diagnostic pop
+#endif
 
-    EXPECT_EQ(object->ref_count(), 1u);
+    EXPECT_EQ(object->ref_count(), 1);
 }
 
 TEST_MAIN(RefPtr)

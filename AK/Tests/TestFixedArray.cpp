@@ -26,8 +26,8 @@
 
 #include <AK/TestSuite.h>
 
-#include <AK/String.h>
 #include <AK/FixedArray.h>
+#include <AK/String.h>
 
 TEST_CASE(construct)
 {
@@ -45,7 +45,7 @@ TEST_CASE(ints)
     EXPECT_EQ(ints[2], 2);
 
     ints.clear();
-    EXPECT_EQ(ints.size(), 0u);
+    EXPECT_EQ(ints.size(), 0);
 }
 
 TEST_CASE(resize)
@@ -54,13 +54,13 @@ TEST_CASE(resize)
     strings[0] = "ABC";
     strings[1] = "DEF";
 
-    EXPECT_EQ(strings.size(), 2u);
+    EXPECT_EQ(strings.size(), 2);
     EXPECT_EQ(strings[0], "ABC");
     EXPECT_EQ(strings[1], "DEF");
 
     strings.resize(4);
 
-    EXPECT_EQ(strings.size(), 4u);
+    EXPECT_EQ(strings.size(), 4);
     EXPECT_EQ(strings[0], "ABC");
     EXPECT_EQ(strings[1], "DEF");
 
@@ -74,7 +74,7 @@ TEST_CASE(resize)
     EXPECT_EQ(strings[3], "JKL");
 
     strings.resize(1);
-    EXPECT_EQ(strings.size(), 1u);
+    EXPECT_EQ(strings.size(), 1);
     EXPECT_EQ(strings[0], "ABC");
 }
 
