@@ -206,7 +206,7 @@ void TestSuite::run(const NonnullRefPtrVector<TestCase>& tests)
         dbg() << "START Running " << test_type << " " << t.name();
 
         TestElapsedTimer timer;
-        t.func();
+        t.func()();
         const auto time = timer.elapsed_milliseconds();
 
         warn() << "\033[32;1mPASS\033[0m: " << time << " ms running " << test_type << " " << t.name();
