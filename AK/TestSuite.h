@@ -28,16 +28,17 @@
 
 #define AK_TEST_SUITE
 
-#include <stdio.h>
-
-#define ASSERT(x)                                             \
-    if (!(x)) {                                               \
-        fprintf(stderr, "\033[33;1mASSERT\033[0m: " #x "\n"); \
+#define ASSERT(x)                                                                                       \
+    {                                                                                                   \
+        if (!(x))                                                                                       \
+            fprintf(stderr, "\033[31;1mFAIL\033[0m: %s:%d: ASSERT(%s) failed", __FILE__, __LINE__, #x); \
     }
 
 #define ASSERT_NOT_REACHED() fprintf(stderr, "\033[31;1mASSERT_NOT_REACHED\033[0m\n");
 #define RELEASE_ASSERT ASSERT
 #define TODO ASSERT_NOT_REACHED
+
+#include <stdio.h>
 
 #include <AK/Function.h>
 #include <AK/NonnullRefPtrVector.h>
@@ -275,13 +276,13 @@ using AK::TestSuite;
         return 0;                                                                  \
     }
 
-#define assertEqual(one, two)                                                                                                                                              \
-    do {                                                                                                                                                                   \
-        auto ___aev1 = one;                                                                                                                                                \
-        auto ___aev2 = two;                                                                                                                                                \
-        if (___aev1 != ___aev2) {                                                                                                                                          \
+#define assertEqual(one, two)                                                                                                        \
+    do {                                                                                                                             \
+        auto ___aev1 = one;                                                                                                          \
+        auto ___aev2 = two;                                                                                                          \
+        if (___aev1 != ___aev2) {                                                                                                    \
             dbg() << "\033[31;1mFAIL\033[0m: " __FILE__ ":" << __LINE__ << ": assertEqual(" ___str(one) ", " ___str(two) ") failed"; \
-        }                                                                                                                                                                  \
+        }                                                                                                                            \
     } while (0)
 
 #define EXPECT_EQ(one, two) assertEqual(one, two)
