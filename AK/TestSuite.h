@@ -28,34 +28,29 @@
 
 #define AK_TEST_SUITE
 
+#include <stdio.h>
+
 #define __str(s) #s
 
-#define ASSERT(x)                                                                                      \
-    {                                                                                                  \
-        if (!(x))                                                                                      \
-            warn() << "\033[31;1mFAIL\033[0m: " __FILE__ ":" __LINE__ ": ASSERT(" __str(x) ") failed"; \
+#define ASSERT(x)                                                                                             \
+    {                                                                                                         \
+        if (!(x))                                                                                             \
+            fprintf(stderr, "\033[31;1mFAIL\033[0m: %s:%d: ASSERT(%s) failed", __FILE__, __LINE__, __str(x)); \
     }
 
-#define ASSERT_NOT_REACHED()                                                                           \
-    {                                                                                                  \
-        if (!(x))                                                                                      \
-            warn() << "\033[31;1mFAIL\033[0m: " __FILE__ ":" __LINE__ ": ASSERT_NOT_REACHED() called"; \
+#define RELEASE_ASSERT(x)                                                                                             \
+    {                                                                                                                 \
+        if (!(x))                                                                                                     \
+            fprintf(stderr, "\033[31;1mFAIL\033[0m: %s:%d: RELEASE_ASSERT(%s) failed", __FILE__, __LINE__, __str(x)); \
     }
 
-#define RELEASE_ASSERT                                                                                         \
-    {                                                                                                          \
-        if (!(x))                                                                                              \
-            warn() << "\033[31;1mFAIL\033[0m: " __FILE__ ":" __LINE__ ": RELEASE_ASSERT(" __str(x) ") failed"; \
-    }
+#define ASSERT_NOT_REACHED() \
+    fprintf(stderr, "\033[31;1mFAIL\033[0m: %s:%d: ASSERT_NOT_REACHED() called", __FILE__, __LINE__);
 
-#define TODO                                                                             \
-    {                                                                                    \
-        if (!(x))                                                                        \
-            warn() << "\033[31;1mFAIL\033[0m: " __FILE__ ":" __LINE__ ": TODO() called"; \
-    }
+#define TODO \
+    fprintf(stderr, "\033[31;1mFAIL\033[0m: %s:%d: TODO() called", __FILE__, __LINE__);
 
 #include <AK/Function.h>
-#include <AK/LogStream.h>
 #include <AK/NonnullRefPtrVector.h>
 #include <AK/String.h>
 
