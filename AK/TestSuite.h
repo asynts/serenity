@@ -30,18 +30,16 @@
 
 #include <stdio.h>
 
-#define __str(s) #s
-
-#define ASSERT(x)                                                                                             \
-    {                                                                                                         \
-        if (!(x))                                                                                             \
-            fprintf(stderr, "\033[31;1mFAIL\033[0m: %s:%d: ASSERT(%s) failed", __FILE__, __LINE__, __str(x)); \
+#define ASSERT(x)                                                                                       \
+    {                                                                                                   \
+        if (!(x))                                                                                       \
+            fprintf(stderr, "\033[31;1mFAIL\033[0m: %s:%d: ASSERT(%s) failed", __FILE__, __LINE__, #x); \
     }
 
-#define RELEASE_ASSERT(x)                                                                                             \
-    {                                                                                                                 \
-        if (!(x))                                                                                                     \
-            fprintf(stderr, "\033[31;1mFAIL\033[0m: %s:%d: RELEASE_ASSERT(%s) failed", __FILE__, __LINE__, __str(x)); \
+#define RELEASE_ASSERT(x)                                                                                       \
+    {                                                                                                           \
+        if (!(x))                                                                                               \
+            fprintf(stderr, "\033[31;1mFAIL\033[0m: %s:%d: RELEASE_ASSERT(%s) failed", __FILE__, __LINE__, #x); \
     }
 
 #define ASSERT_NOT_REACHED() \
@@ -51,6 +49,7 @@
     fprintf(stderr, "\033[31;1mFAIL\033[0m: %s:%d: TODO() called", __FILE__, __LINE__);
 
 #include <AK/Function.h>
+#include <AK/LogStream.h>
 #include <AK/NonnullRefPtrVector.h>
 #include <AK/String.h>
 
@@ -233,49 +232,49 @@ using AK::TestSuite;
 #define __TESTCASE_FUNC(x) __test_##x
 #define __TESTCASE_TYPE(x) __TestCase_##x
 
-#define TEST_CASE(x)                                                                                 \
-    static void __TESTCASE_FUNC(x)();                                                                \
-    struct __TESTCASE_TYPE(x) {                                                                      \
-        __TESTCASE_TYPE(x)                                                                           \
-        () { TestSuite::the().add_case(adopt(*new TestCase(__str(x), __TESTCASE_FUNC(x), false))); } \
-    };                                                                                               \
-    static struct __TESTCASE_TYPE(x) __TESTCASE_TYPE(x);                                             \
+#define TEST_CASE(x)                                                                           \
+    static void __TESTCASE_FUNC(x)();                                                          \
+    struct __TESTCASE_TYPE(x) {                                                                \
+        __TESTCASE_TYPE(x)                                                                     \
+        () { TestSuite::the().add_case(adopt(*new TestCase(#x, __TESTCASE_FUNC(x), false))); } \
+    };                                                                                         \
+    static struct __TESTCASE_TYPE(x) __TESTCASE_TYPE(x);                                       \
     static void __TESTCASE_FUNC(x)()
 
 #define __BENCHMARK_FUNC(x) __benchmark_##x
 #define __BENCHMARK_TYPE(x) __BenchmarkCase_##x
 
-#define BENCHMARK_CASE(x)                                                                            \
-    static void __BENCHMARK_FUNC(x)();                                                               \
-    struct __BENCHMARK_TYPE(x) {                                                                     \
-        __BENCHMARK_TYPE(x)                                                                          \
-        () { TestSuite::the().add_case(adopt(*new TestCase(__str(x), __BENCHMARK_FUNC(x), true))); } \
-    };                                                                                               \
-    static struct __BENCHMARK_TYPE(x) __BENCHMARK_TYPE(x);                                           \
+#define BENCHMARK_CASE(x)                                                                      \
+    static void __BENCHMARK_FUNC(x)();                                                         \
+    struct __BENCHMARK_TYPE(x) {                                                               \
+        __BENCHMARK_TYPE(x)                                                                    \
+        () { TestSuite::the().add_case(adopt(*new TestCase(#x, __BENCHMARK_FUNC(x), true))); } \
+    };                                                                                         \
+    static struct __BENCHMARK_TYPE(x) __BENCHMARK_TYPE(x);                                     \
     static void __BENCHMARK_FUNC(x)()
 
-#define TEST_MAIN(x)                                                      \
-    TestSuite* TestSuite::s_global = nullptr;                             \
-    template<size_t N>                                                    \
-    constexpr size_t compiletime_lenof(const char(&)[N])                  \
-    {                                                                     \
-        return N - 1;                                                     \
-    }                                                                     \
-    int main(int argc, char** argv)                                       \
-    {                                                                     \
-        static_assert(compiletime_lenof(__str(x)) != 0, "Set SuiteName"); \
-        TestSuite::the().main(__str(x), argc, argv);                      \
-        TestSuite::release();                                             \
+#define TEST_MAIN(x)                                                \
+    TestSuite* TestSuite::s_global = nullptr;                       \
+    template<size_t N>                                              \
+    constexpr size_t compiletime_lenof(const char(&)[N])            \
+    {                                                               \
+        return N - 1;                                               \
+    }                                                               \
+    int main(int argc, char** argv)                                 \
+    {                                                               \
+        static_assert(compiletime_lenof(#x) != 0, "Set SuiteName"); \
+        TestSuite::the().main(#x, argc, argv);                      \
+        TestSuite::release();                                       \
     }
 
-#define EXPECT_EQ(a, b)                                                                                                      \
-    {                                                                                                                        \
-        if ((a) != (b))                                                                                                      \
-            out() << "\033[31;1mFAIL\033[0m: " __FILE__ ":" << __LINE__ << ": EXPECT_EQ(" __str(a) ", " __str(b) ") failed"; \
+#define EXPECT_EQ(a, b)                                                                                          \
+    {                                                                                                            \
+        if ((a) != (b))                                                                                          \
+            out() << "\033[31;1mFAIL\033[0m: " __FILE__ ":" << __LINE__ << ": EXPECT_EQ(" #a ", " #b ") failed"; \
     }
 
-#define EXPECT(x)                                                                                           \
-    {                                                                                                       \
-        if (!(x))                                                                                           \
-            out() << "\033[31;1mFAIL\033[0m: " __FILE__ ":" << __LINE__ << ": EXPECT(" __str(x) ") failed"; \
+#define EXPECT(x)                                                                                     \
+    {                                                                                                 \
+        if (!(x))                                                                                     \
+            out() << "\033[31;1mFAIL\033[0m: " __FILE__ ":" << __LINE__ << ": EXPECT(" #x ") failed"; \
     }
