@@ -31,21 +31,21 @@
 TEST_CASE(construct_empty)
 {
     Bitmap bitmap;
-    EXPECT_EQ(bitmap.size(), 0u);
+    EXPECT_EQ(bitmap.size(), 0);
 }
 
 TEST_CASE(find_first_set)
 {
     Bitmap bitmap(128, false);
     bitmap.set(69, true);
-    EXPECT_EQ(bitmap.find_first_set().value(), 69u);
+    EXPECT_EQ(bitmap.find_first_set().value(), 69);
 }
 
 TEST_CASE(find_first_unset)
 {
     Bitmap bitmap(128, true);
     bitmap.set(51, false);
-    EXPECT_EQ(bitmap.find_first_unset().value(), 51u);
+    EXPECT_EQ(bitmap.find_first_unset().value(), 51);
 }
 
 TEST_CASE(find_first_range)
@@ -59,8 +59,8 @@ TEST_CASE(find_first_range)
     size_t found_range_size = 0;
     auto result = bitmap.find_longest_range_of_unset_bits(5, found_range_size);
     EXPECT_EQ(result.has_value(), true);
-    EXPECT_EQ(found_range_size, 5u);
-    EXPECT_EQ(result.value(), 47u);
+    EXPECT_EQ(found_range_size, 5);
+    EXPECT_EQ(result.value(), 47);
 }
 
 TEST_CASE(set_range)
@@ -93,7 +93,7 @@ TEST_CASE(find_first_fit)
         bitmap.set(31, false);
         auto fit = bitmap.find_first_fit(1);
         EXPECT_EQ(fit.has_value(), true);
-        EXPECT_EQ(fit.value(), 31u);
+        EXPECT_EQ(fit.value(), 31);
     }
 
     for (size_t i = 0; i < 128; ++i) {
@@ -133,7 +133,7 @@ TEST_CASE(find_longest_range_of_unset_bits_edge)
     size_t found_range_size = 0;
     auto result = bitmap.find_longest_range_of_unset_bits(1, found_range_size);
     EXPECT_EQ(result.has_value(), true);
-    EXPECT_EQ(result.value(), 32u);
+    EXPECT_EQ(result.value(), 32);
 }
 
 TEST_MAIN(Bitmap)

@@ -30,6 +30,8 @@
 #include <AK/Span.h>
 #include <AK/StdLibExtras.h>
 
+#include <string.h>
+
 TEST_CASE(default_constructor_is_empty)
 {
     Span<int> span;
@@ -115,7 +117,7 @@ TEST_CASE(can_subspan_whole_span)
     Bytes slice = bytes.slice(0, 16);
 
     EXPECT_EQ(slice.data(), buffer);
-    EXPECT_EQ(slice.size(), 16u);
+    EXPECT_EQ(slice.size(), 16);
 }
 
 TEST_CASE(can_subspan_as_intended)
@@ -125,7 +127,7 @@ TEST_CASE(can_subspan_as_intended)
     Span<const u16> span { buffer, 8 };
     auto slice = span.slice(3, 2);
 
-    EXPECT_EQ(slice.size(), 2u);
+    EXPECT_EQ(slice.size(), 2);
     EXPECT_EQ(slice[0], 4);
     EXPECT_EQ(slice[1], 5);
 }

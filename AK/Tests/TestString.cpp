@@ -49,7 +49,7 @@ TEST_CASE(construct_contents)
     String test_string = "ABCDEF";
     EXPECT(!test_string.is_empty());
     EXPECT(!test_string.is_null());
-    EXPECT_EQ(test_string.length(), 6u);
+    EXPECT_EQ(test_string.length(), 6);
     EXPECT_EQ(test_string.length(), strlen(test_string.characters()));
     EXPECT(test_string.characters() != nullptr);
     EXPECT(!strcmp(test_string.characters(), "ABCDEF"));
@@ -202,7 +202,7 @@ TEST_CASE(split)
 {
     String test = "foo bar baz";
     auto parts = test.split(' ');
-    EXPECT_EQ(parts.size(), 3u);
+    EXPECT_EQ(parts.size(), 3);
     EXPECT_EQ(parts[0], "foo");
     EXPECT_EQ(parts[1], "bar");
     EXPECT_EQ(parts[2], "baz");
@@ -214,12 +214,12 @@ TEST_CASE(split)
     test = "a    b";
 
     parts = test.split(' ');
-    EXPECT_EQ(parts.size(), 2u);
+    EXPECT_EQ(parts.size(), 2);
     EXPECT_EQ(parts[0], "a");
     EXPECT_EQ(parts[1], "b");
 
     parts = test.split(' ', true);
-    EXPECT_EQ(parts.size(), 5u);
+    EXPECT_EQ(parts.size(), 5);
     EXPECT_EQ(parts[0], "a");
     EXPECT_EQ(parts[1], "");
     EXPECT_EQ(parts[2], "");
@@ -227,10 +227,10 @@ TEST_CASE(split)
     EXPECT_EQ(parts[4], "b");
 
     test = "axxbx";
-    EXPECT_EQ(test.split('x').size(), 2u);
-    EXPECT_EQ(test.split('x', true).size(), 4u);
-    EXPECT_EQ(test.split_view('x').size(), 2u);
-    EXPECT_EQ(test.split_view('x', true).size(), 4u);
+    EXPECT_EQ(test.split('x').size(), 2);
+    EXPECT_EQ(test.split('x', true).size(), 4);
+    EXPECT_EQ(test.split_view('x').size(), 2);
+    EXPECT_EQ(test.split_view('x', true).size(), 4);
 }
 
 TEST_CASE(builder_zero_initial_capacity)
@@ -239,7 +239,7 @@ TEST_CASE(builder_zero_initial_capacity)
     builder.append("");
     auto built = builder.build();
     EXPECT_EQ(built.is_null(), false);
-    EXPECT_EQ(built.length(), 0u);
+    EXPECT_EQ(built.length(), 0);
 }
 
 TEST_MAIN(String)
