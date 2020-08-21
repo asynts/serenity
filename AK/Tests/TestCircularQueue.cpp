@@ -36,14 +36,14 @@ TEST_CASE(basic)
     ints.enqueue(1);
     ints.enqueue(2);
     ints.enqueue(3);
-    EXPECT_EQ(ints.size(), 3u);
+    EXPECT_EQ(ints.size(), 3);
 
     ints.enqueue(4);
-    EXPECT_EQ(ints.size(), 3u);
+    EXPECT_EQ(ints.size(), 3);
     EXPECT_EQ(ints.dequeue(), 2);
     EXPECT_EQ(ints.dequeue(), 3);
     EXPECT_EQ(ints.dequeue(), 4);
-    EXPECT_EQ(ints.size(), 0u);
+    EXPECT_EQ(ints.size(), 0);
 }
 
 TEST_CASE(complex_type)
@@ -53,7 +53,7 @@ TEST_CASE(complex_type)
     strings.enqueue("ABC");
     strings.enqueue("DEF");
 
-    EXPECT_EQ(strings.size(), 2u);
+    EXPECT_EQ(strings.size(), 2);
 
     strings.enqueue("abc");
     strings.enqueue("def");
@@ -70,9 +70,9 @@ TEST_CASE(complex_type_clear)
     strings.enqueue("xxx");
     strings.enqueue("xxx");
     strings.enqueue("xxx");
-    EXPECT_EQ(strings.size(), 5u);
+    EXPECT_EQ(strings.size(), 5);
     strings.clear();
-    EXPECT_EQ(strings.size(), 0u);
+    EXPECT_EQ(strings.size(), 0);
 }
 
 TEST_MAIN(CircularQueue)

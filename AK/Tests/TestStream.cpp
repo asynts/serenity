@@ -129,26 +129,26 @@ TEST_CASE(duplex_seek_into_history)
 
     FixedArray<u8> one_kibibyte { 1024 };
 
-    EXPECT_EQ(stream.remaining(), 0ul);
+    EXPECT_EQ(stream.remaining(), 0);
 
     for (size_t idx = 0; idx < 256; ++idx) {
         stream << one_kibibyte;
     }
 
-    EXPECT_EQ(stream.remaining(), 256 * 1024ul);
+    EXPECT_EQ(stream.remaining(), 256 * 1024);
 
     for (size_t idx = 0; idx < 128; ++idx) {
         stream >> one_kibibyte;
     }
 
-    EXPECT_EQ(stream.remaining(), 128 * 1024ul);
+    EXPECT_EQ(stream.remaining(), 128 * 1024);
 
     // We now have 128KiB on the stream. Because the stream has a
     // history size of 64KiB, we should be able to seek to 64KiB.
     static_assert(DuplexMemoryStream::history_size == 64 * 1024);
     stream.rseek(64 * 1024);
 
-    EXPECT_EQ(stream.remaining(), 192 * 1024ul);
+    EXPECT_EQ(stream.remaining(), 192 * 1024);
 
     for (size_t idx = 0; idx < 192; ++idx) {
         stream >> one_kibibyte;

@@ -37,26 +37,26 @@ TEST_CASE(basics)
 {
     auto object = adopt(*new Object);
     EXPECT(object.ptr() != nullptr);
-    EXPECT_EQ(object->ref_count(), 1u);
+    EXPECT_EQ(object->ref_count(), 1);
     object->ref();
-    EXPECT_EQ(object->ref_count(), 2u);
+    EXPECT_EQ(object->ref_count(), 2);
     object->unref();
-    EXPECT_EQ(object->ref_count(), 1u);
+    EXPECT_EQ(object->ref_count(), 1);
 
     {
         NonnullRefPtr another = object;
-        EXPECT_EQ(object->ref_count(), 2u);
+        EXPECT_EQ(object->ref_count(), 2);
     }
 
-    EXPECT_EQ(object->ref_count(), 1u);
+    EXPECT_EQ(object->ref_count(), 1);
 }
 
 TEST_CASE(assign_reference)
 {
     auto object = adopt(*new Object);
-    EXPECT_EQ(object->ref_count(), 1u);
+    EXPECT_EQ(object->ref_count(), 1);
     object = *object;
-    EXPECT_EQ(object->ref_count(), 1u);
+    EXPECT_EQ(object->ref_count(), 1);
 }
 
 TEST_CASE(assign_owner_of_self)
@@ -70,14 +70,14 @@ TEST_CASE(assign_owner_of_self)
     child->parent = move(parent);
 
     child = *child->parent;
-    EXPECT_EQ(child->ref_count(), 1u);
+    EXPECT_EQ(child->ref_count(), 1);
 }
 
 TEST_CASE(swap_with_self)
 {
     auto object = adopt(*new Object);
     swap(object, object);
-    EXPECT_EQ(object->ref_count(), 1u);
+    EXPECT_EQ(object->ref_count(), 1);
 }
 
 TEST_MAIN(NonnullRefPtr)

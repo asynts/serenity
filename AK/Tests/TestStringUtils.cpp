@@ -138,41 +138,41 @@ TEST_CASE(convert_to_uint)
 
     auto actual = AK::StringUtils::convert_to_uint("0");
     EXPECT_EQ(actual.has_value(), true);
-    EXPECT_EQ(actual.value(), 0u);
+    EXPECT_EQ(actual.value(), 0);
 
     actual = AK::StringUtils::convert_to_uint("1");
     EXPECT_EQ(actual.has_value(), true);
-    EXPECT_EQ(actual.value(), 1u);
+    EXPECT_EQ(actual.value(), 1);
 
     actual = AK::StringUtils::convert_to_uint("01");
     EXPECT_EQ(actual.has_value(), true);
-    EXPECT_EQ(actual.value(), 1u);
+    EXPECT_EQ(actual.value(), 1);
 
     actual = AK::StringUtils::convert_to_uint("12345");
     EXPECT_EQ(actual.has_value(), true);
-    EXPECT_EQ(actual.value(), 12345u);
+    EXPECT_EQ(actual.value(), 12345);
 }
 
 TEST_CASE(ends_with)
 {
     String test_string = "ABCDEF";
     EXPECT(AK::StringUtils::ends_with(test_string, "DEF", CaseSensitivity::CaseSensitive));
-    EXPECT(AK::StringUtils::ends_with(test_string, "ABCDEF",  CaseSensitivity::CaseSensitive));
+    EXPECT(AK::StringUtils::ends_with(test_string, "ABCDEF", CaseSensitivity::CaseSensitive));
     EXPECT(!AK::StringUtils::ends_with(test_string, "ABCDE", CaseSensitivity::CaseSensitive));
     EXPECT(!AK::StringUtils::ends_with(test_string, "ABCDEFG", CaseSensitivity::CaseSensitive));
-    EXPECT(AK::StringUtils::ends_with(test_string, "def",  CaseSensitivity::CaseInsensitive));
-    EXPECT(!AK::StringUtils::ends_with(test_string, "def",  CaseSensitivity::CaseSensitive));
+    EXPECT(AK::StringUtils::ends_with(test_string, "def", CaseSensitivity::CaseInsensitive));
+    EXPECT(!AK::StringUtils::ends_with(test_string, "def", CaseSensitivity::CaseSensitive));
 }
 
 TEST_CASE(starts_with)
 {
     String test_string = "ABCDEF";
     EXPECT(AK::StringUtils::starts_with(test_string, "ABC", CaseSensitivity::CaseSensitive));
-    EXPECT(AK::StringUtils::starts_with(test_string, "ABCDEF",  CaseSensitivity::CaseSensitive));
+    EXPECT(AK::StringUtils::starts_with(test_string, "ABCDEF", CaseSensitivity::CaseSensitive));
     EXPECT(!AK::StringUtils::starts_with(test_string, "BCDEF", CaseSensitivity::CaseSensitive));
     EXPECT(!AK::StringUtils::starts_with(test_string, "ABCDEFG", CaseSensitivity::CaseSensitive));
-    EXPECT(AK::StringUtils::starts_with(test_string, "abc",  CaseSensitivity::CaseInsensitive));
-    EXPECT(!AK::StringUtils::starts_with(test_string, "abc",  CaseSensitivity::CaseSensitive));
+    EXPECT(AK::StringUtils::starts_with(test_string, "abc", CaseSensitivity::CaseInsensitive));
+    EXPECT(!AK::StringUtils::starts_with(test_string, "abc", CaseSensitivity::CaseSensitive));
 }
 
 TEST_MAIN(StringUtils)
