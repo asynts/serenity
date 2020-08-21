@@ -28,23 +28,23 @@
 
 #define AK_TEST_SUITE
 
-#define ASSERT(x)                                                                                       \
-    {                                                                                                   \
-        if (!(x))                                                                                       \
-            fprintf(stderr, "\033[31;1mFAIL\033[0m: %s:%d: ASSERT(%s) failed", __FILE__, __LINE__, #x); \
+#define ASSERT(x)                                                                                         \
+    {                                                                                                     \
+        if (!(x))                                                                                         \
+            fprintf(stderr, "\033[31;1mFAIL\033[0m: %s:%d: ASSERT(%s) failed\n", __FILE__, __LINE__, #x); \
     }
 
-#define RELEASE_ASSERT(x)                                                                                       \
-    {                                                                                                           \
-        if (!(x))                                                                                               \
-            fprintf(stderr, "\033[31;1mFAIL\033[0m: %s:%d: RELEASE_ASSERT(%s) failed", __FILE__, __LINE__, #x); \
+#define RELEASE_ASSERT(x)                                                                                         \
+    {                                                                                                             \
+        if (!(x))                                                                                                 \
+            fprintf(stderr, "\033[31;1mFAIL\033[0m: %s:%d: RELEASE_ASSERT(%s) failed\n", __FILE__, __LINE__, #x); \
     }
 
 #define ASSERT_NOT_REACHED() \
-    fprintf(stderr, "\033[31;1mFAIL\033[0m: %s:%d: ASSERT_NOT_REACHED() called", __FILE__, __LINE__);
+    fprintf(stderr, "\033[31;1mFAIL\033[0m: %s:%d: ASSERT_NOT_REACHED() called\n", __FILE__, __LINE__);
 
 #define TODO \
-    fprintf(stderr, "\033[31;1mFAIL\033[0m: %s:%d: TODO() called", __FILE__, __LINE__);
+    fprintf(stderr, "\033[31;1mFAIL\033[0m: %s:%d: TODO() called\n", __FILE__, __LINE__);
 
 #include <stdio.h>
 
@@ -267,14 +267,14 @@ using AK::TestSuite;
         TestSuite::release();                                       \
     }
 
-#define EXPECT_EQ(a, b)                                                                                          \
-    {                                                                                                            \
-        if ((a) != (b))                                                                                          \
-            out() << "\033[31;1mFAIL\033[0m: " __FILE__ ":" << __LINE__ << ": EXPECT_EQ(" #a ", " #b ") failed"; \
+#define EXPECT_EQ(a, b)                                                                                           \
+    {                                                                                                             \
+        if ((a) != (b))                                                                                           \
+            warn() << "\033[31;1mFAIL\033[0m: " __FILE__ ":" << __LINE__ << ": EXPECT_EQ(" #a ", " #b ") failed"; \
     }
 
-#define EXPECT(x)                                                                                     \
-    {                                                                                                 \
-        if (!(x))                                                                                     \
-            out() << "\033[31;1mFAIL\033[0m: " __FILE__ ":" << __LINE__ << ": EXPECT(" #x ") failed"; \
+#define EXPECT(x)                                                                                      \
+    {                                                                                                  \
+        if (!(x))                                                                                      \
+            warn() << "\033[31;1mFAIL\033[0m: " __FILE__ ":" << __LINE__ << ": EXPECT(" #x ") failed"; \
     }
