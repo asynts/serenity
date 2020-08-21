@@ -24,9 +24,10 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <AK/TestSuite.h>
+
 #include <AK/CircularQueue.h>
 #include <AK/String.h>
-#include <AK/TestSuite.h>
 
 TEST_CASE(basic)
 {

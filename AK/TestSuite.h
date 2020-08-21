@@ -28,8 +28,6 @@
 
 #define AK_TEST_SUITE
 
-#include <stdio.h>
-
 #define ASSERT(x)                                                                                       \
     {                                                                                                   \
         if (!(x))                                                                                       \
@@ -47,6 +45,8 @@
 
 #define TODO \
     fprintf(stderr, "\033[31;1mFAIL\033[0m: %s:%d: TODO() called", __FILE__, __LINE__);
+
+#include <stdio.h>
 
 #include <AK/Function.h>
 #include <AK/LogStream.h>
