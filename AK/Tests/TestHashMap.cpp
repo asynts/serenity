@@ -26,14 +26,14 @@
 
 #include <AK/TestSuite.h>
 
-#include <AK/String.h>
 #include <AK/HashMap.h>
+#include <AK/String.h>
 
 TEST_CASE(construct)
 {
     typedef HashMap<int, int> IntIntMap;
     EXPECT(IntIntMap().is_empty());
-    EXPECT_EQ(IntIntMap().size(), 0u);
+    EXPECT_EQ(IntIntMap().size(), 0);
 }
 
 TEST_CASE(populate)
@@ -44,7 +44,7 @@ TEST_CASE(populate)
     number_to_string.set(3, "Three");
 
     EXPECT_EQ(number_to_string.is_empty(), false);
-    EXPECT_EQ(number_to_string.size(), 3u);
+    EXPECT_EQ(number_to_string.size(), 3);
 }
 
 TEST_CASE(range_loop)
@@ -70,11 +70,11 @@ TEST_CASE(map_remove)
     number_to_string.set(3, "Three");
 
     number_to_string.remove(1);
-    EXPECT_EQ(number_to_string.size(), 2u);
+    EXPECT_EQ(number_to_string.size(), 2);
     EXPECT(number_to_string.find(1) == number_to_string.end());
 
     number_to_string.remove(3);
-    EXPECT_EQ(number_to_string.size(), 1u);
+    EXPECT_EQ(number_to_string.size(), 1);
     EXPECT(number_to_string.find(3) == number_to_string.end());
     EXPECT(number_to_string.find(2) != number_to_string.end());
 }
@@ -85,7 +85,7 @@ TEST_CASE(case_insensitive)
     EXPECT_EQ(String("nickserv").to_lowercase(), String("NickServ").to_lowercase());
     casemap.set("nickserv", 3);
     casemap.set("NickServ", 3);
-    EXPECT_EQ(casemap.size(), 1u);
+    EXPECT_EQ(casemap.size(), 1);
 }
 
 TEST_CASE(assert_on_iteration_during_clear)
@@ -105,7 +105,10 @@ TEST_CASE(assert_on_iteration_during_clear)
 TEST_CASE(hashmap_of_nonnullownptr_get)
 {
     struct Object {
-        Object(const String& s) : string(s) {}
+        Object(const String& s)
+            : string(s)
+        {
+        }
         String string;
     };
 
@@ -128,7 +131,7 @@ TEST_CASE(hashmap_of_nonnullownptr_get)
         EXPECT_EQ(x.value()->string, "Two");
     }
 
-    EXPECT_EQ(objects.size(), 3u);
+    EXPECT_EQ(objects.size(), 3);
 }
 
 TEST_MAIN(HashMap)
