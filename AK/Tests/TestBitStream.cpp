@@ -38,7 +38,7 @@ void initialize_data(Bytes bytes)
 
 TEST_CASE(like_underlying_stream)
 {
-    FixedArray data { 1024 };
+    FixedArray<u8> data { 1024 };
     initialize_data(data);
 
     InputMemoryStream stream0 { data };
@@ -54,6 +54,7 @@ TEST_CASE(like_underlying_stream)
 
         EXPECT_EQ(value0, value1);
         EXPECT_EQ(stream0.offset(), idx * 4);
+        EXPECT_EQ(stream1_a.offset(), idx * 4);
     }
 
     EXPECT(stream0.eof() && stream1_b.eof());
@@ -61,44 +62,44 @@ TEST_CASE(like_underlying_stream)
 
 TEST_CASE(partially_read_bits_are_considered)
 {
-    FixedArray data { 1 };
+    FixedArray<u8> data { 1 };
     data[0] = 0b11111110;
 
     u8 value = 0;
 
-    InputMemoryStream stream0 { data };
-    InputBitStream stream1 { stream0 };
+    InputMemoryStream stream0_a { data };
+    InputBitStream stream0_b { stream0_a };
 
-    EXPECT_EQ(stream1.read_bits(1), 0);
+    EXPECT_EQ(stream0_b.read_bits(1), 0);
 
-    stream1 >> value;
+    stream0_b >> value;
     EXPECT_EQ(value, 0b11111110);
-    EXPECT_EQ(stream0.offset(), 1);
+    EXPECT_EQ(stream0_a.offset(), 1);
 }
 
 TEST_CASE(read_accoss_byte_boundary)
 {
-    FixedArray data { 3 };
+    FixedArray<u8> data { 3 };
     data[0] = 0b01010101;
     data[1] = 0b11111111;
     data[2] = 0b11100011;
 
-    InputMemoryStream stream0 { data };
-    InputBitStream stream1 { stream0 };
+    InputMemoryStream stream0_a { data };
+    InputBitStream stream0_b { stream0_a };
 
-    EXPECT_EQ(stream1.read_bits(3), 0b101);
-    EXPECT_EQ(stream0.offset(), 0);
+    EXPECT_EQ(stream0_b.read_bits(3), 0b101);
+    EXPECT_EQ(stream0_a.offset(), 1);
 
-    EXPECT_EQ(stream1.read_bits(6), 0b101010);
-    EXPECT_EQ(stream0.offset(), 1);
+    EXPECT_EQ(stream0_b.read_bits(6), 0b101010);
+    EXPECT_EQ(stream0_a.offset(), 2);
 
-    EXPECT_EQ(stream1.read_bits(10), 0b0111111111);
-    EXPECT_EQ(stream0.offset(), 2);
+    EXPECT_EQ(stream0_b.read_bits(10), 0b0111111111);
+    EXPECT_EQ(stream0_a.offset(), 3);
 
-    EXPECT_EQ(stream1.read_bits(5), 0b11100);
-    EXPECT_EQ(stream0.offset(), 3);
+    EXPECT_EQ(stream0_b.read_bits(5), 0b11100);
+    EXPECT_EQ(stream0_a.offset(), 3);
 
-    EXPECT(stream0.eof() && stream1.eof());
+    EXPECT(stream0_a.eof() && stream0_b.eof());
 }
 
 TEST_MAIN(BitStream)

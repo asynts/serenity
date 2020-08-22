@@ -90,7 +90,7 @@ public:
         size_t nread = 0;
         while (nread < count) {
             if (m_next_byte.has_value()) {
-                const auto bit = (m_next_byte >> m_bit_offset) & 1;
+                const auto bit = (m_next_byte.value() >> m_bit_offset) & 1;
                 result |= bit << nread;
                 ++nread;
             } else if (m_stream.eof()) {

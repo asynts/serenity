@@ -149,6 +149,13 @@ inline OutputStream& operator<<(OutputStream& stream, ReadonlyBytes bytes)
     return stream;
 }
 
+template<typename T>
+InputStream& operator>>(InputStream& stream, Optional<T> value)
+{
+    stream.read_or_error({ value.m_storage, sizeof(value.m_storage) });
+    return stream;
+}
+
 class InputMemoryStream final : public InputStream {
     friend InputMemoryStream& operator>>(InputMemoryStream& stream, String& string);
 
