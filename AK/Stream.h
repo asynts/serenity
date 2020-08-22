@@ -150,7 +150,7 @@ inline OutputStream& operator<<(OutputStream& stream, ReadonlyBytes bytes)
 }
 
 template<typename T>
-InputStream& operator>>(InputStream& stream, Optional<T> value)
+InputStream& operator>>(InputStream& stream, Optional<T>& value)
 {
     T temporary;
     stream.read_or_error({ &temporary, sizeof(temporary) });
