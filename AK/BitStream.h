@@ -48,7 +48,6 @@ public:
             if (m_next_byte.has_value()) {
                 bytes[0] = m_next_byte.value();
                 m_next_byte.clear();
-                m_bit_offset = 0;
 
                 ++nread;
             }
@@ -74,8 +73,6 @@ public:
         if (count >= 1) {
             if (m_next_byte.has_value()) {
                 m_next_byte.clear();
-                m_bit_offset = 0;
-
                 --count;
             }
         }
@@ -89,15 +86,20 @@ public:
 
         size_t nread = 0;
         while (nread < count) {
+            // For some reason m_next_byte.has_value() is never true?
             if (m_next_byte.has_value()) {
                 const auto bit = (m_next_byte.value() >> m_bit_offset) & 1;
                 result |= bit << nread;
                 ++nread;
+
+                if (m_bit_offset++ == 7)
+                    m_next_byte.clear();
             } else if (m_stream.eof()) {
                 m_error = true;
                 return 0;
             } else {
                 m_stream >> m_next_byte;
+                m_bit_offset = 0;
             }
         }
 

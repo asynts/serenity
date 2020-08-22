@@ -27,7 +27,6 @@
 #pragma once
 
 #include <AK/Assertions.h>
-#include <AK/Forward.h>
 #include <AK/Platform.h>
 #include <AK/StdLibExtras.h>
 #include <AK/Types.h>
@@ -35,17 +34,9 @@
 namespace AK {
 
 template<typename T>
-class alignas(T) [[nodiscard]] Optional;
-
-template<typename T>
-InputStream& operator>>(InputStream&, Optional<T>);
-
-template<typename T>
 class alignas(T) [[nodiscard]] Optional
 {
 public:
-    friend InputStream& operator>><T>(InputStream&, Optional<T>);
-
     Optional() { }
 
     Optional(const T& value)

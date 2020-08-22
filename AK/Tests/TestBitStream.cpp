@@ -53,8 +53,7 @@ TEST_CASE(like_underlying_stream)
         stream1_b >> value1;
 
         EXPECT_EQ(value0, value1);
-        EXPECT_EQ(stream0.offset(), idx * 4);
-        EXPECT_EQ(stream1_a.offset(), idx * 4);
+        EXPECT_EQ(stream0.offset(), stream1_a.offset());
     }
 
     EXPECT(stream0.eof() && stream1_b.eof());
