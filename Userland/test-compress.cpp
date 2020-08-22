@@ -27,6 +27,7 @@
 #include <AK/TestSuite.h>
 
 #include <LibCompress/Deflate.h>
+#include <LibCompress/DeflateDecompressor.h>
 #include <LibCompress/Zlib.h>
 
 bool compare(ReadonlyBytes lhs, ReadonlyBytes rhs)

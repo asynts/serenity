@@ -32,7 +32,7 @@
 
 namespace AK {
 
-template<typename StreamType, typename EnableIf<IsBaseOf<InputStream, StreamType>::value, int>::Type = 0>
+template<typename StreamType = InputStream, typename EnableIf<IsBaseOf<InputStream, StreamType>::value, int>::Type = 0>
 class InputBitStream final : public InputStream {
 public:
     explicit InputBitStream(StreamType& stream)
@@ -105,11 +105,22 @@ public:
         return result;
     }
 
+    bool read_bit() { return static_cast<bool>(read_bits(1)); }
+
+    void align_to_byte_boundary()
+    {
+        if (m_next_byte.has_value())
+            m_next_byte.clear();
+    }
+
 private:
     Optional<u8> m_next_byte;
     size_t m_bit_offset { 0 };
     StreamType& m_stream;
 };
+
+template<typename StreamType>
+explicit InputBitStream(StreamType&) -> InputBitStream<StreamType>;
 
 }
 
