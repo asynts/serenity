@@ -1,6 +1,7 @@
 set(SOURCES
     Deflate.cpp
     Zlib.cpp
+    DeflateDecompressor.cpp
 )
 
 serenity_lib(LibCompress compression)
