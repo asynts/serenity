@@ -26,39 +26,18 @@
 
 #pragma once
 
+#include <AK/BitStream.h>
 #include <AK/CircularQueue.h>
 #include <AK/Span.h>
 #include <AK/Types.h>
 #include <AK/Vector.h>
-#include <cstring>
 
 namespace Compress {
-
-// Reads one bit at a time starting with the rightmost bit
-class BitStreamReader {
-public:
-    BitStreamReader(ReadonlyBytes data)
-        : m_data(data)
-    {
-    }
-
-    i8 read();
-    i8 read_byte();
-    u32 read_bits(u8);
-    u8 get_bit_byte_offset();
-
-private:
-    ReadonlyBytes m_data;
-    size_t m_data_index { 0 };
-
-    i8 m_current_byte { 0 };
-    u8 m_remaining_bits { 0 };
-};
 
 class CanonicalCode {
 public:
     CanonicalCode(Vector<u8>);
-    u32 next_symbol(BitStreamReader&);
+    u32 next_symbol(InputBitStream&);
 
 private:
     Vector<u32> m_symbol_codes;
@@ -67,8 +46,8 @@ private:
 
 class Deflate {
 public:
-    Deflate(ReadonlyBytes data)
-        : m_reader(data)
+    Deflate(InputStream& stream)
+        : m_input_stream(stream)
         , m_literal_length_codes(generate_literal_length_codes())
         , m_fixed_distance_codes(generate_fixed_distance_codes())
     {
@@ -78,8 +57,9 @@ public:
 
     static Vector<u8> decompress_all(ReadonlyBytes bytes)
     {
-        Deflate deflate { bytes };
-        return deflate.decompress();
+        InputMemoryStream memory_stream { bytes };
+        Deflate deflate_stream { memory_stream };
+        return deflate_stream.decompress();
     }
 
 private:
@@ -94,7 +74,8 @@ private:
     Vector<u8> generate_literal_length_codes();
     Vector<u8> generate_fixed_distance_codes();
 
-    BitStreamReader m_reader;
+    InputBitStream m_input_stream;
+
     CircularQueue<u8, 32 * 1024> m_history_buffer;
     Vector<u8, 256> m_output_buffer;
 
