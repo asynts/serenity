@@ -37,11 +37,32 @@ namespace Compress {
 class CanonicalCode {
 public:
     CanonicalCode(ReadonlyBytes);
-    u32 read_symbol(InputBitStream&);
+    u32 read_symbol(InputBitStream&) const;
 
 private:
     Vector<u32> m_symbol_codes;
     Vector<u32> m_symbol_values;
+};
+
+class Deflate;
+
+class CompressedBlock {
+public:
+    CompressedBlock(Deflate& decompressor, const CanonicalCode& length_codes, const CanonicalCode* distance_codes)
+        : m_decompressor(decompressor)
+        , m_length_codes(length_codes)
+        , m_distance_codes(distance_codes)
+    {
+    }
+
+    bool read_next_chunk();
+
+private:
+    bool m_eof { false };
+
+    Deflate& m_decompressor;
+    const CanonicalCode& m_length_codes;
+    const CanonicalCode* m_distance_codes;
 };
 
 class Deflate {
@@ -51,6 +72,12 @@ public:
         , m_literal_length_codes(generate_literal_length_codes())
         , m_fixed_distance_codes(generate_fixed_distance_codes())
     {
+    }
+
+    ~Deflate()
+    {
+        if (m_state == State::ReadingCompressedBlock)
+            m_huffman_block.~CompressedBlock();
     }
 
     Vector<u8> decompress();
@@ -63,6 +90,12 @@ public:
     }
 
 private:
+    enum class State {
+        Idle,
+        ReadingCompressedBlock,
+        ReadingUncompressedBlock
+    };
+
     void decompress_uncompressed_block();
     void decompress_static_block();
     void decompress_dynamic_block();
@@ -73,6 +106,11 @@ private:
     u32 decode_distance(u32);
     Vector<u8> generate_literal_length_codes();
     Vector<u8> generate_fixed_distance_codes();
+
+    State m_state { State::Idle };
+    union {
+        CompressedBlock m_huffman_block;
+    };
 
     InputBitStream m_input_stream;
 
