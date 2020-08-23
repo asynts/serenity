@@ -33,38 +33,39 @@
 
 namespace Compress {
 
-bool DeflateStream::read_next_block() const
+Vector<u8> Deflate::decompress()
 {
-    if (m_read_last_block)
-        return false;
+    bool is_final_block = false;
 
-    m_read_last_block = m_reader.read_bits(1);
-    auto block_type = m_reader.read_bits(2);
+    do {
+        is_final_block = m_reader.read();
+        auto block_type = m_reader.read_bits(2);
 
-    switch (block_type) {
-    case 0:
-        decompress_uncompressed_block();
-        break;
-    case 1:
-        decompress_static_block();
-        break;
-    case 2:
-        decompress_dynamic_block();
-        break;
-    case 3:
-        dbg() << "Block contains reserved block type...";
-        ASSERT_NOT_REACHED();
-        break;
-    default:
-        dbg() << "Invalid block type was read...";
-        ASSERT_NOT_REACHED();
-        break;
-    }
+        switch (block_type) {
+        case 0:
+            decompress_uncompressed_block();
+            break;
+        case 1:
+            decompress_static_block();
+            break;
+        case 2:
+            decompress_dynamic_block();
+            break;
+        case 3:
+            dbg() << "Block contains reserved block type...";
+            ASSERT_NOT_REACHED();
+            break;
+        default:
+            dbg() << "Invalid block type was read...";
+            ASSERT_NOT_REACHED();
+            break;
+        }
+    } while (!is_final_block);
 
-    return true;
+    return m_output_buffer;
 }
 
-void DeflateStream::decompress_uncompressed_block() const
+void Deflate::decompress_uncompressed_block()
 {
     // Align to the next byte boundary.
     while (m_reader.get_bit_byte_offset() != 0) {
@@ -86,16 +87,17 @@ void DeflateStream::decompress_uncompressed_block() const
             ASSERT_NOT_REACHED();
         }
 
-        m_intermediate_stream << byte;
+        m_output_buffer.append(byte);
+        m_history_buffer.enqueue(byte);
     }
 }
 
-void DeflateStream::decompress_static_block() const
+void Deflate::decompress_static_block()
 {
     decompress_huffman_block(m_literal_length_codes, &m_fixed_distance_codes);
 }
 
-void DeflateStream::decompress_dynamic_block() const
+void Deflate::decompress_dynamic_block()
 {
     auto codes = decode_huffman_codes();
     if (codes.size() == 2) {
@@ -105,7 +107,7 @@ void DeflateStream::decompress_dynamic_block() const
     }
 }
 
-void DeflateStream::decompress_huffman_block(CanonicalCode& length_codes, CanonicalCode* distance_codes) const
+void Deflate::decompress_huffman_block(CanonicalCode& length_codes, CanonicalCode* distance_codes)
 {
     for (;;) {
         u32 symbol = length_codes.next_symbol(m_reader);
@@ -117,7 +119,8 @@ void DeflateStream::decompress_huffman_block(CanonicalCode& length_codes, Canoni
 
         // literal byte.
         if (symbol < 256) {
-            m_intermediate_stream << static_cast<u8>(symbol);
+            m_history_buffer.enqueue(symbol);
+            m_output_buffer.append(symbol);
             continue;
         }
 
@@ -141,7 +144,7 @@ void DeflateStream::decompress_huffman_block(CanonicalCode& length_codes, Canoni
     }
 }
 
-Vector<CanonicalCode> DeflateStream::decode_huffman_codes() const
+Vector<CanonicalCode> Deflate::decode_huffman_codes()
 {
     // FIXME: This path is not tested.
     Vector<CanonicalCode> result;
@@ -241,7 +244,7 @@ Vector<CanonicalCode> DeflateStream::decode_huffman_codes() const
     return result;
 }
 
-u32 DeflateStream::decode_run_length(u32 symbol) const
+u32 Deflate::decode_run_length(u32 symbol)
 {
     if (symbol <= 264) {
         return symbol - 254;
@@ -260,7 +263,7 @@ u32 DeflateStream::decode_run_length(u32 symbol) const
     ASSERT_NOT_REACHED();
 }
 
-u32 DeflateStream::decode_distance(u32 symbol) const
+u32 Deflate::decode_distance(u32 symbol)
 {
     if (symbol <= 3) {
         return symbol + 1;
@@ -275,19 +278,15 @@ u32 DeflateStream::decode_distance(u32 symbol) const
     ASSERT_NOT_REACHED();
 }
 
-void DeflateStream::copy_from_history(u32 distance, u32 run) const
+void Deflate::copy_from_history(u32 distance, u32 run)
 {
-    for (size_t i = 0; i < run; i++) {
-        u8 byte;
+    auto head_index = (m_history_buffer.head_index() + m_history_buffer.size()) % m_history_buffer.capacity();
+    auto read_index = (head_index - distance + m_history_buffer.capacity()) % m_history_buffer.capacity();
 
-        // FIXME: In many cases we can read more than one byte at a time, this should
-        //        be refactored into a while loop. Beware, edge case:
-        //
-        //            // The first four bytes are on the stream already, the other four
-        //            // are written by copy_from_history() itself.
-        //            copy_from_history(4, 8);
-        m_intermediate_stream.read({ &byte, sizeof(byte) }, m_intermediate_stream.woffset() - distance);
-        m_intermediate_stream << byte;
+    for (size_t i = 0; i < run; i++) {
+        auto data = m_history_buffer.at(read_index++);
+        m_output_buffer.append(data);
+        m_history_buffer.enqueue(data);
     }
 }
 
@@ -336,7 +335,7 @@ u32 BitStreamReader::read_bits(u8 count)
     return result;
 }
 
-Vector<u8> DeflateStream::generate_literal_length_codes() const
+Vector<u8> Deflate::generate_literal_length_codes()
 {
     Vector<u8> ll_codes;
     ll_codes.resize(288);
@@ -347,7 +346,7 @@ Vector<u8> DeflateStream::generate_literal_length_codes() const
     return ll_codes;
 }
 
-Vector<u8> DeflateStream::generate_fixed_distance_codes() const
+Vector<u8> Deflate::generate_fixed_distance_codes()
 {
     Vector<u8> fd_codes;
     fd_codes.resize(32);
@@ -424,5 +423,4 @@ u32 CanonicalCode::next_symbol(BitStreamReader& reader)
         }
     }
 }
-
 }
