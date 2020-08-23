@@ -106,7 +106,7 @@ void Deflate::decompress_dynamic_block()
 void Deflate::decompress_huffman_block(CanonicalCode& length_codes, CanonicalCode* distance_codes)
 {
     for (;;) {
-        u32 symbol = length_codes.next_symbol(m_input_stream);
+        u32 symbol = length_codes.read_symbol(m_input_stream);
 
         // End of block.
         if (symbol == 256) {
@@ -129,7 +129,7 @@ void Deflate::decompress_huffman_block(CanonicalCode& length_codes, CanonicalCod
             ASSERT_NOT_REACHED();
         }
 
-        auto distance_symbol = distance_codes->next_symbol(m_input_stream);
+        auto distance_symbol = distance_codes->read_symbol(m_input_stream);
         auto distance = decode_distance(distance_symbol);
         if (distance < 1 || distance > 32768) {
             dbg() << "Invalid distance";
@@ -167,7 +167,7 @@ Vector<CanonicalCode> Deflate::decode_huffman_codes()
     code_lens.resize(length_code_count + distance_code_count);
 
     for (size_t index = 0; index < code_lens.capacity();) {
-        auto symbol = code_length_code.next_symbol(m_input_stream);
+        auto symbol = code_length_code.read_symbol(m_input_stream);
 
         if (symbol <= 15) {
             code_lens[index] = symbol;
@@ -305,7 +305,7 @@ Vector<u8> Deflate::generate_fixed_distance_codes()
     return fd_codes;
 }
 
-CanonicalCode::CanonicalCode(Vector<u8> codes)
+CanonicalCode::CanonicalCode(ReadonlyBytes codes)
 {
     m_symbol_codes.resize(codes.size());
     m_symbol_values.resize(codes.size());
@@ -362,7 +362,7 @@ static i32 binary_search(Vector<u32>& heystack, u32 needle)
     return -1;
 }
 
-u32 CanonicalCode::next_symbol(InputBitStream& stream)
+u32 CanonicalCode::read_symbol(InputBitStream& stream)
 {
     auto code_bits = 1;
 
