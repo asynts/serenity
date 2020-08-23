@@ -74,6 +74,25 @@ class DuplexStream
     , public OutputStream {
 };
 
+template<typename T>
+InputStream& operator>>(InputStream& stream, Optional<T>& opt)
+{
+    static_assert(sizeof(T) == sizeof(opt.m_storage));
+    stream.read_or_error({ opt.m_storage, sizeof(opt.m_storage) });
+    opt.m_has_value = true;
+
+    return stream;
+}
+
+template<typename T>
+OutputStream& operator<<(OutputStream& stream, const Optional<T>& opt)
+{
+    if (opt.has_value())
+        return stream << opt.value();
+
+    return stream;
+}
+
 #if defined(__cpp_concepts) && !defined(__COVERITY__)
 template<Concepts::Integral Integral>
 #else
@@ -440,7 +459,6 @@ private:
     size_t m_base_offset { 0 };
     bool m_do_discard_chunks { false };
 };
-
 }
 
 using AK::DuplexMemoryStream;
