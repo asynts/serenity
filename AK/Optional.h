@@ -35,12 +35,12 @@
 namespace AK {
 
 template<typename T>
-InputStream& operator>>(InputStream&, Optional<T>);
+InputStream& operator>>(InputStream&, Optional<T>&);
 
 template<typename T>
 class alignas(T) [[nodiscard]] Optional
 {
-    friend InputStream& operator>><T>(InputStream&, Optional<T>);
+    friend InputStream& operator>><T>(InputStream&, Optional<T>&);
 
 public:
     Optional() { }
