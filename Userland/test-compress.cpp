@@ -52,7 +52,7 @@ TEST_CASE(deflate_decompress_compressed_block)
 
     const u8 uncompressed[] = "This is a simple text file :)";
 
-    const auto decompressed = Compress::DeflateStream::decompress_all({ compressed, sizeof(compressed) });
+    const auto decompressed = Compress::Deflate::decompress_all({ compressed, sizeof(compressed) });
     EXPECT(compare({ uncompressed, sizeof(uncompressed) - 1 }, decompressed.span()));
 }
 
@@ -67,7 +67,7 @@ TEST_CASE(zlib_simple_decompress)
 
     const u8 uncompressed[] = "This is a simple text file :)";
 
-    const auto decompressed = Compress::Zlib { { compressed, sizeof(compressed) } }.decompress();
+    const auto decompressed = Compress::Zlib::decompress_all({ compressed, sizeof(compressed) });
     EXPECT(compare({ uncompressed, sizeof(uncompressed) - 1 }, decompressed.span()));
 }
 

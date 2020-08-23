@@ -38,6 +38,12 @@ public:
     Vector<u8> decompress();
     u32 checksum();
 
+    static Vector<u8> decompress_all(ReadonlyBytes bytes)
+    {
+        Zlib zlib { bytes };
+        return zlib.decompress();
+    }
+
 private:
     u8 m_compression_method;
     u8 m_compression_info;
@@ -49,5 +55,4 @@ private:
     ReadonlyBytes m_input_data;
     ReadonlyBytes m_data_bytes;
 };
-
 }
