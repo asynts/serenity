@@ -36,8 +36,8 @@ namespace Compress {
 
 class CanonicalCode {
 public:
-    CanonicalCode(Vector<u8>);
-    u32 next_symbol(InputBitStream&);
+    CanonicalCode(ReadonlyBytes);
+    u32 read_symbol(InputBitStream&);
 
 private:
     Vector<u32> m_symbol_codes;
@@ -82,4 +82,5 @@ private:
     CanonicalCode m_literal_length_codes;
     CanonicalCode m_fixed_distance_codes;
 };
+
 }
