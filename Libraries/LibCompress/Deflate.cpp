@@ -44,7 +44,6 @@ bool CompressedBlock::try_read_more()
 
     if (symbol < 256) {
         m_decompressor.m_history_buffer.enqueue(static_cast<u8>(symbol));
-        m_decompressor.m_output_buffer.append(static_cast<u8>(symbol));
         return true;
     } else if (symbol == 256) {
         m_eof = true;
@@ -65,55 +64,25 @@ bool UncompressedBlock::try_read_more()
     if (m_bytes_remaining == 0)
         return false;
 
+    const auto start_offset = (m_decompressor.m_history_buffer.head_index() + m_decompressor.m_history_buffer.size()) % m_decompressor.m_history_buffer.capacity();
+
     const auto max_contiguous_size = min(
         m_decompressor.m_history_buffer.capacity() - m_decompressor.m_history_buffer.size(),
-        m_decompressor.m_history_buffer.capacity() - m_decompressor.m_history_buffer.head_index());
+        m_decompressor.m_history_buffer.capacity() - start_offset;
 
     const auto nread = min(max_contiguous_size, m_bytes_remaining);
     m_bytes_remaining -= nread;
 
-    // FIXME: The following can be greatly simplified by removing m_decompressor.m_output_buffer.
-
-    const auto offset = m_decompressor.m_output_buffer.size();
-    m_decompressor.m_output_buffer.grow_capacity(offset + nread);
-    m_decompressor.m_input_stream.read_or_error(m_decompressor.m_output_buffer.span().slice(offset));
-
-    for (size_t idx = 0; idx < nread; ++idx)
-        m_decompressor.m_history_buffer.enqueue(m_decompressor.m_output_buffer[offset + idx]);
+    auto bytes = ReadonlyBytes { m_decompressor.m_history_buffer.elements_FIXME() + start_offset, nread };
+    m_decompressor.m_input_stream.read_or_error(bytes);
+    m_decompressor.m_history_buffer.skip_FIXME(nread);
 
     return true;
 }
 
 Vector<u8> Deflate::decompress()
 {
-    bool is_final_block = false;
-
-    do {
-        is_final_block = m_input_stream.read_bit();
-        auto block_type = m_input_stream.read_bits(2);
-
-        switch (block_type) {
-        case 0:
-            decompress_uncompressed_block();
-            break;
-        case 1:
-            decompress_static_block();
-            break;
-        case 2:
-            decompress_dynamic_block();
-            break;
-        case 3:
-            dbg() << "Block contains reserved block type...";
-            ASSERT_NOT_REACHED();
-            break;
-        default:
-            dbg() << "Invalid block type was read...";
-            ASSERT_NOT_REACHED();
-            break;
-        }
-    } while (!is_final_block);
-
-    return m_output_buffer;
+    TODO();
 }
 
 void Deflate::decompress_uncompressed_block()
@@ -132,194 +101,36 @@ void Deflate::decompress_uncompressed_block()
         u8 byte;
         m_input_stream >> byte;
 
-        m_output_buffer.append(byte);
         m_history_buffer.enqueue(byte);
     }
 }
 
-void Deflate::decompress_static_block()
-{
-    decompress_huffman_block(m_literal_length_codes, &m_fixed_distance_codes);
-}
-
-void Deflate::decompress_dynamic_block()
-{
-    auto codes = decode_huffman_codes();
-    if (codes.size() == 2) {
-        decompress_huffman_block(codes[0], &codes[1]);
-    } else {
-        decompress_huffman_block(codes[0], nullptr);
-    }
-}
-
-void Deflate::decompress_huffman_block(CanonicalCode& length_codes, CanonicalCode* distance_codes)
-{
-    for (;;) {
-        u32 symbol = length_codes.read_symbol(m_input_stream);
-
-        // End of block.
-        if (symbol == 256) {
-            break;
-        }
-
-        // literal byte.
-        if (symbol < 256) {
-            m_history_buffer.enqueue(symbol);
-            m_output_buffer.append(symbol);
-            continue;
-        }
-
-        // Length and distance for copying.
-        ASSERT(distance_codes);
-
-        auto run = decode_run_length(symbol);
-        if (run < 3 || run > 258) {
-            dbg() << "Invalid run length";
-            ASSERT_NOT_REACHED();
-        }
-
-        auto distance_symbol = distance_codes->read_symbol(m_input_stream);
-        auto distance = decode_distance(distance_symbol);
-        if (distance < 1 || distance > 32768) {
-            dbg() << "Invalid distance";
-            ASSERT_NOT_REACHED();
-        }
-
-        copy_from_history(distance, run);
-    }
-}
-
-Vector<CanonicalCode> Deflate::decode_huffman_codes()
-{
-    // FIXME: This path is not tested.
-    Vector<CanonicalCode> result;
-
-    auto length_code_count = m_input_stream.read_bits(5) + 257;
-    auto distance_code_count = m_input_stream.read_bits(5) + 1;
-
-    size_t length_code_code_length = m_input_stream.read_bits(4) + 4;
-
-    Vector<u8> code_length_code_length;
-    code_length_code_length.resize(19);
-    code_length_code_length[16] = m_input_stream.read_bits(3);
-    code_length_code_length[17] = m_input_stream.read_bits(3);
-    code_length_code_length[18] = m_input_stream.read_bits(3);
-    code_length_code_length[0] = m_input_stream.read_bits(3);
-    for (size_t i = 0; i < length_code_code_length; i++) {
-        auto index = (i % 2 == 0) ? (8 + (i / 2)) : (7 - (i / 2));
-        code_length_code_length[index] = m_input_stream.read_bits(3);
-    }
-
-    auto code_length_code = CanonicalCode(code_length_code_length);
-
-    Vector<u32> code_lens;
-    code_lens.resize(length_code_count + distance_code_count);
-
-    for (size_t index = 0; index < code_lens.capacity();) {
-        auto symbol = code_length_code.read_symbol(m_input_stream);
-
-        if (symbol <= 15) {
-            code_lens[index] = symbol;
-            index++;
-            continue;
-        }
-
-        u32 run_length;
-        u32 run_value = 0;
-
-        if (symbol == 16) {
-            if (index == 0) {
-                dbg() << "No code length value avaliable";
-                ASSERT_NOT_REACHED();
-            }
-
-            run_length = m_input_stream.read_bits(2) + 3;
-            run_value = code_lens[index - 1];
-        } else if (symbol == 17) {
-            run_length = m_input_stream.read_bits(3) + 3;
-        } else if (symbol == 18) {
-            run_length = m_input_stream.read_bits(7) + 11;
-        } else {
-            dbg() << "Code symbol is out of range!";
-            ASSERT_NOT_REACHED();
-        }
-
-        u32 end = index + run_length;
-        if (end > code_lens.capacity()) {
-            dbg() << "Code run is out of range!";
-            ASSERT_NOT_REACHED();
-        }
-
-        memset(code_lens.data() + index, run_value, run_length);
-        index = end;
-    }
-
-    Vector<u8> literal_codes;
-    literal_codes.resize(length_code_count);
-    memcpy(literal_codes.data(), code_lens.data(), literal_codes.capacity());
-    result.append(CanonicalCode(literal_codes));
-
-    Vector<u8> distance_codes;
-    distance_codes.resize(distance_code_count);
-    memcpy(distance_codes.data(), code_lens.data() + length_code_count, distance_codes.capacity());
-
-    if (distance_code_count == 1 && distance_codes[0] == 0) {
-        return result;
-    }
-
-    u8 one_count = 0;
-    u8 other_count = 0;
-
-    for (size_t i = 0; i < distance_codes.capacity(); i++) {
-        u8 value = distance_codes.at(i);
-
-        if (value == 1) {
-            one_count++;
-        } else if (value > 1) {
-            other_count++;
-        }
-    }
-
-    if (one_count == 1 && other_count == 0) {
-        distance_codes.resize(32);
-        distance_codes[31] = 1;
-    }
-
-    result.append(CanonicalCode(distance_codes));
-    return result;
-}
-
 u32 Deflate::decode_run_length(u32 symbol)
 {
-    if (symbol <= 264) {
+    if (symbol <= 264)
         return symbol - 254;
-    }
 
     if (symbol <= 284) {
         auto extra_bits = (symbol - 261) / 4;
-        return ((((symbol - 265) % 4) + 4) << extra_bits) + 3 + m_input_stream.read_bits(extra_bits);
+        return (((symbol - 265) % 4 + 4) << extra_bits) + 3 + m_input_stream.read_bits(extra_bits);
     }
 
-    if (symbol == 285) {
+    if (symbol == 285)
         return 258;
-    }
 
-    dbg() << "Found invalid symbol in run length " << symbol;
     ASSERT_NOT_REACHED();
 }
 
 u32 Deflate::decode_distance(u32 symbol)
 {
-    if (symbol <= 3) {
+    if (symbol <= 3)
         return symbol + 1;
-    }
 
     if (symbol <= 29) {
         auto extra_bits = (symbol / 2) - 1;
-        return (((symbol % 2) + 2) << extra_bits) + 1 + m_input_stream.read_bits(extra_bits);
+        return ((symbol % 2 + 2) << extra_bits) + 1 + m_input_stream.read_bits(extra_bits);
     }
 
-    dbg() << "Found invalid symbol in distance" << symbol;
     ASSERT_NOT_REACHED();
 }
 
@@ -330,7 +141,6 @@ void Deflate::copy_from_history(u32 distance, u32 run)
 
     for (size_t i = 0; i < run; i++) {
         auto data = m_history_buffer.at(read_index++);
-        m_output_buffer.append(data);
         m_history_buffer.enqueue(data);
     }
 }
