@@ -35,9 +35,53 @@
 
 namespace Compress {
 
-bool CompressedBlock::read_next_chunk()
+bool CompressedBlock::try_read_more()
 {
-    TODO();
+    if (m_eof == true)
+        return false;
+
+    const auto symbol = m_length_codes.read_symbol(m_decompressor.m_input_stream);
+
+    if (symbol < 256) {
+        m_decompressor.m_history_buffer.enqueue(static_cast<u8>(symbol));
+        m_decompressor.m_output_buffer.append(static_cast<u8>(symbol));
+        return true;
+    } else if (symbol == 256) {
+        m_eof = true;
+        return false;
+    } else {
+        ASSERT(m_distance_codes);
+
+        const auto run_length = m_decompressor.decode_run_length(symbol);
+        const auto distance = m_decompressor.decode_distance(m_distance_codes->read_symbol(m_decompressor.m_input_stream));
+        m_decompressor.copy_from_history(distance, run_length);
+
+        return true;
+    }
+}
+
+bool UncompressedBlock::try_read_more()
+{
+    if (m_bytes_remaining == 0)
+        return false;
+
+    const auto max_contiguous_size = min(
+        m_decompressor.m_history_buffer.capacity() - m_decompressor.m_history_buffer.size(),
+        m_decompressor.m_history_buffer.capacity() - m_decompressor.m_history_buffer.head_index());
+
+    const auto nread = min(max_contiguous_size, m_bytes_remaining);
+    m_bytes_remaining -= nread;
+
+    // FIXME: The following can be greatly simplified by removing m_decompressor.m_output_buffer.
+
+    const auto offset = m_decompressor.m_output_buffer.size();
+    m_decompressor.m_output_buffer.grow_capacity(offset + nread);
+    m_decompressor.m_input_stream.read_or_error(m_decompressor.m_output_buffer.span().slice(offset));
+
+    for (size_t idx = 0; idx < nread; ++idx)
+        m_decompressor.m_history_buffer.enqueue(m_decompressor.m_output_buffer[offset + idx]);
+
+    return true;
 }
 
 Vector<u8> Deflate::decompress()
