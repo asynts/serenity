@@ -43,7 +43,7 @@ bool CompressedBlock::try_read_more()
     const auto symbol = m_length_codes.read_symbol(m_decompressor.m_input_stream);
 
     if (symbol < 256) {
-        m_decompressor.m_history_buffer.enqueue(static_cast<u8>(symbol));
+        m_decompressor.m_output_stream << static_cast<u8>(symbol);
         return true;
     } else if (symbol == 256) {
         m_eof = true;
@@ -53,7 +53,9 @@ bool CompressedBlock::try_read_more()
 
         const auto run_length = m_decompressor.decode_run_length(symbol);
         const auto distance = m_decompressor.decode_distance(m_distance_codes->read_symbol(m_decompressor.m_input_stream));
-        m_decompressor.copy_from_history(distance, run_length);
+
+        auto bytes = m_decompressor.m_output_stream.reserve_contigous(run_length);
+        m_decompressor.m_output_stream.read(bytes, distance);
 
         return true;
     }
@@ -64,48 +66,15 @@ bool UncompressedBlock::try_read_more()
     if (m_bytes_remaining == 0)
         return false;
 
-    const auto start_offset = (m_decompressor.m_history_buffer.head_index() + m_decompressor.m_history_buffer.size()) % m_decompressor.m_history_buffer.capacity();
-
-    const auto max_contiguous_size = min(
-        m_decompressor.m_history_buffer.capacity() - m_decompressor.m_history_buffer.size(),
-        m_decompressor.m_history_buffer.capacity() - start_offset;
-
-    const auto nread = min(max_contiguous_size, m_bytes_remaining);
+    const auto nread = min(m_bytes_remaining, m_decompressor.m_output_stream.remaining_contigous_space());
     m_bytes_remaining -= nread;
 
-    auto bytes = ReadonlyBytes { m_decompressor.m_history_buffer.elements_FIXME() + start_offset, nread };
-    m_decompressor.m_input_stream.read_or_error(bytes);
-    m_decompressor.m_history_buffer.skip_FIXME(nread);
+    m_decompressor.m_input_stream >> m_decompressor.m_output_stream.reserve_contigous(nread);
 
     return true;
 }
 
-Vector<u8> Deflate::decompress()
-{
-    TODO();
-}
-
-void Deflate::decompress_uncompressed_block()
-{
-    m_input_stream.align_to_byte_boundary();
-
-    auto length = m_input_stream.read_bits(16) & 0xFFFF;
-    auto negated_length = m_input_stream.read_bits(16) & 0xFFFF;
-
-    if ((length ^ 0xFFFF) != negated_length) {
-        dbg() << "Block length is invalid...";
-        ASSERT_NOT_REACHED();
-    }
-
-    for (size_t i = 0; i < length; i++) {
-        u8 byte;
-        m_input_stream >> byte;
-
-        m_history_buffer.enqueue(byte);
-    }
-}
-
-u32 Deflate::decode_run_length(u32 symbol)
+u32 DeflateDecompressor::decode_run_length(u32 symbol)
 {
     if (symbol <= 264)
         return symbol - 254;
@@ -121,7 +90,7 @@ u32 Deflate::decode_run_length(u32 symbol)
     ASSERT_NOT_REACHED();
 }
 
-u32 Deflate::decode_distance(u32 symbol)
+u32 DeflateDecompressor::decode_distance(u32 symbol)
 {
     if (symbol <= 3)
         return symbol + 1;
@@ -134,18 +103,7 @@ u32 Deflate::decode_distance(u32 symbol)
     ASSERT_NOT_REACHED();
 }
 
-void Deflate::copy_from_history(u32 distance, u32 run)
-{
-    auto head_index = (m_history_buffer.head_index() + m_history_buffer.size()) % m_history_buffer.capacity();
-    auto read_index = (head_index - distance + m_history_buffer.capacity()) % m_history_buffer.capacity();
-
-    for (size_t i = 0; i < run; i++) {
-        auto data = m_history_buffer.at(read_index++);
-        m_history_buffer.enqueue(data);
-    }
-}
-
-Vector<u8> Deflate::generate_literal_length_codes()
+Vector<u8> DeflateDecompressor::generate_literal_length_codes()
 {
     Vector<u8> ll_codes;
     ll_codes.resize(288);
@@ -156,7 +114,7 @@ Vector<u8> Deflate::generate_literal_length_codes()
     return ll_codes;
 }
 
-Vector<u8> Deflate::generate_fixed_distance_codes()
+Vector<u8> DeflateDecompressor::generate_fixed_distance_codes()
 {
     Vector<u8> fd_codes;
     fd_codes.resize(32);

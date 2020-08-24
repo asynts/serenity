@@ -113,6 +113,19 @@ public:
 
     bool eof() const override { return m_queue.size() == 0; }
 
+    size_t remaining_contigous_space() const {
+        return min(Capacity - m_queue.size(), m_queue.capacity() - (m_queue.head_index() + m_queue.size()) % Capacity)
+    }
+
+    Bytes reserve_contigous(size_t count)
+    {
+        ASSERT(count <= remaining_contigous_space());
+        Bytes bytes { m_queue.m_storage + (m_queue.head_index() + m_queue.size()) % Capacity, count };
+        m_queue.m_size += count;
+
+        return bytes;
+    }
+
 private:
     CircularQueue<u8, Capacity> m_queue;
     size_t m_total_written { 0 };

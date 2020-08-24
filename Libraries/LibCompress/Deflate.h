@@ -32,6 +32,9 @@
 #include <AK/Types.h>
 #include <AK/Vector.h>
 
+#include <AK/ByteBuffer.h>
+#include <LibCompress/CircularDuplexStream.h>
+
 namespace Compress {
 
 class CanonicalCode {
@@ -44,11 +47,11 @@ private:
     Vector<u32> m_symbol_values;
 };
 
-class Deflate;
+class DeflateDecompressor;
 
 class CompressedBlock {
 public:
-    CompressedBlock(Deflate& decompressor, const CanonicalCode& length_codes, const CanonicalCode* distance_codes)
+    CompressedBlock(DeflateDecompressor& decompressor, const CanonicalCode& length_codes, const CanonicalCode* distance_codes)
         : m_decompressor(decompressor)
         , m_length_codes(length_codes)
         , m_distance_codes(distance_codes)
@@ -60,14 +63,14 @@ public:
 private:
     bool m_eof { false };
 
-    Deflate& m_decompressor;
+    DeflateDecompressor& m_decompressor;
     const CanonicalCode& m_length_codes;
     const CanonicalCode* m_distance_codes;
 };
 
 class UncompressedBlock {
 public:
-    UncompressedBlock(Deflate& decompressor, size_t length)
+    UncompressedBlock(DeflateDecompressor& decompressor, size_t length)
         : m_decompressor(decompressor)
         , m_bytes_remaining(length)
     {
@@ -76,20 +79,20 @@ public:
     bool try_read_more();
 
 private:
-    Deflate& m_decompressor;
+    DeflateDecompressor& m_decompressor;
     size_t m_bytes_remaining;
 };
 
-class Deflate {
+class DeflateDecompressor : public InputStream {
 public:
-    Deflate(InputStream& stream)
+    DeflateDecompressor(InputStream& stream)
         : m_input_stream(stream)
         , m_literal_length_codes(generate_literal_length_codes())
         , m_fixed_distance_codes(generate_fixed_distance_codes())
     {
     }
 
-    ~Deflate()
+    ~DeflateDecompressor()
     {
         if (m_state == State::ReadingCompressedBlock)
             m_compressed_block.~CompressedBlock();
@@ -97,18 +100,79 @@ public:
             m_uncompressed_block.~UncompressedBlock();
     }
 
-    size_t read(Bytes bytes)
+    size_t read(Bytes bytes) override
     {
-        TODO();
+        if (m_state == State::Idle) {
+            TODO();
+        }
+
+        if (m_state == State::ReadingCompressedBlock) {
+            auto nread = m_output_stream.read(bytes);
+
+            while (nread < bytes.size() && m_compressed_block.try_read_more()) {
+                nread += m_output_stream.read(bytes.slice(nread));
+            }
+
+            if (nread == bytes.size())
+                return nread;
+
+            m_compressed_block.~CompressedBlock();
+            m_state = State::Idle;
+
+            return nread + read(bytes.slice(nread));
+        }
+
+        if (m_state == State::ReadingUncompressedBlock) {
+            auto nread = m_output_stream.read(bytes);
+
+            while (nread < bytes.size() && m_uncompressed_block.try_read_more()) {
+                nread += m_output_stream.read(bytes.slice(nread));
+            }
+
+            if (nread == bytes.size())
+                return nread;
+
+            m_uncompressed_block.~CompressedBlock();
+            m_state = State::Idle;
+
+            return nread + read(bytes.slice(nread));
+        }
+
+        ASSERT_NOT_REACHED();
     }
 
-    Vector<u8> decompress();
+    bool read_or_error(Bytes bytes) override
+    {
+        if (read(bytes) < bytes.size()) {
+            m_error = true;
+            return false;
+        }
 
-    static Vector<u8> decompress_all(ReadonlyBytes bytes)
+        return true;
+    }
+
+    bool discard_or_error(size_t count) override { TODO(); }
+    bool eof() const override { TODO(); }
+
+    static ByteBuffer decompress_all(ReadonlyBytes bytes)
     {
         InputMemoryStream memory_stream { bytes };
-        Deflate deflate_stream { memory_stream };
-        return deflate_stream.decompress();
+        InputBitStream bit_stream { memory_stream };
+        DeflateDecompressor deflate_stream { bit_stream };
+
+        // FIXME: Add an OutputMemoryStream class?
+
+        ByteBuffer buffer { 4096 };
+        size_t nread = 0;
+
+        while (!deflate_stream.eof()) {
+            nread += deflate_stream.read(buffer.bytes().slice(nread));
+            if (buffer.size() - nread < 4096)
+                buffer.grow(buffer.size() + 4096);
+        }
+
+        buffer.trim(nread);
+        return buffer;
     }
 
 private:
@@ -118,14 +182,9 @@ private:
         ReadingUncompressedBlock
     };
 
-    void decompress_uncompressed_block();
-    void decompress_static_block();
-    void decompress_dynamic_block();
-    void decompress_huffman_block(CanonicalCode&, CanonicalCode*);
-    Vector<CanonicalCode> decode_huffman_codes();
-    void copy_from_history(u32, u32);
     u32 decode_run_length(u32);
     u32 decode_distance(u32);
+
     Vector<u8> generate_literal_length_codes();
     Vector<u8> generate_fixed_distance_codes();
 
@@ -136,8 +195,7 @@ private:
     };
 
     InputBitStream m_input_stream;
-
-    CircularQueue<u8, 32 * 1024> m_history_buffer;
+    AK::CircularDuplexStream m_output_stream;
 
     CanonicalCode m_literal_length_codes;
     CanonicalCode m_fixed_distance_codes;
