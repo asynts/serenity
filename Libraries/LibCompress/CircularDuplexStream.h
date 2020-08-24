@@ -70,12 +70,21 @@ public:
 
     size_t read(Bytes bytes, size_t seekback)
     {
-        ASSERT(seekback >= m_total_written);
         ASSERT(seekback <= 64 * 1024);
+
+        if (seekback > m_total_written) {
+            m_error = true;
+            return 0;
+        }
 
         const auto nread = min(bytes.size(), seekback);
 
-        TODO();
+        for (size_t idx = 0; idx < nread; ++idx) {
+            const auto index = (m_total_written - seekback + idx) % Capacity;
+            bytes[idx] = m_queue.m_storage[index];
+        }
+
+        return nread;
     }
 
     bool read_or_error(Bytes bytes) override
