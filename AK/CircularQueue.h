@@ -34,6 +34,8 @@ namespace AK {
 
 template<typename T, size_t Capacity>
 class CircularQueue {
+    friend class ::Compress::CircularDuplexStream;
+
 public:
     CircularQueue()
     {
@@ -118,19 +120,6 @@ public:
 
     ConstIterator begin() const { return ConstIterator(*this, m_head); }
     ConstIterator end() const { return ConstIterator(*this, size()); }
-
-    T* elements_FIXME() { return elements(); }
-
-    void skip_FIXME(size_t count)
-    {
-        m_head = (m_head + count) % Capacity;
-        m_size += count;
-    }
-
-    void consume_FIXME(size_t count)
-    {
-        m_size -= count;
-    }
 
     size_t head_index() const { return m_head; }
 
