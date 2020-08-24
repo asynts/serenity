@@ -38,8 +38,8 @@ int integral_compare(const T& a, const T& b)
     return a - b;
 }
 
-template<typename T, typename Compare>
-T* binary_search(Span<T> haystack, const T& needle, Compare compare = integral_compare, size_t* nearby_index = nullptr)
+template<typename T, typename Compare = decltype(integral_compare<T>)>
+T* binary_search(Span<T> haystack, const typename RemoveConst<T>::Type& needle, size_t* nearby_index = nullptr, Compare compare = integral_compare)
 {
     if (haystack.size() == 0) {
         if (nearby_index)

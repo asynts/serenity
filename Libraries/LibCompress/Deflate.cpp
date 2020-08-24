@@ -25,6 +25,7 @@
  */
 
 #include <AK/Assertions.h>
+#include <AK/BinarySearch.h>
 #include <AK/LogStream.h>
 #include <AK/Span.h>
 #include <AK/Types.h>
@@ -391,37 +392,16 @@ CanonicalCode::CanonicalCode(Vector<u8> codes)
     }
 }
 
-static i32 binary_search(Vector<u32>& heystack, u32 needle)
-{
-    i32 low = 0;
-    i32 high = heystack.size();
-
-    while (low <= high) {
-        u32 mid = (low + high) >> 1;
-        u32 value = heystack.at(mid);
-
-        if (value < needle) {
-            low = mid + 1;
-        } else if (value > needle) {
-            high = mid - 1;
-        } else {
-            return mid;
-        }
-    }
-
-    return -1;
-}
-
 u32 CanonicalCode::next_symbol(BitStreamReader& reader)
 {
-    auto code_bits = 1;
+    u32 code_bits = 1;
 
     for (;;) {
         code_bits = code_bits << 1 | reader.read();
-        i32 index = binary_search(m_symbol_codes, code_bits);
-        if (index >= 0) {
+
+        size_t index;
+        if (binary_search(m_symbol_codes.span(), code_bits, &index))
             return m_symbol_values.at(index);
-        }
     }
 }
 
