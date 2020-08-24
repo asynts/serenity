@@ -55,7 +55,7 @@ public:
     {
     }
 
-    bool read_next_chunk();
+    bool try_read_more();
 
 private:
     bool m_eof { false };
@@ -63,6 +63,21 @@ private:
     Deflate& m_decompressor;
     const CanonicalCode& m_length_codes;
     const CanonicalCode* m_distance_codes;
+};
+
+class UncompressedBlock {
+public:
+    UncompressedBlock(Deflate& decompressor, size_t length)
+        : m_decompressor(decompressor)
+        , m_bytes_remaining(length)
+    {
+    }
+
+    bool try_read_more();
+
+private:
+    Deflate& m_decompressor;
+    size_t m_bytes_remaining;
 };
 
 class Deflate {
@@ -119,6 +134,9 @@ private:
 
     CanonicalCode m_literal_length_codes;
     CanonicalCode m_fixed_distance_codes;
+
+    friend CompressedBlock;
+    friend UncompressedBlock;
 };
 
 }
