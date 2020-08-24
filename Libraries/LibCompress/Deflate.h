@@ -92,7 +92,14 @@ public:
     ~Deflate()
     {
         if (m_state == State::ReadingCompressedBlock)
-            m_huffman_block.~CompressedBlock();
+            m_compressed_block.~CompressedBlock();
+        if (m_state == State::ReadingUncompressedBlock)
+            m_uncompressed_block.~UncompressedBlock();
+    }
+
+    size_t read(Bytes bytes)
+    {
+        TODO();
     }
 
     Vector<u8> decompress();
@@ -124,13 +131,13 @@ private:
 
     State m_state { State::Idle };
     union {
-        CompressedBlock m_huffman_block;
+        CompressedBlock m_compressed_block;
+        UncompressedBlock m_uncompressed_block;
     };
 
     InputBitStream m_input_stream;
 
     CircularQueue<u8, 32 * 1024> m_history_buffer;
-    Vector<u8, 256> m_output_buffer;
 
     CanonicalCode m_literal_length_codes;
     CanonicalCode m_fixed_distance_codes;
