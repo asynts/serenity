@@ -52,8 +52,8 @@ TEST_CASE(deflate_decompress_compressed_block)
 
     const u8 uncompressed[] = "This is a simple text file :)";
 
-    const auto decompressed = Compress::Deflate::decompress_all({ compressed, sizeof(compressed) });
-    EXPECT(compare({ uncompressed, sizeof(uncompressed) - 1 }, decompressed.span()));
+    const auto decompressed = Compress::DeflateDecompressor::decompress_all({ compressed, sizeof(compressed) });
+    EXPECT(compare({ uncompressed, sizeof(uncompressed) - 1 }, decompressed.bytes()));
 }
 
 TEST_CASE(deflate_decompress_uncompressed_block)
@@ -65,8 +65,8 @@ TEST_CASE(deflate_decompress_uncompressed_block)
 
     const u8 uncompressed[] = "Hello, World!";
 
-    const auto decompressed = Compress::Deflate::decompress_all({ compressed, sizeof(compressed) });
-    EXPECT(compare({ uncompressed, sizeof(uncompressed) - 1 }, decompressed.span()));
+    const auto decompressed = Compress::DeflateDecompressor::decompress_all({ compressed, sizeof(compressed) });
+    EXPECT(compare({ uncompressed, sizeof(uncompressed) - 1 }, decompressed.bytes()));
 }
 
 TEST_CASE(deflate_decompress_multiple_blocks)
@@ -82,8 +82,8 @@ TEST_CASE(deflate_decompress_multiple_blocks)
 
     const u8 uncompressed[] = "The first block is uncompressed and the second block is compressed.";
 
-    const auto decompressed = Compress::Deflate::decompress_all({ compressed, sizeof(compressed) });
-    EXPECT(compare({ uncompressed, sizeof(uncompressed) - 1 }, decompressed.span()));
+    const auto decompressed = Compress::DeflateDecompressor::decompress_all({ compressed, sizeof(compressed) });
+    EXPECT(compare({ uncompressed, sizeof(uncompressed) - 1 }, decompressed.bytes()));
 }
 
 TEST_CASE(zlib_decompress_simple)
@@ -98,7 +98,7 @@ TEST_CASE(zlib_decompress_simple)
     const u8 uncompressed[] = "This is a simple text file :)";
 
     const auto decompressed = Compress::Zlib::decompress_all({ compressed, sizeof(compressed) });
-    EXPECT(compare({ uncompressed, sizeof(uncompressed) - 1 }, decompressed.span()));
+    EXPECT(compare({ uncompressed, sizeof(uncompressed) - 1 }, decompressed.bytes()));
 }
 
 TEST_MAIN(Compress)

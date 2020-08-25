@@ -132,7 +132,7 @@ public:
             if (nread == bytes.size())
                 return nread;
 
-            m_uncompressed_block.~CompressedBlock();
+            m_uncompressed_block.~UncompressedBlock();
             m_state = State::Idle;
 
             return nread + read(bytes.slice(nread));
@@ -151,7 +151,7 @@ public:
         return true;
     }
 
-    bool discard_or_error(size_t count) override { TODO(); }
+    bool discard_or_error(size_t) override { TODO(); }
     bool eof() const override { TODO(); }
 
     static ByteBuffer decompress_all(ReadonlyBytes bytes)
@@ -160,9 +160,7 @@ public:
         InputBitStream bit_stream { memory_stream };
         DeflateDecompressor deflate_stream { bit_stream };
 
-        // FIXME: Add an OutputMemoryStream class?
-
-        ByteBuffer buffer { 4096 };
+        auto buffer = ByteBuffer::create_uninitialized(4096);
         size_t nread = 0;
 
         while (!deflate_stream.eof()) {
@@ -195,7 +193,7 @@ private:
     };
 
     InputBitStream m_input_stream;
-    AK::CircularDuplexStream m_output_stream;
+    CircularDuplexStream<64 * 1024> m_output_stream;
 
     CanonicalCode m_literal_length_codes;
     CanonicalCode m_fixed_distance_codes;

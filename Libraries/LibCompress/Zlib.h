@@ -26,19 +26,20 @@
 
 #pragma once
 
+#include <AK/ByteBuffer.h>
 #include <AK/Span.h>
 #include <AK/Types.h>
-#include <AK/Vector.h>
 
 namespace Compress {
+
 class Zlib {
 public:
     Zlib(ReadonlyBytes data);
 
-    Vector<u8> decompress();
+    ByteBuffer decompress();
     u32 checksum();
 
-    static Vector<u8> decompress_all(ReadonlyBytes bytes)
+    static ByteBuffer decompress_all(ReadonlyBytes bytes)
     {
         Zlib zlib { bytes };
         return zlib.decompress();
@@ -55,4 +56,5 @@ private:
     ReadonlyBytes m_input_data;
     ReadonlyBytes m_data_bytes;
 };
+
 }
