@@ -103,8 +103,6 @@ u32 DeflateDecompressor::decode_distance(u32 symbol)
     ASSERT_NOT_REACHED();
 }
 
-void DeflateDecompressor::decode_codes(CanonicalCode&, CanonicalCode&) { TODO(); }
-
 CanonicalCode::CanonicalCode(ReadonlyBytes codes)
 {
     m_symbol_codes.resize(codes.size());
