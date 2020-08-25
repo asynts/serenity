@@ -28,13 +28,13 @@
 
 #include <AK/BitStream.h>
 #include <AK/ByteBuffer.h>
+#include <AK/CircularDuplexStream.h>
 #include <AK/CircularQueue.h>
 #include <AK/FixedArray.h>
 #include <AK/Span.h>
 #include <AK/Types.h>
 #include <AK/Vector.h>
 
-#include <LibCompress/CircularDuplexStream.h>
 #include <LibCompress/Endian.h>
 
 namespace Compress {

@@ -29,7 +29,7 @@
 #include <AK/CircularQueue.h>
 #include <AK/Stream.h>
 
-namespace Compress {
+namespace AK {
 
 // FIXME: There are a lot of raw loops here, that's not necessary an issue but it
 //        has to be verified that the optimizer is able to insert memcpy instead.
@@ -133,3 +133,5 @@ private:
 };
 
 }
+
+using AK::CircularDuplexStream;
