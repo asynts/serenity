@@ -33,7 +33,7 @@ template<typename T>
 class [[gnu::packed]] NetworkOrdered
 {
 public:
-    NetworkOrdered() {}
+    NetworkOrdered() { }
     NetworkOrdered(const T& host_value)
         : m_network_value(convert_between_host_and_network(host_value))
     {
