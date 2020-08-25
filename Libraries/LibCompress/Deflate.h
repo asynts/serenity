@@ -27,12 +27,13 @@
 #pragma once
 
 #include <AK/BitStream.h>
+#include <AK/ByteBuffer.h>
 #include <AK/CircularQueue.h>
+#include <AK/FixedArray.h>
 #include <AK/Span.h>
 #include <AK/Types.h>
 #include <AK/Vector.h>
 
-#include <AK/ByteBuffer.h>
 #include <LibCompress/CircularDuplexStream.h>
 #include <LibCompress/Endian.h>
 
@@ -44,8 +45,36 @@ public:
     CanonicalCode(ReadonlyBytes);
     u32 read_symbol(InputBitStream&) const;
 
-    static const CanonicalCode& fixed_literal_codes() { TODO(); }
-    static const CanonicalCode& fixed_distance_codes() { TODO(); }
+    static const CanonicalCode& fixed_literal_codes()
+    {
+        static CanonicalCode* code = nullptr;
+
+        if (code)
+            return *code;
+
+        FixedArray<u8> data { 288 };
+        data.bytes().slice(0, 144 - 0).fill(8);
+        data.bytes().slice(144, 256 - 144).fill(9);
+        data.bytes().slice(256, 280 - 256).fill(7);
+        data.bytes().slice(280, 288 - 280).fill(8);
+
+        code = new CanonicalCode(data);
+        return *code;
+    }
+
+    static const CanonicalCode& fixed_distance_codes()
+    {
+        static CanonicalCode* code = nullptr;
+
+        if (code)
+            return *code;
+
+        FixedArray<u8> data { 32 };
+        data.bytes().fill(5);
+
+        code = new CanonicalCode(data);
+        return *code;
+    }
 
 private:
     Vector<u32> m_symbol_codes;
@@ -239,7 +268,10 @@ private:
 
     u32 decode_run_length(u32);
     u32 decode_distance(u32);
-    void decode_codes(CanonicalCode&, CanonicalCode&) { TODO(); }
+    void decode_codes(CanonicalCode&, CanonicalCode&)
+    {
+        TODO();
+    }
 
     bool m_read_final_bock { false };
 
