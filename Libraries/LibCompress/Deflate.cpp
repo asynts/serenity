@@ -40,7 +40,7 @@ bool CompressedBlock::try_read_more()
     if (m_eof == true)
         return false;
 
-    const auto symbol = m_length_codes.read_symbol(m_decompressor.m_input_stream);
+    const auto symbol = m_literal_codes.read_symbol(m_decompressor.m_input_stream);
 
     if (symbol < 256) {
         m_decompressor.m_output_stream << static_cast<u8>(symbol);
@@ -49,10 +49,10 @@ bool CompressedBlock::try_read_more()
         m_eof = true;
         return false;
     } else {
-        ASSERT(m_distance_codes);
+        ASSERT(m_distance_codes.has_value());
 
         const auto run_length = m_decompressor.decode_run_length(symbol);
-        const auto distance = m_decompressor.decode_distance(m_distance_codes->read_symbol(m_decompressor.m_input_stream));
+        const auto distance = m_decompressor.decode_distance(m_distance_codes.value().read_symbol(m_decompressor.m_input_stream));
 
         auto bytes = m_decompressor.m_output_stream.reserve_contigous(run_length);
         m_decompressor.m_output_stream.read(bytes, distance);
@@ -101,25 +101,6 @@ u32 DeflateDecompressor::decode_distance(u32 symbol)
     }
 
     ASSERT_NOT_REACHED();
-}
-
-Vector<u8> DeflateDecompressor::generate_literal_length_codes()
-{
-    Vector<u8> ll_codes;
-    ll_codes.resize(288);
-    memset(ll_codes.data() + 0, 8, 144 - 0);
-    memset(ll_codes.data() + 144, 9, 256 - 144);
-    memset(ll_codes.data() + 256, 7, 280 - 256);
-    memset(ll_codes.data() + 280, 8, 288 - 280);
-    return ll_codes;
-}
-
-Vector<u8> DeflateDecompressor::generate_fixed_distance_codes()
-{
-    Vector<u8> fd_codes;
-    fd_codes.resize(32);
-    memset(fd_codes.data(), 5, 32);
-    return fd_codes;
 }
 
 CanonicalCode::CanonicalCode(ReadonlyBytes codes)

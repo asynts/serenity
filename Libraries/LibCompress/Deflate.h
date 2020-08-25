@@ -34,13 +34,18 @@
 
 #include <AK/ByteBuffer.h>
 #include <LibCompress/CircularDuplexStream.h>
+#include <LibCompress/Endian.h>
 
 namespace Compress {
 
 class CanonicalCode {
 public:
+    CanonicalCode() = default;
     CanonicalCode(ReadonlyBytes);
     u32 read_symbol(InputBitStream&) const;
+
+    static const CanonicalCode& fixed_literal_codes() { TODO(); }
+    static const CanonicalCode& fixed_distance_codes() { TODO(); }
 
 private:
     Vector<u32> m_symbol_codes;
@@ -51,9 +56,9 @@ class DeflateDecompressor;
 
 class CompressedBlock {
 public:
-    CompressedBlock(DeflateDecompressor& decompressor, const CanonicalCode& length_codes, const CanonicalCode* distance_codes)
+    CompressedBlock(DeflateDecompressor& decompressor, CanonicalCode literal_codes, Optional<CanonicalCode> distance_codes)
         : m_decompressor(decompressor)
-        , m_length_codes(length_codes)
+        , m_literal_codes(literal_codes)
         , m_distance_codes(distance_codes)
     {
     }
@@ -64,8 +69,8 @@ private:
     bool m_eof { false };
 
     DeflateDecompressor& m_decompressor;
-    const CanonicalCode& m_length_codes;
-    const CanonicalCode* m_distance_codes;
+    CanonicalCode m_literal_codes;
+    Optional<CanonicalCode> m_distance_codes;
 };
 
 class UncompressedBlock {
@@ -87,8 +92,6 @@ class DeflateDecompressor : public InputStream {
 public:
     DeflateDecompressor(InputStream& stream)
         : m_input_stream(stream)
-        , m_literal_length_codes(generate_literal_length_codes())
-        , m_fixed_distance_codes(generate_fixed_distance_codes())
     {
     }
 
@@ -102,8 +105,46 @@ public:
 
     size_t read(Bytes bytes) override
     {
-        if (m_state == State::Idle) {
-            TODO();
+        if (m_state == State::Ready) {
+            if (m_read_final_bock)
+                return 0;
+
+            m_read_final_bock = m_input_stream.read_bit();
+            const auto block_type = m_input_stream.read_bits(2);
+
+            if (block_type == 0b00) {
+                m_input_stream.align_to_byte_boundary();
+
+                LittleEndian<u16> length, negated_length;
+                m_input_stream >> length >> negated_length;
+
+                if ((length ^ 0xffff) != negated_length) {
+                    m_error = true;
+                    return 0;
+                }
+
+                m_state = State::ReadingUncompressedBlock;
+                new (&m_uncompressed_block) UncompressedBlock(*this, length);
+
+                return read(bytes);
+            }
+
+            if (block_type == 0b01) {
+                m_state = State::ReadingCompressedBlock;
+                new (&m_compressed_block) CompressedBlock(*this, CanonicalCode::fixed_literal_codes(), CanonicalCode::fixed_distance_codes());
+
+                return read(bytes);
+            }
+
+            if (block_type == 0b10) {
+                CanonicalCode literal_codes, distance_codes;
+                decode_codes(literal_codes, distance_codes);
+                new (&m_compressed_block) CompressedBlock(*this, literal_codes, distance_codes);
+
+                return read(bytes);
+            }
+
+            ASSERT_NOT_REACHED();
         }
 
         if (m_state == State::ReadingCompressedBlock) {
@@ -117,7 +158,7 @@ public:
                 return nread;
 
             m_compressed_block.~CompressedBlock();
-            m_state = State::Idle;
+            m_state = State::Ready;
 
             return nread + read(bytes.slice(nread));
         }
@@ -133,7 +174,7 @@ public:
                 return nread;
 
             m_uncompressed_block.~UncompressedBlock();
-            m_state = State::Idle;
+            m_state = State::Ready;
 
             return nread + read(bytes.slice(nread));
         }
@@ -151,8 +192,24 @@ public:
         return true;
     }
 
-    bool discard_or_error(size_t) override { TODO(); }
-    bool eof() const override { TODO(); }
+    bool discard_or_error(size_t count) override
+    {
+        u8 buffer[4096];
+
+        size_t ndiscarded = 0;
+        while (ndiscarded < count) {
+            if (eof()) {
+                m_error = true;
+                return false;
+            }
+
+            ndiscarded += read({ buffer, min<size_t>(count - ndiscarded, 4096) });
+        }
+
+        return true;
+    }
+
+    bool eof() const override { return m_state == State::Ready && m_read_final_bock; }
 
     static ByteBuffer decompress_all(ReadonlyBytes bytes)
     {
@@ -175,18 +232,18 @@ public:
 
 private:
     enum class State {
-        Idle,
+        Ready,
         ReadingCompressedBlock,
         ReadingUncompressedBlock
     };
 
     u32 decode_run_length(u32);
     u32 decode_distance(u32);
+    void decode_codes(CanonicalCode&, CanonicalCode&) { TODO(); }
 
-    Vector<u8> generate_literal_length_codes();
-    Vector<u8> generate_fixed_distance_codes();
+    bool m_read_final_bock { false };
 
-    State m_state { State::Idle };
+    State m_state { State::Ready };
     union {
         CompressedBlock m_compressed_block;
         UncompressedBlock m_uncompressed_block;
@@ -194,9 +251,6 @@ private:
 
     InputBitStream m_input_stream;
     CircularDuplexStream<64 * 1024> m_output_stream;
-
-    CanonicalCode m_literal_length_codes;
-    CanonicalCode m_fixed_distance_codes;
 
     friend CompressedBlock;
     friend UncompressedBlock;
