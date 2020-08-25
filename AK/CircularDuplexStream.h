@@ -49,7 +49,7 @@ public:
 
     bool write_or_error(ReadonlyBytes bytes) override
     {
-        if (bytes.size() < Capacity - m_queue.size()) {
+        if (Capacity - m_queue.size() < bytes.size()) {
             m_error = true;
             return false;
         }
@@ -70,7 +70,7 @@ public:
 
     size_t read(Bytes bytes, size_t seekback)
     {
-        ASSERT(seekback <= 64 * 1024);
+        ASSERT(seekback <= Capacity);
 
         if (seekback > m_total_written) {
             m_error = true;
@@ -118,7 +118,7 @@ public:
         return min(Capacity - m_queue.size(), m_queue.capacity() - (m_queue.head_index() + m_queue.size()) % Capacity);
     }
 
-    Bytes reserve_contigous(size_t count)
+    Bytes reserve_contigous_space(size_t count)
     {
         ASSERT(count <= remaining_contigous_space());
         Bytes bytes { m_queue.m_storage + (m_queue.head_index() + m_queue.size()) % Capacity, count };

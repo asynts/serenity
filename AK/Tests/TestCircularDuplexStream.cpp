@@ -75,7 +75,10 @@ TEST_CASE(overwritting_is_well_defined)
         u8 byte;
         stream >> byte;
 
-        EXPECT_EQ(byte, idx % 128);
+        if (idx < half_capacity)
+            EXPECT_EQ(byte, half_capacity + idx % 256);
+        else
+            EXPECT_EQ(byte, idx % 256 - half_capacity);
     }
 
     EXPECT(stream.eof());

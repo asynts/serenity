@@ -54,7 +54,7 @@ bool CompressedBlock::try_read_more()
         const auto run_length = m_decompressor.decode_run_length(symbol);
         const auto distance = m_decompressor.decode_distance(m_distance_codes.value().read_symbol(m_decompressor.m_input_stream));
 
-        auto bytes = m_decompressor.m_output_stream.reserve_contigous(run_length);
+        auto bytes = m_decompressor.m_output_stream.reserve_contigous_space(run_length);
         m_decompressor.m_output_stream.read(bytes, distance);
 
         return true;
@@ -69,7 +69,7 @@ bool UncompressedBlock::try_read_more()
     const auto nread = min(m_bytes_remaining, m_decompressor.m_output_stream.remaining_contigous_space());
     m_bytes_remaining -= nread;
 
-    m_decompressor.m_input_stream >> m_decompressor.m_output_stream.reserve_contigous(nread);
+    m_decompressor.m_input_stream >> m_decompressor.m_output_stream.reserve_contigous_space(nread);
 
     return true;
 }
