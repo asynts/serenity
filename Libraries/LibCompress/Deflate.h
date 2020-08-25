@@ -239,7 +239,7 @@ private:
 
     u32 decode_run_length(u32);
     u32 decode_distance(u32);
-    void decode_codes(CanonicalCode&, CanonicalCode&);
+    void decode_codes(CanonicalCode&, CanonicalCode&) { TODO(); }
 
     bool m_read_final_bock { false };
 
