@@ -30,11 +30,18 @@
 #include <AK/StdLibExtras.h>
 #include <AK/Types.h>
 
+namespace Compress {
+
+template<size_t Capacity>
+class CircularDuplexStream;
+
+}
+
 namespace AK {
 
 template<typename T, size_t Capacity>
 class CircularQueue {
-    friend class ::Compress::CircularDuplexStream;
+    friend Compress::CircularDuplexStream<Capacity>;
 
 public:
     CircularQueue()
