@@ -54,6 +54,7 @@ bool CompressedBlock::try_read_more()
         const auto run_length = m_decompressor.decode_run_length(symbol);
         const auto distance = m_decompressor.decode_distance(m_distance_codes.value().read_symbol(m_decompressor.m_input_stream));
 
+        // FIXME: This allocation changes m_size!
         auto bytes = m_decompressor.m_output_stream.reserve_contigous_space(run_length);
         m_decompressor.m_output_stream.read(bytes, distance);
 
@@ -79,6 +80,7 @@ u32 DeflateDecompressor::decode_run_length(u32 symbol)
     if (symbol <= 264)
         return symbol - 254;
 
+    // FIXME: Where does this expression come from?
     if (symbol <= 284) {
         auto extra_bits = (symbol - 261) / 4;
         return (((symbol - 265) % 4 + 4) << extra_bits) + 3 + m_input_stream.read_bits(extra_bits);
@@ -95,6 +97,7 @@ u32 DeflateDecompressor::decode_distance(u32 symbol)
     if (symbol <= 3)
         return symbol + 1;
 
+    // FIXME: Where does this expression come from?
     if (symbol <= 29) {
         auto extra_bits = (symbol / 2) - 1;
         return ((symbol % 2 + 2) << extra_bits) + 1 + m_input_stream.read_bits(extra_bits);
