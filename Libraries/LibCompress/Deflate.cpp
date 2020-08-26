@@ -32,11 +32,9 @@
 #include <AK/Vector.h>
 #include <LibCompress/Deflate.h>
 
-#include <cstring>
-
 namespace Compress {
 
-CanonicalCode::CanonicalCode(ReadonlyBytes codes)
+DeflateDecompressor::CanonicalCode::CanonicalCode(ReadonlyBytes codes)
 {
     m_symbol_codes.resize(codes.size());
     m_symbol_values.resize(codes.size());
@@ -72,7 +70,7 @@ CanonicalCode::CanonicalCode(ReadonlyBytes codes)
     }
 }
 
-const CanonicalCode& CanonicalCode::fixed_literal_codes()
+const DeflateDecompressor::CanonicalCode& DeflateDecompressor::CanonicalCode::fixed_literal_codes()
 {
     static CanonicalCode* code = nullptr;
 
@@ -89,7 +87,7 @@ const CanonicalCode& CanonicalCode::fixed_literal_codes()
     return *code;
 }
 
-const CanonicalCode& CanonicalCode::fixed_distance_codes()
+const DeflateDecompressor::CanonicalCode& DeflateDecompressor::CanonicalCode::fixed_distance_codes()
 {
     static CanonicalCode* code = nullptr;
 
@@ -103,7 +101,7 @@ const CanonicalCode& CanonicalCode::fixed_distance_codes()
     return *code;
 }
 
-u32 CanonicalCode::read_symbol(InputBitStream& stream) const
+u32 DeflateDecompressor::CanonicalCode::read_symbol(InputBitStream& stream) const
 {
     u32 code_bits = 1;
 
