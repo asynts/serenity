@@ -336,6 +336,9 @@ u32 DeflateDecompressor::decode_distance(u32 symbol)
 
 void DeflateDecompressor::decode_codes(CanonicalCode&, CanonicalCode&)
 {
+    // FIXME: This was already implemented but I removed it because it was quite chaotic and untested.
+    //        I am planning to come back to this. @asynts
+    //        https://github.com/SerenityOS/serenity/blob/208cb995babb13e0af07bb9d3219f0a9fe7bca7d/Libraries/LibCompress/Deflate.cpp#L144-L242
     TODO();
 }
 
