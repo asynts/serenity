@@ -81,42 +81,6 @@ private:
     Vector<u32> m_symbol_values;
 };
 
-class DeflateDecompressor;
-
-class CompressedBlock {
-public:
-    CompressedBlock(DeflateDecompressor& decompressor, CanonicalCode literal_codes, Optional<CanonicalCode> distance_codes)
-        : m_decompressor(decompressor)
-        , m_literal_codes(literal_codes)
-        , m_distance_codes(distance_codes)
-    {
-    }
-
-    bool try_read_more();
-
-private:
-    bool m_eof { false };
-
-    DeflateDecompressor& m_decompressor;
-    CanonicalCode m_literal_codes;
-    Optional<CanonicalCode> m_distance_codes;
-};
-
-class UncompressedBlock {
-public:
-    UncompressedBlock(DeflateDecompressor& decompressor, size_t length)
-        : m_decompressor(decompressor)
-        , m_bytes_remaining(length)
-    {
-    }
-
-    bool try_read_more();
-
-private:
-    DeflateDecompressor& m_decompressor;
-    size_t m_bytes_remaining;
-};
-
 class DeflateDecompressor : public InputStream {
 public:
     DeflateDecompressor(InputStream& stream)
@@ -260,6 +224,40 @@ public:
     }
 
 private:
+    class CompressedBlock {
+    public:
+        CompressedBlock(DeflateDecompressor& decompressor, CanonicalCode literal_codes, Optional<CanonicalCode> distance_codes)
+            : m_decompressor(decompressor)
+            , m_literal_codes(literal_codes)
+            , m_distance_codes(distance_codes)
+        {
+        }
+
+        bool try_read_more();
+
+    private:
+        bool m_eof { false };
+
+        DeflateDecompressor& m_decompressor;
+        CanonicalCode m_literal_codes;
+        Optional<CanonicalCode> m_distance_codes;
+    };
+
+    class UncompressedBlock {
+    public:
+        UncompressedBlock(DeflateDecompressor& decompressor, size_t length)
+            : m_decompressor(decompressor)
+            , m_bytes_remaining(length)
+        {
+        }
+
+        bool try_read_more();
+
+    private:
+        DeflateDecompressor& m_decompressor;
+        size_t m_bytes_remaining;
+    };
+
     enum class State {
         Ready,
         ReadingCompressedBlock,

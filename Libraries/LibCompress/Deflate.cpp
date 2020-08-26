@@ -36,7 +36,7 @@
 
 namespace Compress {
 
-bool CompressedBlock::try_read_more()
+bool DeflateDecompressor::CompressedBlock::try_read_more()
 {
     if (m_eof == true)
         return false;
@@ -62,7 +62,7 @@ bool CompressedBlock::try_read_more()
     }
 }
 
-bool UncompressedBlock::try_read_more()
+bool DeflateDecompressor::UncompressedBlock::try_read_more()
 {
     if (m_bytes_remaining == 0)
         return false;
