@@ -44,26 +44,6 @@ bool compare(ReadonlyBytes lhs, ReadonlyBytes rhs)
     return true;
 }
 
-void dump(ReadonlyBytes bytes)
-{
-    if (bytes.size() == 0) {
-        dbg() << "{ }";
-    }
-
-    StringBuilder builder;
-
-    builder.append("{ ");
-    auto prefix = "";
-    for (auto byte : bytes) {
-        builder.append(prefix);
-        builder.appendf("%02x", (unsigned)byte);
-        prefix = ", ";
-    }
-    builder.append(" }");
-
-    dbg() << builder.to_string();
-}
-
 TEST_CASE(deflate_decompress_compressed_block)
 {
     const u8 compressed[] = {
@@ -75,10 +55,6 @@ TEST_CASE(deflate_decompress_compressed_block)
     const u8 uncompressed[] = "This is a simple text file :)";
 
     const auto decompressed = Compress::DeflateDecompressor::decompress_all({ compressed, sizeof(compressed) });
-
-    dump({ uncompressed, sizeof(uncompressed) - 1 });
-    dump(decompressed);
-
     EXPECT(compare({ uncompressed, sizeof(uncompressed) - 1 }, decompressed.bytes()));
 }
 
@@ -92,10 +68,6 @@ TEST_CASE(deflate_decompress_uncompressed_block)
     const u8 uncompressed[] = "Hello, World!";
 
     const auto decompressed = Compress::DeflateDecompressor::decompress_all({ compressed, sizeof(compressed) });
-
-    dump({ uncompressed, sizeof(uncompressed) - 1 });
-    dump(decompressed);
-
     EXPECT(compare({ uncompressed, sizeof(uncompressed) - 1 }, decompressed.bytes()));
 }
 
@@ -113,10 +85,6 @@ TEST_CASE(deflate_decompress_multiple_blocks)
     const u8 uncompressed[] = "The first block is uncompressed and the second block is compressed.";
 
     const auto decompressed = Compress::DeflateDecompressor::decompress_all({ compressed, sizeof(compressed) });
-
-    dump({ uncompressed, sizeof(uncompressed) - 1 });
-    dump(decompressed);
-
     EXPECT(compare({ uncompressed, sizeof(uncompressed) - 1 }, decompressed.bytes()));
 }
 
@@ -132,10 +100,6 @@ TEST_CASE(zlib_decompress_simple)
     const u8 uncompressed[] = "This is a simple text file :)";
 
     const auto decompressed = Compress::Zlib::decompress_all({ compressed, sizeof(compressed) });
-
-    dump({ uncompressed, sizeof(uncompressed) - 1 });
-    dump(decompressed);
-
     EXPECT(compare({ uncompressed, sizeof(uncompressed) - 1 }, decompressed.bytes()));
 }
 
