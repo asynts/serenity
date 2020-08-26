@@ -26,10 +26,9 @@
 
 #include <AK/Assertions.h>
 #include <AK/BinarySearch.h>
+#include <AK/FixedArray.h>
 #include <AK/LogStream.h>
-#include <AK/Span.h>
-#include <AK/Types.h>
-#include <AK/Vector.h>
+
 #include <LibCompress/Deflate.h>
 
 namespace Compress {
