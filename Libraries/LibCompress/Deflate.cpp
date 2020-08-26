@@ -36,6 +36,86 @@
 
 namespace Compress {
 
+CanonicalCode::CanonicalCode(ReadonlyBytes codes)
+{
+    m_symbol_codes.resize(codes.size());
+    m_symbol_values.resize(codes.size());
+
+    auto allocated_symbols_count = 0;
+    auto next_code = 0;
+
+    for (size_t code_length = 1; code_length <= 15; code_length++) {
+        next_code <<= 1;
+        auto start_bit = 1 << code_length;
+
+        for (size_t symbol = 0; symbol < codes.size(); symbol++) {
+            if (codes.at(symbol) != code_length) {
+                continue;
+            }
+
+            if (next_code > start_bit) {
+                dbg() << "Canonical code overflows the huffman tree";
+                ASSERT_NOT_REACHED();
+            }
+
+            m_symbol_codes[allocated_symbols_count] = start_bit | next_code;
+            m_symbol_values[allocated_symbols_count] = symbol;
+
+            allocated_symbols_count++;
+            next_code++;
+        }
+    }
+
+    if (next_code != (1 << 15)) {
+        dbg() << "Canonical code underflows the huffman tree " << next_code;
+        ASSERT_NOT_REACHED();
+    }
+}
+
+const CanonicalCode& CanonicalCode::fixed_literal_codes()
+{
+    static CanonicalCode* code = nullptr;
+
+    if (code)
+        return *code;
+
+    FixedArray<u8> data { 288 };
+    data.bytes().slice(0, 144 - 0).fill(8);
+    data.bytes().slice(144, 256 - 144).fill(9);
+    data.bytes().slice(256, 280 - 256).fill(7);
+    data.bytes().slice(280, 288 - 280).fill(8);
+
+    code = new CanonicalCode(data);
+    return *code;
+}
+
+const CanonicalCode& CanonicalCode::fixed_distance_codes()
+{
+    static CanonicalCode* code = nullptr;
+
+    if (code)
+        return *code;
+
+    FixedArray<u8> data { 32 };
+    data.bytes().fill(5);
+
+    code = new CanonicalCode(data);
+    return *code;
+}
+
+u32 CanonicalCode::read_symbol(InputBitStream& stream) const
+{
+    u32 code_bits = 1;
+
+    for (;;) {
+        code_bits = code_bits << 1 | stream.read_bits(1);
+
+        size_t index;
+        if (AK::binary_search(m_symbol_codes.span(), code_bits, AK::integral_compare<u32>, &index))
+            return m_symbol_values[index];
+    }
+}
+
 bool DeflateDecompressor::CompressedBlock::try_read_more()
 {
     if (m_eof == true)
@@ -104,55 +184,6 @@ u32 DeflateDecompressor::decode_distance(u32 symbol)
     }
 
     ASSERT_NOT_REACHED();
-}
-
-CanonicalCode::CanonicalCode(ReadonlyBytes codes)
-{
-    m_symbol_codes.resize(codes.size());
-    m_symbol_values.resize(codes.size());
-
-    auto allocated_symbols_count = 0;
-    auto next_code = 0;
-
-    for (size_t code_length = 1; code_length <= 15; code_length++) {
-        next_code <<= 1;
-        auto start_bit = 1 << code_length;
-
-        for (size_t symbol = 0; symbol < codes.size(); symbol++) {
-            if (codes.at(symbol) != code_length) {
-                continue;
-            }
-
-            if (next_code > start_bit) {
-                dbg() << "Canonical code overflows the huffman tree";
-                ASSERT_NOT_REACHED();
-            }
-
-            m_symbol_codes[allocated_symbols_count] = start_bit | next_code;
-            m_symbol_values[allocated_symbols_count] = symbol;
-
-            allocated_symbols_count++;
-            next_code++;
-        }
-    }
-
-    if (next_code != (1 << 15)) {
-        dbg() << "Canonical code underflows the huffman tree " << next_code;
-        ASSERT_NOT_REACHED();
-    }
-}
-
-u32 CanonicalCode::read_symbol(InputBitStream& stream) const
-{
-    u32 code_bits = 1;
-
-    for (;;) {
-        code_bits = code_bits << 1 | stream.read_bits(1);
-
-        size_t index;
-        if (AK::binary_search(m_symbol_codes.span(), code_bits, AK::integral_compare<u32>, &index))
-            return m_symbol_values[index];
-    }
 }
 
 }
