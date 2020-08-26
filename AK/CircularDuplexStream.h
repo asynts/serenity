@@ -121,8 +121,11 @@ public:
     Bytes reserve_contigous_space(size_t count)
     {
         ASSERT(count <= remaining_contigous_space());
+
         Bytes bytes { m_queue.m_storage + (m_queue.head_index() + m_queue.size()) % Capacity, count };
+
         m_queue.m_size += count;
+        m_total_written += count;
 
         return bytes;
     }
