@@ -33,22 +33,26 @@
 
 namespace Compress {
 
+// FIXME: This logic needs to go into the deflate decoder somehow, we don't want
+//        to assert that the input is valid. Instead we need to set m_error on the
+//        stream.
 DeflateDecompressor::CanonicalCode::CanonicalCode(ReadonlyBytes codes)
 {
+    // FIXME: I can't quite follow the algorithm here, but it seems to work.
+
     m_symbol_codes.resize(codes.size());
     m_symbol_values.resize(codes.size());
 
     auto allocated_symbols_count = 0;
     auto next_code = 0;
 
-    for (size_t code_length = 1; code_length <= 15; code_length++) {
+    for (size_t code_length = 1; code_length <= 15; ++code_length) {
         next_code <<= 1;
         auto start_bit = 1 << code_length;
 
-        for (size_t symbol = 0; symbol < codes.size(); symbol++) {
-            if (codes.at(symbol) != code_length) {
+        for (size_t symbol = 0; symbol < codes.size(); ++symbol) {
+            if (codes[symbol] != code_length)
                 continue;
-            }
 
             if (next_code > start_bit) {
                 dbg() << "Canonical code overflows the huffman tree";
@@ -180,6 +184,9 @@ DeflateDecompressor::~DeflateDecompressor()
 
 size_t DeflateDecompressor::read(Bytes bytes)
 {
+    // FIXME: There are surely a ton of bugs because we don't check for read errors
+    //        very often.
+
     if (m_state == State::Idle) {
         if (m_read_final_bock)
             return 0;
@@ -293,8 +300,8 @@ ByteBuffer DeflateDecompressor::decompress_all(ReadonlyBytes bytes)
     DeflateDecompressor deflate_stream { bit_stream };
 
     auto buffer = ByteBuffer::create_uninitialized(4096);
-    size_t nread = 0;
 
+    size_t nread = 0;
     while (!deflate_stream.eof()) {
         nread += deflate_stream.read(buffer.bytes().slice(nread));
         if (buffer.size() - nread < 4096)
@@ -307,6 +314,8 @@ ByteBuffer DeflateDecompressor::decompress_all(ReadonlyBytes bytes)
 
 u32 DeflateDecompressor::decode_run_length(u32 symbol)
 {
+    // FIXME: I can't quite follow the algorithm here, but it seems to work.
+
     if (symbol <= 264)
         return symbol - 254;
 
@@ -323,6 +332,8 @@ u32 DeflateDecompressor::decode_run_length(u32 symbol)
 
 u32 DeflateDecompressor::decode_distance(u32 symbol)
 {
+    // FIXME: I can't quite follow the algorithm here, but it seems to work.
+
     if (symbol <= 3)
         return symbol + 1;
 
