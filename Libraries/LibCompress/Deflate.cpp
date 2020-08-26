@@ -114,6 +114,13 @@ u32 DeflateDecompressor::CanonicalCode::read_symbol(InputBitStream& stream) cons
     }
 }
 
+DeflateDecompressor::CompressedBlock::CompressedBlock(DeflateDecompressor& decompressor, CanonicalCode literal_codes, Optional<CanonicalCode> distance_codes)
+    : m_decompressor(decompressor)
+    , m_literal_codes(literal_codes)
+    , m_distance_codes(distance_codes)
+{
+}
+
 bool DeflateDecompressor::CompressedBlock::try_read_more()
 {
     if (m_eof == true)
@@ -140,6 +147,12 @@ bool DeflateDecompressor::CompressedBlock::try_read_more()
     }
 }
 
+DeflateDecompressor::UncompressedBlock::UncompressedBlock(DeflateDecompressor& decompressor, size_t length)
+    : m_decompressor(decompressor)
+    , m_bytes_remaining(length)
+{
+}
+
 bool DeflateDecompressor::UncompressedBlock::try_read_more()
 {
     if (m_bytes_remaining == 0)
@@ -153,12 +166,151 @@ bool DeflateDecompressor::UncompressedBlock::try_read_more()
     return true;
 }
 
+DeflateDecompressor::DeflateDecompressor(InputStream& stream)
+    : m_input_stream(stream)
+{
+}
+
+DeflateDecompressor::~DeflateDecompressor()
+{
+    if (m_state == State::ReadingCompressedBlock)
+        m_compressed_block.~CompressedBlock();
+    if (m_state == State::ReadingUncompressedBlock)
+        m_uncompressed_block.~UncompressedBlock();
+}
+
+size_t DeflateDecompressor::read(Bytes bytes)
+{
+    if (m_state == State::Idle) {
+        if (m_read_final_bock)
+            return 0;
+
+        m_read_final_bock = m_input_stream.read_bit();
+        const auto block_type = m_input_stream.read_bits(2);
+
+        if (block_type == 0b00) {
+            m_input_stream.align_to_byte_boundary();
+
+            LittleEndian<u16> length, negated_length;
+            m_input_stream >> length >> negated_length;
+
+            if ((length ^ 0xffff) != negated_length) {
+                m_error = true;
+                return 0;
+            }
+
+            m_state = State::ReadingUncompressedBlock;
+            new (&m_uncompressed_block) UncompressedBlock(*this, length);
+
+            return read(bytes);
+        }
+
+        if (block_type == 0b01) {
+            m_state = State::ReadingCompressedBlock;
+            new (&m_compressed_block) CompressedBlock(*this, CanonicalCode::fixed_literal_codes(), CanonicalCode::fixed_distance_codes());
+
+            return read(bytes);
+        }
+
+        if (block_type == 0b10) {
+            CanonicalCode literal_codes, distance_codes;
+            decode_codes(literal_codes, distance_codes);
+            new (&m_compressed_block) CompressedBlock(*this, literal_codes, distance_codes);
+
+            return read(bytes);
+        }
+
+        ASSERT_NOT_REACHED();
+    }
+
+    if (m_state == State::ReadingCompressedBlock) {
+        auto nread = m_output_stream.read(bytes);
+
+        while (nread < bytes.size() && m_compressed_block.try_read_more()) {
+            nread += m_output_stream.read(bytes.slice(nread));
+        }
+
+        if (nread == bytes.size())
+            return nread;
+
+        m_compressed_block.~CompressedBlock();
+        m_state = State::Idle;
+
+        return nread + read(bytes.slice(nread));
+    }
+
+    if (m_state == State::ReadingUncompressedBlock) {
+        auto nread = m_output_stream.read(bytes);
+
+        while (nread < bytes.size() && m_uncompressed_block.try_read_more()) {
+            nread += m_output_stream.read(bytes.slice(nread));
+        }
+
+        if (nread == bytes.size())
+            return nread;
+
+        m_uncompressed_block.~UncompressedBlock();
+        m_state = State::Idle;
+
+        return nread + read(bytes.slice(nread));
+    }
+
+    ASSERT_NOT_REACHED();
+}
+
+bool DeflateDecompressor::read_or_error(Bytes bytes)
+{
+    if (read(bytes) < bytes.size()) {
+        m_error = true;
+        return false;
+    }
+
+    return true;
+}
+
+bool DeflateDecompressor::discard_or_error(size_t count)
+{
+    u8 buffer[4096];
+
+    size_t ndiscarded = 0;
+    while (ndiscarded < count) {
+        if (eof()) {
+            m_error = true;
+            return false;
+        }
+
+        ndiscarded += read({ buffer, min<size_t>(count - ndiscarded, 4096) });
+    }
+
+    return true;
+}
+
+bool DeflateDecompressor::eof() const { return m_state == State::Idle && m_read_final_bock; }
+
+ByteBuffer DeflateDecompressor::decompress_all(ReadonlyBytes bytes)
+{
+    InputMemoryStream memory_stream { bytes };
+    InputBitStream bit_stream { memory_stream };
+    DeflateDecompressor deflate_stream { bit_stream };
+
+    auto buffer = ByteBuffer::create_uninitialized(4096);
+    size_t nread = 0;
+
+    while (!deflate_stream.eof()) {
+        nread += deflate_stream.read(buffer.bytes().slice(nread));
+        if (buffer.size() - nread < 4096)
+            buffer.grow(buffer.size() + 4096);
+    }
+
+    buffer.trim(nread);
+    return buffer;
+}
+
 u32 DeflateDecompressor::decode_run_length(u32 symbol)
 {
     if (symbol <= 264)
         return symbol - 254;
 
-    // FIXME: Where does this expression come from?
     if (symbol <= 284) {
         auto extra_bits = (symbol - 261) / 4;
         return (((symbol - 265) % 4 + 4) << extra_bits) + 3 + m_input_stream.read_bits(extra_bits);
@@ -175,13 +327,17 @@ u32 DeflateDecompressor::decode_distance(u32 symbol)
     if (symbol <= 3)
         return symbol + 1;
 
-    // FIXME: Where does this expression come from?
     if (symbol <= 29) {
         auto extra_bits = (symbol / 2) - 1;
         return ((symbol % 2 + 2) << extra_bits) + 1 + m_input_stream.read_bits(extra_bits);
     }
 
     ASSERT_NOT_REACHED();
+}
+
+void DeflateDecompressor::decode_codes(CanonicalCode&, CanonicalCode&)
+{
+    TODO();
 }
 
 }
