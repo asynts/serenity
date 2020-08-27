@@ -154,6 +154,25 @@ bool GzipDecompressor::discard_or_error(size_t count)
     return true;
 }
 
+ByteBuffer GzipDecompressor::decompress_all(ReadonlyBytes bytes)
+{
+    InputMemoryStream memory_stream { bytes };
+    GzipDecompressor gzip_stream { memory_stream };
+
+    auto buffer = ByteBuffer::create_uninitialized(4096);
+
+    size_t nread = 0;
+    while (!gzip_stream.eof()) {
+        nread += gzip_stream.read(buffer.bytes().slice(nread));
+
+        if (buffer.size() - nread < 4096)
+            buffer.grow(buffer.size() + 4096);
+    }
+
+    buffer.trim(nread);
+    return buffer;
+}
+
 bool GzipDecompressor::eof() const
 {
     if (m_state == State::Idle)
