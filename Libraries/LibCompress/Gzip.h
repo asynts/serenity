@@ -30,7 +30,7 @@
 
 namespace Compress {
 
-class GzipDecompressor : public InputStream {
+class GzipDecompressor final : public InputStream {
 public:
     GzipDecompressor(InputStream&);
     ~GzipDecompressor();
