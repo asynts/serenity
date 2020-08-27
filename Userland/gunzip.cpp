@@ -39,6 +39,8 @@ public:
 
     size_t read(Bytes bytes) override
     {
+        dbg() << "read({ " << bytes.data() << ", " << bytes.size() << "})";
+
         size_t nread = 0;
         while (nread < bytes.size()) {
             if (m_file->eof())
@@ -97,6 +99,8 @@ public:
 
     size_t write(ReadonlyBytes bytes) override
     {
+        dbg() << "write({ " << bytes.data() << ", " << bytes.size() << "})";
+
         if (!m_file->write(bytes.data(), bytes.size())) {
             m_error = true;
             return 0;
@@ -124,6 +128,21 @@ StringView output_filename_for(StringView filename)
     return filename.substring_view(0, filename.length() - 3);
 }
 
+void decompress_file(InputFileStream input_stream, OutputFileStream output_stream)
+{
+    auto gzip_stream = Compress::GzipDecompressor { input_stream };
+
+    u8 buffer[4096];
+    while (!gzip_stream.eof()) {
+        ASSERT(!input_stream.has_error());
+        ASSERT(!output_stream.has_error());
+        ASSERT(!gzip_stream.has_error());
+
+        const auto nread = gzip_stream.read({ buffer, sizeof(buffer) });
+        output_stream.write({ buffer, nread });
+    }
+}
+
 int main(int argc, char** argv)
 {
     Vector<const char*> filenames;
@@ -133,58 +152,13 @@ int main(int argc, char** argv)
 
     args_parser.parse(argc, argv);
 
-    for (StringView filename : filenames) {
-        if (!filename.ends_with(".gz")) {
-            out() << "error: filename '" << filename << "' does not end with '.gz'.";
-            exit(1);
-        }
-    }
+    for (StringView input_filename : filenames) {
+        ASSERT(input_filename.ends_with(".gz"));
+        const auto output_filename = input_filename.substring_view(0, input_filename.length() - 3);
 
-    for (StringView filename : filenames) {
-        auto input_file_result = Core::File::open(filename, Core::IODevice::OpenMode::ReadOnly);
-        auto output_file_result = Core::File::open(
-            output_filename_for(filename),
-            static_cast<Core::IODevice::OpenMode>(Core::IODevice::OpenMode::MustBeNew | Core::IODevice::OpenMode::WriteOnly));
+        auto input_file_result = Core::File::open(input_filename, Core::IODevice::OpenMode::ReadOnly);
+        auto output_file_result = Core::File::open(output_filename, Core::IODevice::OpenMode::WriteOnly);
 
-        if (input_file_result.is_error()) {
-            out() << "error: can't open '" << filename << "'.";
-            exit(1);
-        }
-
-        if (output_file_result.is_error()) {
-            out() << "error: can't open '" << output_filename_for(filename) << "'.";
-            exit(1);
-        }
-
-        auto input_stream = InputFileStream { input_file_result.value() };
-        auto output_stream = OutputFileStream { output_file_result.value() };
-
-        auto gzip_stream = Compress::GzipDecompressor { input_stream };
-
-        u8 buffer[4096];
-        while (!gzip_stream.eof()) {
-            if (gzip_stream.handle_error()) {
-                out() << "error: '" << filename << "' is not a valid gzip file.";
-                exit(1);
-            }
-
-            auto nread = gzip_stream.read({ buffer, sizeof(buffer) });
-            output_stream.write_or_error({ buffer, nread });
-        }
-
-        if (gzip_stream.handle_error()) {
-            out() << "error: '" << filename << "' is not a valid gzip file.";
-            exit(1);
-        }
-
-        if (input_stream.handle_error()) {
-            out() << "error: general input/output error for '" << filename << "'";
-            exit(1);
-        }
-
-        if (output_stream.handle_error()) {
-            out() << "error: general input/output error for '" << output_filename_for(filename) << "'";
-            exit(1);
-        }
+        decompress_file(input_file_result.value(), output_file_result.value());
     }
 }
