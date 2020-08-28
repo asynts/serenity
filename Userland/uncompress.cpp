@@ -29,8 +29,69 @@
 #include <LibCore/File.h>
 #include <LibCore/FileStream.h>
 
+static void decompress_gzip_file(StringView input_filename, StringView output_filename)
+{
+    auto input_stream_result = Core::InputFileStream::open(input_filename);
+    auto output_stream_result = Core::OutputFileStream::open(output_filename);
+
+    if (input_stream_result.is_error()) {
+        out() << "error: can't open '" << input_filename << "', " << input_stream_result.error();
+        exit(1);
+    }
+
+    if (output_stream_result.is_error()) {
+        out() << "error: can't open '" << output_filename << "', " << output_stream_result.error();
+        exit(1);
+    }
+
+    auto input_stream = input_stream_result.value();
+    auto output_stream = output_stream_result.value();
+
+    auto gzip_stream = Compress::GzipDecompressor { input_stream };
+
+    u8 buffer[4096];
+
+    while (!gzip_stream.eof()) {
+        if (gzip_stream.has_error()) {
+            out() << "error: '" << input_filename << "' is not a valid gzip file.";
+            exit(1);
+        }
+
+        ASSERT(!output_stream.has_error());
+
+        const auto nread = gzip_stream.read({ buffer, sizeof(buffer) });
+        output_stream.write_or_error({ buffer, nread });
+    }
+
+    input_stream.close();
+    output_stream.close();
+}
+
 int main(int argc, char** argv)
 {
+    Vector<const char*> filenames;
+    bool use_gzip { false };
+    bool do_discard { false };
+
     Core::ArgsParser args_parser;
+    args_parser.add_option(use_gzip, "Input files are compressed using gzip.", "gzip", 0);
+    args_parser.add_option(do_discard, "Discard input files after decompressing files.", "discard", 0);
+    args_parser.add_positional_argument(filenames, "Files to decompress.", "FILE");
     args_parser.parse(argc, argv);
+
+    ASSERT(use_gzip);
+
+    for (StringView filename : filenames) {
+        ASSERT(filename.ends_with(".gz"));
+
+        String input_filename = filename;
+        String output_filename = filename.substring_view(0, input_filename.length() - 3);
+
+        decompress_gzip_file(input_filename, output_filename);
+
+        if (do_discard) {
+            if (unlink(input_filename.characters()))
+                ASSERT_NOT_REACHED();
+        }
+    }
 }
