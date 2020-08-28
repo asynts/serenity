@@ -26,7 +26,6 @@
 
 #include <LibCompress/Gzip.h>
 #include <LibCore/ArgsParser.h>
-#include <LibCore/File.h>
 #include <LibCore/FileStream.h>
 
 static void decompress_gzip_file(StringView input_filename, StringView output_filename)
@@ -52,12 +51,20 @@ static void decompress_gzip_file(StringView input_filename, StringView output_fi
     u8 buffer[4096];
 
     while (!gzip_stream.eof()) {
-        if (gzip_stream.has_error()) {
-            out() << "error: '" << input_filename << "' is not a valid gzip file.";
+        if (input_stream.handle_error()) {
+            out() << "error: can't read from '" << input_filename << "'";
             exit(1);
         }
 
-        ASSERT(!output_stream.has_error());
+        if (output_stream.handle_error()) {
+            out() << "error: can't write to '" << output_filename << "'";
+            exit(1);
+        }
+
+        if (gzip_stream.handle_error()) {
+            out() << "error: '" << input_filename << "' is not a valid gzip file.";
+            exit(1);
+        }
 
         const auto nread = gzip_stream.read({ buffer, sizeof(buffer) });
         output_stream.write_or_error({ buffer, nread });
@@ -70,28 +77,19 @@ static void decompress_gzip_file(StringView input_filename, StringView output_fi
 int main(int argc, char** argv)
 {
     Vector<const char*> filenames;
-    bool use_gzip { false };
-    bool do_discard { false };
 
     Core::ArgsParser args_parser;
-    args_parser.add_option(use_gzip, "Input files are compressed using gzip.", "gzip", 0);
-    args_parser.add_option(do_discard, "Discard input files after decompressing files.", "discard", 0);
-    args_parser.add_positional_argument(filenames, "Files to decompress.", "FILE");
+    args_parser.add_positional_argument(filenames, "Files to decompress", "FILE");
     args_parser.parse(argc, argv);
 
-    ASSERT(use_gzip);
-
     for (StringView filename : filenames) {
+        // FIXME: We should poll the file and see which magic number is present and then
+        //        choose the correct algorithm.
         ASSERT(filename.ends_with(".gz"));
 
         String input_filename = filename;
         String output_filename = filename.substring_view(0, input_filename.length() - 3);
 
         decompress_gzip_file(input_filename, output_filename);
-
-        if (do_discard) {
-            if (unlink(input_filename.characters()))
-                ASSERT_NOT_REACHED();
-        }
     }
 }
