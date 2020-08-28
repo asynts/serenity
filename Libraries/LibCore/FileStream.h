@@ -54,6 +54,14 @@ public:
     size_t read(Bytes bytes) override
     {
         size_t nread = 0;
+
+        if (!m_buffered.is_empty()) {
+            nread += m_buffered.bytes().copy_trimmed_to(bytes);
+
+            m_buffered.bytes().slice(nread).copy_to(m_buffered);
+            m_buffered.trim(m_buffered.size() - nread);
+        }
+
         while (nread < bytes.size() && !eof()) {
             if (m_file->has_error()) {
                 m_error = true;
@@ -93,8 +101,18 @@ public:
         return true;
     }
 
-    // FIXME: This method is sometimes false negative.
-    bool eof() const override { return m_file->eof(); }
+    bool eof() const override
+    {
+        if (m_buffered.size() > 0)
+            return false;
+
+        if (m_file->eof())
+            return true;
+
+        m_buffered = m_file->read(4096);
+
+        return m_buffered.size() == 0;
+    }
 
     void close()
     {
@@ -105,7 +123,8 @@ public:
 private:
     InputFileStream() = default;
 
-    NonnullRefPtr<File> m_file;
+    mutable NonnullRefPtr<File> m_file;
+    mutable ByteBuffer m_buffered;
 };
 
 // FIXME: Buffering, maybe add a Buffered<T> template?
