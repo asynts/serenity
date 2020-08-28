@@ -93,6 +93,7 @@ public:
         return true;
     }
 
+    // FIXME: This method is sometimes false negative.
     bool eof() const override { return m_file->eof(); }
 
     void close()
