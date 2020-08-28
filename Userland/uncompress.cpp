@@ -27,108 +27,14 @@
 #include <LibCompress/Gzip.h>
 #include <LibCore/ArgsParser.h>
 #include <LibCore/File.h>
-
-// FIXME: Maybe add some buffering, or does Core::File do this already? Also, this should
-//        be moved into LibCore.
-class InputFileStream final : public InputStream {
-public:
-    InputFileStream(NonnullRefPtr<Core::File> file)
-        : m_file(file)
-    {
-    }
-
-    size_t read(Bytes bytes) override
-    {
-        dbg() << "read({ " << bytes.data() << ", " << bytes.size() << "})";
-
-        size_t nread = 0;
-        while (nread < bytes.size()) {
-            if (m_file->eof())
-                return nread;
-
-            const auto buffer = m_file->read(nread - bytes.size());
-            nread += buffer.bytes().copy_to(bytes.slice(nread));
-        }
-
-        return nread;
-    }
-
-    bool read_or_error(Bytes bytes) override
-    {
-        if (read(bytes) < bytes.size()) {
-            m_error = true;
-            return false;
-        }
-
-        return true;
-    }
-
-    bool discard_or_error(size_t count) override
-    {
-        u8 buffer[4096];
-
-        size_t ndiscarded = 0;
-        while (ndiscarded < count) {
-            if (eof()) {
-                m_error = true;
-                return false;
-            }
-
-            ndiscarded += read({ buffer, min<size_t>(count - ndiscarded, sizeof(buffer)) });
-        }
-
-        return true;
-    }
-
-    bool eof() const override { return m_file->eof(); }
-
-private:
-    InputFileStream() = default;
-
-    NonnullRefPtr<Core::File> m_file;
-};
-
-// FIXME: Maybe add some buffering, or does Core::File do this already? Also, this should
-//        be moved into LibCore.
-class OutputFileStream : public OutputStream {
-public:
-    OutputFileStream(NonnullRefPtr<Core::File> file)
-        : m_file(file)
-    {
-    }
-
-    size_t write(ReadonlyBytes bytes) override
-    {
-        dbg() << "write({ " << bytes.data() << ", " << bytes.size() << "})";
-
-        if (!m_file->write(bytes.data(), bytes.size())) {
-            m_error = true;
-            return 0;
-        }
-
-        return bytes.size();
-    }
-
-    bool write_or_error(ReadonlyBytes bytes) override
-    {
-        if (write(bytes) < bytes.size()) {
-            m_error = true;
-            return false;
-        }
-
-        return true;
-    }
-
-private:
-    NonnullRefPtr<Core::File> m_file;
-};
+#include <LibCore/FileStream.h>
 
 StringView output_filename_for(StringView filename)
 {
     return filename.substring_view(0, filename.length() - 3);
 }
 
-void decompress_file(InputFileStream input_stream, OutputFileStream output_stream)
+void decompress_file(Core::InputFileStream input_stream, Core::OutputFileStream output_stream)
 {
     auto gzip_stream = Compress::GzipDecompressor { input_stream };
 
@@ -148,8 +54,7 @@ int main(int argc, char** argv)
     Vector<const char*> filenames;
 
     Core::ArgsParser args_parser;
-    args_parser.add_positional_argument(filenames, "Path to gzip compressed file.", "FILE");
-
+    args_parser.add_positional_argument(filenames, "Path to compressed file.", "FILE");
     args_parser.parse(argc, argv);
 
     for (StringView input_filename : filenames) {
@@ -159,6 +64,6 @@ int main(int argc, char** argv)
         auto input_file_result = Core::File::open(input_filename, Core::IODevice::OpenMode::ReadOnly);
         auto output_file_result = Core::File::open(output_filename, Core::IODevice::OpenMode::WriteOnly);
 
-        decompress_file(input_file_result.value(), output_file_result.value());
+        decompress_file(Core::InputFileStream { input_file_result.value() }, Core::OutputFileStream { output_file_result.value() });
     }
 }
