@@ -42,11 +42,13 @@ public:
     size_t read(Bytes bytes) override
     {
         size_t nread = 0;
-        while (nread < bytes.size()) {
-            if (m_file->eof())
-                return nread;
+        while (nread < bytes.size() && !eof()) {
+            if (m_file->has_error()) {
+                m_error = true;
+                return 0;
+            }
 
-            const auto buffer = m_file->read(nread - bytes.size());
+            const auto buffer = m_file->read(bytes.size() - nread);
             nread += buffer.bytes().copy_to(bytes.slice(nread));
         }
 
@@ -68,13 +70,12 @@ public:
         u8 buffer[4096];
 
         size_t ndiscarded = 0;
-        while (ndiscarded < count) {
-            if (eof()) {
-                m_error = true;
-                return false;
-            }
-
+        while (ndiscarded < count && !eof())
             ndiscarded += read({ buffer, min<size_t>(count - ndiscarded, sizeof(buffer)) });
+
+        if (eof()) {
+            m_error = true;
+            return false;
         }
 
         return true;
