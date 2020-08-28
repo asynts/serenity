@@ -39,6 +39,18 @@ public:
     {
     }
 
+    static Result<InputFileStream, String> open(StringView filename, IODevice::OpenMode mode = IODevice::OpenMode::ReadOnly, mode_t permissions = 0644)
+    {
+        ASSERT((mode & 0xf) == IODevice::OpenMode::ReadOnly || (mode & 0xf) == IODevice::OpenMode::ReadWrite);
+
+        auto file_result = File::open(filename, mode, permissions);
+
+        if (file_result.is_error())
+            return file_result.error();
+
+        return InputFileStream { file_result.value() };
+    }
+
     size_t read(Bytes bytes) override
     {
         size_t nread = 0;
@@ -83,6 +95,12 @@ public:
 
     bool eof() const override { return m_file->eof(); }
 
+    void close()
+    {
+        if (!m_file->close())
+            m_error = true;
+    }
+
 private:
     InputFileStream() = default;
 
@@ -95,6 +113,18 @@ public:
     OutputFileStream(NonnullRefPtr<File> file)
         : m_file(file)
     {
+    }
+
+    static Result<OutputFileStream, String> open(StringView filename, IODevice::OpenMode mode = IODevice::OpenMode::WriteOnly, mode_t permissions = 0644)
+    {
+        ASSERT((mode & 0xf) == IODevice::OpenMode::WriteOnly || (mode & 0xf) == IODevice::OpenMode::ReadWrite);
+
+        auto file_result = File::open(filename, mode, permissions);
+
+        if (file_result.is_error())
+            return file_result.error();
+
+        return OutputFileStream { file_result.value() };
     }
 
     size_t write(ReadonlyBytes bytes) override
@@ -115,6 +145,12 @@ public:
         }
 
         return true;
+    }
+
+    void close()
+    {
+        if (!m_file->close())
+            m_error = true;
     }
 
 private:
