@@ -31,7 +31,10 @@
 
 namespace Core {
 
-// FIXME: Buffering, maybe add a Buffered<T> template?
+// FIXME: Readable and writeable files should be distinguished in the source code and not
+//        at runtime. I don't want to do this now, so I just added a simple wrapper for
+//        Core::File.
+
 class InputFileStream final : public InputStream {
 public:
     explicit InputFileStream(NonnullRefPtr<File> file)
@@ -127,7 +130,6 @@ private:
     mutable ByteBuffer m_buffered;
 };
 
-// FIXME: Buffering, maybe add a Buffered<T> template?
 class OutputFileStream : public OutputStream {
 public:
     OutputFileStream(NonnullRefPtr<File> file)
