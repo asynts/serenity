@@ -148,7 +148,7 @@ bool GzipDecompressor::discard_or_error(size_t count)
             return false;
         }
 
-        ndiscarded += read({ buffer, min(count - ndiscarded, sizeof(buffer)) });
+        ndiscarded += read({ buffer, min<size_t>(count - ndiscarded, sizeof(buffer)) });
     }
 
     return true;
