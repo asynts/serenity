@@ -5,4 +5,4 @@ set(SOURCES
 )
 
 serenity_lib(LibCompress compression)
-target_link_libraries(LibCompress LibC)
+target_link_libraries(LibCompress LibC LibCrypto)

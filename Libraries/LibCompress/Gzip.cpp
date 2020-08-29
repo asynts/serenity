@@ -70,7 +70,7 @@ size_t GzipDecompressor::read(Bytes bytes)
     if (m_current_member.has_value()) {
         size_t nread = current_member().m_stream.read(bytes);
         current_member().m_checksum.update(bytes.trim(nread));
-        current_member().nread += nread;
+        current_member().m_nread += nread;
 
         if (nread < bytes.size()) {
             LittleEndian<u32> crc32, input_size;
@@ -120,7 +120,7 @@ size_t GzipDecompressor::read(Bytes bytes)
             m_input_stream >> comment;
         }
 
-        m_current_member = Member(header, m_input_stream);
+        m_current_member.emplace(header, m_input_stream);
         return read(bytes);
     }
 }

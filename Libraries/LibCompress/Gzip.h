@@ -70,7 +70,7 @@ private:
 
     class Member {
     public:
-        Member(BlockHeader header, InputBitStream &stream)
+        Member(BlockHeader header, InputStream& stream)
             : m_header(header)
             , m_stream(stream)
         {
@@ -82,6 +82,7 @@ private:
         size_t m_nread { 0 };
     };
 
+    const Member& current_member() const { return m_current_member.value(); }
     Member& current_member() { return m_current_member.value(); }
 
     InputStream& m_input_stream;
