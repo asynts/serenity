@@ -128,7 +128,7 @@ private:
 
 class OutputFileStream : public OutputStream {
 public:
-    OutputFileStream(NonnullRefPtr<File> file)
+    explicit OutputFileStream(NonnullRefPtr<File> file)
         : m_file(file)
     {
     }
@@ -143,6 +143,11 @@ public:
             return file_result.error();
 
         return OutputFileStream { file_result.value() };
+    }
+
+    static OutputFileStream stdout()
+    {
+        return OutputFileStream { Core::File::stdout() };
     }
 
     size_t write(ReadonlyBytes bytes) override
