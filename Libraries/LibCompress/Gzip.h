@@ -60,9 +60,9 @@ private:
     struct Flags {
         static constexpr u8 FTEXT = 1 << 0;
         static constexpr u8 FHCRC = 1 << 1;
-        static constexpr u8 FEXTRA = 1 << 1;
-        static constexpr u8 FNAME = 1 << 1;
-        static constexpr u8 FCOMMENT = 1 << 1;
+        static constexpr u8 FEXTRA = 1 << 2;
+        static constexpr u8 FNAME = 1 << 3;
+        static constexpr u8 FCOMMENT = 1 << 4;
 
         static constexpr u8 MAX = FTEXT | FHCRC | FEXTRA | FNAME | FCOMMENT;
     };
