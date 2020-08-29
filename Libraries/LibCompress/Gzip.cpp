@@ -96,6 +96,7 @@ size_t GzipDecompressor::read(Bytes bytes)
         if (m_input_stream.eof())
             return 0;
 
+        // FIXME: This fails with the new changes?
         BlockHeader header;
         m_input_stream >> Bytes { &header, sizeof(header) };
 
