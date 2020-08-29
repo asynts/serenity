@@ -30,6 +30,7 @@
 #include <AK/ByteBuffer.h>
 #include <AK/CircularDuplexStream.h>
 #include <AK/Endian.h>
+#include <AK/Result.h>
 #include <AK/Vector.h>
 
 namespace Compress {
@@ -41,6 +42,8 @@ private:
         CanonicalCode() = default;
         CanonicalCode(ReadonlyBytes);
         u32 read_symbol(InputBitStream&) const;
+
+        static Result<CanonicalCode, String> from_bytes(ReadonlyBytes);
 
         static const CanonicalCode& fixed_literal_codes();
         static const CanonicalCode& fixed_distance_codes();
