@@ -27,6 +27,7 @@
 #pragma once
 
 #include <LibCompress/Deflate.h>
+#include <LibCrypto/Checksum/CRC32.h>
 
 namespace Compress {
 
@@ -67,18 +68,24 @@ private:
         static constexpr u8 MAX = FTEXT | FHCRC | FEXTRA | FNAME | FCOMMENT;
     };
 
-    enum class State {
-        Idle,
-        ReadingDeflateBlock
+    class Member {
+    public:
+        Member(BlockHeader header, InputBitStream &stream)
+            : m_header(header)
+            , m_stream(stream)
+        {
+        }
+
+        BlockHeader m_header;
+        DeflateDecompressor m_stream;
+        Crypto::Checksum::CRC32 m_checksum;
+        size_t m_nread { 0 };
     };
 
-    State m_state { State::Idle };
-    union {
-        DeflateDecompressor m_block_stream;
-        BlockHeader m_block_header;
-    };
+    Member& current_member() { return m_current_member.value(); }
 
     InputStream& m_input_stream;
+    Optional<Member> m_current_member;
 };
 
 }

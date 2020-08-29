@@ -61,68 +61,68 @@ GzipDecompressor::GzipDecompressor(InputStream& stream)
 
 GzipDecompressor::~GzipDecompressor()
 {
-    if (m_state == State::ReadingDeflateBlock) {
-        m_block_stream.~DeflateDecompressor();
-        m_block_header.~BlockHeader();
-    }
+    m_current_member.clear();
 }
 
 // FIXME: Again, there are surely a ton of bugs because the code doesn't check for read errors.
 size_t GzipDecompressor::read(Bytes bytes)
 {
-    if (m_state == State::ReadingDeflateBlock) {
-        size_t nread = m_block_stream.read(bytes);
+    if (m_current_member.has_value()) {
+        size_t nread = current_member().m_stream.read(bytes);
+        current_member().m_checksum.update(bytes.trim(nread));
+        current_member().nread += nread;
 
         if (nread < bytes.size()) {
-            m_block_stream.~DeflateDecompressor();
-            m_state = State::Idle;
-
             LittleEndian<u32> crc32, input_size;
             m_input_stream >> crc32 >> input_size;
 
-            // FIXME: Validate crc32 and input_size.
+            if (crc32 != current_member().m_checksum.digest()) {
+                m_error = true;
+                return 0;
+            }
+
+            if (input_size != current_member().m_nread) {
+                m_error = true;
+                return 0;
+            }
+
+            m_current_member.clear();
 
             return nread + read(bytes.slice(nread));
         }
 
         return nread;
-    }
-
-    if (m_state == State::Idle) {
+    } else {
         if (m_input_stream.eof())
             return 0;
 
-        new (&m_block_header) BlockHeader();
-        m_input_stream >> Bytes { &m_block_header, sizeof(m_block_header) };
+        BlockHeader header;
+        m_input_stream >> Bytes { &header, sizeof(header) };
 
-        if (!m_block_header.valid_magic_number() || !m_block_header.supported_by_implementation()) {
+        if (!header.valid_magic_number() || !header.supported_by_implementation()) {
             m_error = true;
             return 0;
         }
 
-        if (m_block_header.flags & Flags::FEXTRA) {
+        if (header.flags & Flags::FEXTRA) {
             LittleEndian<u16> subfield_id, length;
             m_input_stream >> subfield_id >> length;
             m_input_stream.discard_or_error(length);
         }
 
-        if (m_block_header.flags & Flags::FNAME) {
+        if (header.flags & Flags::FNAME) {
             String original_filename;
             m_input_stream >> original_filename;
         }
 
-        if (m_block_header.flags & Flags::FCOMMENT) {
+        if (header.flags & Flags::FCOMMENT) {
             String comment;
             m_input_stream >> comment;
         }
 
-        m_state = State::ReadingDeflateBlock;
-        new (&m_block_stream) DeflateDecompressor(m_input_stream);
-
+        m_current_member = Member(header, m_input_stream);
         return read(bytes);
     }
-
-    ASSERT_NOT_REACHED();
 }
 
 bool GzipDecompressor::read_or_error(Bytes bytes)
@@ -173,16 +173,13 @@ ByteBuffer GzipDecompressor::decompress_all(ReadonlyBytes bytes)
 
 bool GzipDecompressor::eof() const
 {
-    if (m_state == State::Idle)
-        return m_input_stream.eof();
-
-    if (m_state == State::ReadingDeflateBlock) {
+    if (m_current_member.has_value()) {
         // FIXME: There is an ugly edge case where we read the whole deflate block
         //        but haven't read CRC32 and ISIZE.
-        return m_block_stream.eof() && m_input_stream.eof();
+        return current_member().m_stream.eof() && m_input_stream.eof();
+    } else {
+        return m_input_stream.eof();
     }
-
-    ASSERT_NOT_REACHED();
 }
 
 }
