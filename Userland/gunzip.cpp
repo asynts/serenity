@@ -28,44 +28,13 @@
 #include <LibCore/ArgsParser.h>
 #include <LibCore/FileStream.h>
 
-static void decompress_gzip_file(StringView input_filename, StringView output_filename)
+static void decompress_file(Core::InputFileStream input_stream, Core::OutputFileStream output_stream)
 {
-    auto input_stream_result = Core::InputFileStream::open(input_filename);
-    auto output_stream_result = Core::OutputFileStream::open(output_filename);
-
-    if (input_stream_result.is_error()) {
-        out() << "error: can't open '" << input_filename << "', " << input_stream_result.error();
-        exit(1);
-    }
-
-    if (output_stream_result.is_error()) {
-        out() << "error: can't open '" << output_filename << "', " << output_stream_result.error();
-        exit(1);
-    }
-
-    auto input_stream = input_stream_result.value();
-    auto output_stream = output_stream_result.value();
-
     auto gzip_stream = Compress::GzipDecompressor { input_stream };
 
     u8 buffer[4096];
 
     while (!gzip_stream.eof()) {
-        if (input_stream.handle_error()) {
-            out() << "error: can't read from '" << input_filename << "'";
-            exit(1);
-        }
-
-        if (output_stream.handle_error()) {
-            out() << "error: can't write to '" << output_filename << "'";
-            exit(1);
-        }
-
-        if (gzip_stream.handle_error()) {
-            out() << "error: '" << input_filename << "' is not a valid gzip file.";
-            exit(1);
-        }
-
         const auto nread = gzip_stream.read({ buffer, sizeof(buffer) });
         output_stream.write_or_error({ buffer, nread });
     }
@@ -77,19 +46,36 @@ static void decompress_gzip_file(StringView input_filename, StringView output_fi
 int main(int argc, char** argv)
 {
     Vector<const char*> filenames;
+    bool keep_input_files { false };
+    bool write_to_stdout { false };
 
     Core::ArgsParser args_parser;
-    args_parser.add_positional_argument(filenames, "Files to decompress", "FILE");
+    args_parser.add_option(keep_input_files, "Keep (don't delete) input files", "keep", 'k');
+    args_parser.add_option(write_to_stdout, "Write to stdout, keep original files unchanged", "stdout", 'c');
+    args_parser.add_positional_argument(filenames, "File to decompress", "FILE");
     args_parser.parse(argc, argv);
 
+    if (write_to_stdout)
+        keep_input_files = true;
+
     for (StringView filename : filenames) {
-        // FIXME: We should poll the file and see which magic number is present and then
-        //        choose the correct algorithm.
         ASSERT(filename.ends_with(".gz"));
 
         const auto input_filename = filename;
-        const auto output_filename = filename.substring_view(0, input_filename.length() - 3);
+        const auto output_filename = filename.substring_view(0, filename.length() - 3);
 
-        decompress_gzip_file(input_filename, output_filename);
+        auto input_stream_result = Core::InputFileStream::open(input_filename);
+
+        if (write_to_stdout) {
+            decompress_file(input_stream_result.value(), Core::OutputFileStream::stdout());
+        } else {
+            auto output_stream_result = Core::OutputFileStream::open(output_filename);
+            decompress_file(input_stream_result.value(), output_stream_result.value());
+        }
+
+        if (!keep_input_files) {
+            const auto retval = unlink(String { input_filename }.characters());
+            ASSERT(retval == 0);
+        }
     }
 }
