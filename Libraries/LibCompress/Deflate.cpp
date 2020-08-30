@@ -41,7 +41,9 @@ Result<DeflateDecompressor::CanonicalCode, String> DeflateDecompressor::Canonica
     CanonicalCode code;
 
     code.m_symbol_codes.resize(bytes.size());
+    code.m_symbol_codes.span().fill(0);
     code.m_symbol_values.resize(bytes.size());
+    code.m_symbol_values.span().fill(0);
 
     size_t allocated_symbols_count = 0;
     u32 next_code = 0;
