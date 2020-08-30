@@ -87,9 +87,6 @@ TEST_CASE(deflate_decompress_multiple_blocks)
     EXPECT(compare({ uncompressed, sizeof(uncompressed) - 1 }, decompressed.bytes()));
 }
 
-// FIXME: The following test uses a dynamic encoding which isn't supported by DeflateDecompressor yet.
-
-/*
 TEST_CASE(deflate_decompress_zeroes)
 {
     const u8 compressed[] = {
@@ -103,7 +100,6 @@ TEST_CASE(deflate_decompress_zeroes)
     const auto decompressed = Compress::DeflateDecompressor::decompress_all({ compressed, sizeof(compressed) });
     EXPECT(compare({ uncompressed, sizeof(uncompressed) }, decompressed.bytes()));
 }
-*/
 
 TEST_CASE(zlib_decompress_simple)
 {

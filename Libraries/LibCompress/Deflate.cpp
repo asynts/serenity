@@ -350,7 +350,7 @@ u32 DeflateDecompressor::decode_distance(u32 symbol)
     ASSERT_NOT_REACHED();
 }
 
-void DeflateDecompressor::decode_codes(CanonicalCode& length_codes, Optional<CanonicalCode>& distance_codes)
+void DeflateDecompressor::decode_codes(CanonicalCode& literal_code, Optional<CanonicalCode>& distance_code)
 {
     auto literal_code_count = m_input_stream.read_bits(5) + 257;
     auto distance_code_count = m_input_stream.read_bits(5) + 1;
@@ -359,7 +359,7 @@ void DeflateDecompressor::decode_codes(CanonicalCode& length_codes, Optional<Can
     // First we have to extract the code lengths of the code that was used to encode the code lengths of
     // the code that was used to encode the block.
 
-    auto code_lengths_code_lengths = ByteBuffer::create_uninitialized(code_length_count);
+    u8 code_lengths_code_lengths[19] = { 0 };
     for (size_t i = 0; i < code_length_count; ++i) {
         static const size_t indices[] { 16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15 };
         code_lengths_code_lengths[indices[i]] = m_input_stream.read_bits(3);
@@ -368,7 +368,7 @@ void DeflateDecompressor::decode_codes(CanonicalCode& length_codes, Optional<Can
     // Now we can extract the code that was used to encode the code lengths of the code that was used to
     // encode the blcok.
 
-    auto code_length_code_result = CanonicalCode::from_bytes(code_lengths_code_lengths);
+    auto code_length_code_result = CanonicalCode::from_bytes({ code_lengths_code_lengths, sizeof(code_lengths_code_lengths) });
     if (code_length_code_result.is_error()) {
         m_error = true;
         return;
@@ -410,7 +410,6 @@ void DeflateDecompressor::decode_codes(CanonicalCode& length_codes, Optional<Can
             code_lengths.append(code_lengths.last());
     }
 
-    // FIXME: Is this correct?
     if (code_lengths.size() != literal_code_count + distance_code_count) {
         m_error = true;
         return;
@@ -423,9 +422,27 @@ void DeflateDecompressor::decode_codes(CanonicalCode& length_codes, Optional<Can
         m_error = true;
         return;
     }
-    const auto literal_code = literal_code_result.value();
+    literal_code = literal_code_result.value();
 
-    // FIXME
+    // Now we extract the code that was used to encode distances in the block.
+
+    if (distance_code_count == 1) {
+        auto length = code_lengths[literal_code_count];
+
+        if (length == 0) {
+            return;
+        } else if (length != 1) {
+            m_error = true;
+            return;
+        }
+    }
+
+    auto distance_code_result = CanonicalCode::from_bytes(code_lengths.span().slice(literal_code_count));
+    if (distance_code_result.is_error()) {
+        m_error = true;
+        return;
+    }
+    distance_code = distance_code_result.value();
 }
 
 }
