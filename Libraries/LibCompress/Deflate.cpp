@@ -40,14 +40,7 @@ Result<DeflateDecompressor::CanonicalCode, String> DeflateDecompressor::Canonica
 
     CanonicalCode code;
 
-    code.m_symbol_codes.resize(bytes.size());
-    code.m_symbol_codes.span().fill(0);
-    code.m_symbol_values.resize(bytes.size());
-    code.m_symbol_values.span().fill(0);
-
-    size_t allocated_symbols_count = 0;
     u32 next_code = 0;
-
     for (size_t code_length = 1; code_length <= 15; ++code_length) {
         next_code <<= 1;
         u32 start_bit = 1 << code_length;
@@ -59,10 +52,9 @@ Result<DeflateDecompressor::CanonicalCode, String> DeflateDecompressor::Canonica
             if (next_code > start_bit)
                 return String { "Canonical code overflows the huffman tree" };
 
-            code.m_symbol_codes[allocated_symbols_count] = start_bit | next_code;
-            code.m_symbol_values[allocated_symbols_count] = symbol;
+            code.m_symbol_codes.append(start_bit | next_code);
+            code.m_symbol_values.append(symbol);
 
-            allocated_symbols_count++;
             next_code++;
         }
     }
@@ -365,8 +357,6 @@ void DeflateDecompressor::decode_codes(CanonicalCode& literal_code, Optional<Can
     for (size_t i = 0; i < code_length_count; ++i) {
         static const size_t indices[] { 16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15 };
         code_lengths_code_lengths[indices[i]] = m_input_stream.read_bits(3);
-
-        dbg() << "code_lengths_code_lengths[" << indices[i] << "] = " << code_lengths_code_lengths[indices[i]];
     }
 
     // Now we can extract the code that was used to encode the code lengths of the code that was used to
@@ -382,36 +372,34 @@ void DeflateDecompressor::decode_codes(CanonicalCode& literal_code, Optional<Can
     // Next we extract the code lengths of the code that was used to encode the block.
 
     Vector<u8> code_lengths;
-    for (size_t i = 0; i < literal_code_count + distance_code_count; ++i) {
+    while (code_lengths.size() < literal_code_count + distance_code_count) {
         auto symbol = code_length_code.read_symbol(m_input_stream);
 
         if (symbol <= 15) {
             code_lengths.append(static_cast<u8>(symbol));
             continue;
-        }
-
-        if (symbol == 17) {
+        } else if (symbol == 17) {
             auto nrepeat = 3 + m_input_stream.read_bits(3);
             for (size_t j = 0; j < nrepeat; ++j)
                 code_lengths.append(0);
-        }
-
-        if (symbol == 18) {
+            continue;
+        } else if (symbol == 18) {
             auto nrepeat = 11 + m_input_stream.read_bits(7);
             for (size_t j = 0; j < nrepeat; ++j)
                 code_lengths.append(0);
+            continue;
+        } else {
+            ASSERT(symbol == 16);
+
+            if (code_lengths.is_empty()) {
+                m_error = true;
+                return;
+            }
+
+            auto nrepeat = 3 + m_input_stream.read_bits(3);
+            for (size_t j = 0; j < nrepeat; ++j)
+                code_lengths.append(code_lengths.last());
         }
-
-        ASSERT(symbol == 16);
-
-        if (code_lengths.is_empty()) {
-            m_error = true;
-            return;
-        }
-
-        auto nrepeat = 3 + m_input_stream.read_bits(3);
-        for (size_t j = 0; j < nrepeat; ++j)
-            code_lengths.append(code_lengths.last());
     }
 
     if (code_lengths.size() != literal_code_count + distance_code_count) {
