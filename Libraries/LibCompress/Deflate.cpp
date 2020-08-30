@@ -363,10 +363,12 @@ void DeflateDecompressor::decode_codes(CanonicalCode& literal_code, Optional<Can
     for (size_t i = 0; i < code_length_count; ++i) {
         static const size_t indices[] { 16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15 };
         code_lengths_code_lengths[indices[i]] = m_input_stream.read_bits(3);
+
+        dbg() << "code_lengths_code_lengths[" << indices[i] << "] = " << code_lengths_code_lengths[indices[i]];
     }
 
     // Now we can extract the code that was used to encode the code lengths of the code that was used to
-    // encode the blcok.
+    // encode the block.
 
     auto code_length_code_result = CanonicalCode::from_bytes({ code_lengths_code_lengths, sizeof(code_lengths_code_lengths) });
     if (code_length_code_result.is_error()) {
@@ -376,8 +378,6 @@ void DeflateDecompressor::decode_codes(CanonicalCode& literal_code, Optional<Can
     const auto code_length_code = code_length_code_result.value();
 
     // Next we extract the code lengths of the code that was used to encode the block.
-
-    // FIXME: We have an infinite loop here.
 
     Vector<u8> code_lengths;
     for (size_t i = 0; i < literal_code_count + distance_code_count; ++i) {
