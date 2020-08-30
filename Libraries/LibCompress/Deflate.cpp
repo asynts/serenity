@@ -377,6 +377,8 @@ void DeflateDecompressor::decode_codes(CanonicalCode& literal_code, Optional<Can
 
     // Next we extract the code lengths of the code that was used to encode the block.
 
+    // FIXME: We have an infinite loop here.
+
     Vector<u8> code_lengths;
     for (size_t i = 0; i < literal_code_count + distance_code_count; ++i) {
         auto symbol = code_length_code.read_symbol(m_input_stream);
