@@ -344,6 +344,57 @@ u32 DeflateDecompressor::decode_distance(u32 symbol)
     ASSERT_NOT_REACHED();
 }
 
+bool DeflateDecompressor::read_dynamic_code_lengths_code(CanonicalCode& code, size_t count)
+{
+    u8 lengths[19] = { 0 };
+    for (size_t i = 0; i < count; ++i) {
+        static const size_t indices[] { 16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15 };
+        lengths[indices[i]] = m_input_stream.read_bits(3);
+    }
+
+    auto code_length_code_result = CanonicalCode::from_bytes({ lengths, sizeof(lengths) });
+    if (code_length_code_result.is_error())
+        return false;
+
+    code = code_length_code_result.value();
+    return true;
+}
+
+bool DeflateDecompressor::read_dynamic_code_lengths(Bytes bytes, const CanonicalCode& code)
+{
+    Vector<u8> lengths;
+    while (lengths.size() < bytes.size()) {
+        auto symbol = code.read_symbol(m_input_stream);
+
+        if (symbol <= 15) {
+            lengths.append(static_cast<u8>(symbol));
+        } else if (symbol == 17) {
+            auto nrepeat = 3 + m_input_stream.read_bits(3);
+            for (size_t j = 0; j < nrepeat; ++j)
+                lengths.append(0);
+        } else if (symbol == 18) {
+            auto nrepeat = 11 + m_input_stream.read_bits(7);
+            for (size_t j = 0; j < nrepeat; ++j)
+                lengths.append(0);
+        } else {
+            ASSERT(symbol == 16);
+
+            if (lengths.is_empty())
+                return false;
+
+            auto nrepeat = 3 + m_input_stream.read_bits(3);
+            for (size_t j = 0; j < nrepeat; ++j)
+                lengths.append(lengths.last());
+        }
+    }
+
+    if (lengths.size() != bytes.size())
+        return false;
+
+    lengths.span().copy_to(bytes);
+    return true;
+}
+
 void DeflateDecompressor::decode_codes(CanonicalCode& literal_code, Optional<CanonicalCode>& distance_code)
 {
     auto literal_code_count = m_input_stream.read_bits(5) + 257;
@@ -353,73 +404,27 @@ void DeflateDecompressor::decode_codes(CanonicalCode& literal_code, Optional<Can
     // First we have to extract the code lengths of the code that was used to encode the code lengths of
     // the code that was used to encode the block.
 
-    u8 code_lengths_code_lengths[19] = { 0 };
-    for (size_t i = 0; i < code_length_count; ++i) {
-        static const size_t indices[] { 16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15 };
-        code_lengths_code_lengths[indices[i]] = m_input_stream.read_bits(3);
-    }
-
-    // Now we can extract the code that was used to encode the code lengths of the code that was used to
-    // encode the block.
-
-    auto code_length_code_result = CanonicalCode::from_bytes({ code_lengths_code_lengths, sizeof(code_lengths_code_lengths) });
-    if (code_length_code_result.is_error()) {
-        m_error = true;
-        return;
-    }
-    const auto code_length_code = code_length_code_result.value();
-
-    // Next we extract the code lengths of the code that was used to encode the block.
-
-    Vector<u8> code_lengths;
-    while (code_lengths.size() < literal_code_count + distance_code_count) {
-        auto symbol = code_length_code.read_symbol(m_input_stream);
-
-        if (symbol <= 15) {
-            code_lengths.append(static_cast<u8>(symbol));
-            continue;
-        } else if (symbol == 17) {
-            auto nrepeat = 3 + m_input_stream.read_bits(3);
-            for (size_t j = 0; j < nrepeat; ++j)
-                code_lengths.append(0);
-            continue;
-        } else if (symbol == 18) {
-            auto nrepeat = 11 + m_input_stream.read_bits(7);
-            for (size_t j = 0; j < nrepeat; ++j)
-                code_lengths.append(0);
-            continue;
-        } else {
-            ASSERT(symbol == 16);
-
-            if (code_lengths.is_empty()) {
-                m_error = true;
-                return;
-            }
-
-            auto nrepeat = 3 + m_input_stream.read_bits(3);
-            for (size_t j = 0; j < nrepeat; ++j)
-                code_lengths.append(code_lengths.last());
-        }
-    }
-
-    if (code_lengths.size() != literal_code_count + distance_code_count) {
+    CanonicalCode lengths_code;
+    if (!read_dynamic_code_lengths_code(lengths_code, code_length_count)) {
         m_error = true;
         return;
     }
 
-    // Now we extract the code that was used to encode literals and lengths in the block.
+    FixedArray<u8> lengths { literal_code_count + distance_code_count };
+    if (!read_dynamic_code_lengths(lengths, lengths_code)) {
+        m_error = true;
+        return;
+    }
 
-    auto literal_code_result = CanonicalCode::from_bytes(code_lengths.span().trim(literal_code_count));
+    auto literal_code_result = CanonicalCode::from_bytes(lengths.bytes().trim(literal_code_count));
     if (literal_code_result.is_error()) {
         m_error = true;
         return;
     }
     literal_code = literal_code_result.value();
 
-    // Now we extract the code that was used to encode distances in the block.
-
     if (distance_code_count == 1) {
-        auto length = code_lengths[literal_code_count];
+        auto length = lengths[literal_code_count];
 
         if (length == 0) {
             return;
@@ -429,7 +434,7 @@ void DeflateDecompressor::decode_codes(CanonicalCode& literal_code, Optional<Can
         }
     }
 
-    auto distance_code_result = CanonicalCode::from_bytes(code_lengths.span().slice(literal_code_count));
+    auto distance_code_result = CanonicalCode::from_bytes(lengths.bytes().slice(literal_code_count));
     if (distance_code_result.is_error()) {
         m_error = true;
         return;

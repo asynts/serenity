@@ -101,7 +101,10 @@ public:
 private:
     u32 decode_run_length(u32);
     u32 decode_distance(u32);
+
     void decode_codes(CanonicalCode& length_codes, Optional<CanonicalCode>& distance_codes);
+    bool read_dynamic_code_lengths_code(CanonicalCode&, size_t);
+    bool read_dynamic_code_lengths(Bytes, const CanonicalCode&);
 
     bool m_read_final_bock { false };
 
