@@ -201,7 +201,7 @@ size_t DeflateDecompressor::read(Bytes bytes)
             m_input_stream >> length >> negated_length;
 
             if ((length ^ 0xffff) != negated_length) {
-                m_error = true;
+                set_fatal_error();
                 return 0;
             }
 
@@ -267,7 +267,7 @@ size_t DeflateDecompressor::read(Bytes bytes)
 bool DeflateDecompressor::read_or_error(Bytes bytes)
 {
     if (read(bytes) < bytes.size()) {
-        m_error = true;
+        set_fatal_error();
         return false;
     }
 
@@ -281,7 +281,7 @@ bool DeflateDecompressor::discard_or_error(size_t count)
     size_t ndiscarded = 0;
     while (ndiscarded < count) {
         if (eof()) {
-            m_error = true;
+            set_fatal_error();
             return false;
         }
 
