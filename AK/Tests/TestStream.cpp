@@ -62,9 +62,9 @@ TEST_CASE(recoverable_error)
 
     EXPECT(!stream.has_any_error() && !stream.eof());
     stream >> to_large_value;
-    EXPECT(stream.has_any_error() && !stream.eof());
+    EXPECT(stream.has_recoverable_error() && !stream.eof());
 
-    EXPECT(stream.handle_any_error());
+    EXPECT(stream.handle_recoverable_error());
     EXPECT(!stream.has_any_error() && !stream.eof());
 
     stream >> actual;
