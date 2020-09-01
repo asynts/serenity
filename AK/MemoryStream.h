@@ -26,7 +26,10 @@
 
 #pragma once
 
+#include <AK/ByteBuffer.h>
+#include <AK/MemMem.h>
 #include <AK/Stream.h>
+#include <AK/Vector.h>
 
 namespace AK {
 
