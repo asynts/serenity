@@ -222,7 +222,7 @@ public:
         return {};
     }
 
-    size_t read(Bytes bytes) override
+    size_t read_without_consuming(Bytes bytes) const
     {
         size_t nread = 0;
         while (bytes.size() - nread > 0 && m_write_offset - m_read_offset - nread > 0) {
@@ -231,8 +231,14 @@ public:
             nread += chunk_bytes.copy_trimmed_to(bytes.slice(nread));
         }
 
-        m_read_offset += nread;
+        return nread;
+    }
 
+    size_t read(Bytes bytes) override
+    {
+        const auto nread = read_without_consuming(bytes);
+
+        m_read_offset += nread;
         try_discard_chunks();
 
         return nread;
@@ -267,6 +273,16 @@ public:
     {
         write(bytes);
         return true;
+    }
+
+    ByteBuffer copy_into_contigous_buffer() const
+    {
+        auto buffer = ByteBuffer::create_uninitialized(remaining());
+
+        const auto nread = read_without_consuming(buffer);
+        ASSERT(nread == buffer.size());
+
+        return buffer;
     }
 
     size_t roffset() const { return m_read_offset; }
