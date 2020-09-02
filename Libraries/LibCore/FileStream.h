@@ -74,7 +74,7 @@ public:
             m_buffered.trim(m_buffered.size() - nread);
         }
 
-        while (nread < bytes.size() && !eof()) {
+        while (nread < bytes.size() && !guaranteed_eof()) {
             if (m_file->has_error()) {
                 set_fatal_error();
                 return 0;
@@ -102,10 +102,10 @@ public:
         u8 buffer[4096];
 
         size_t ndiscarded = 0;
-        while (ndiscarded < count && !eof())
+        while (ndiscarded < count && !guaranteed_eof())
             ndiscarded += read({ buffer, min<size_t>(count - ndiscarded, sizeof(buffer)) });
 
-        if (eof()) {
+        if (guaranteed_eof()) {
             set_fatal_error();
             return false;
         }
@@ -113,18 +113,7 @@ public:
         return true;
     }
 
-    bool eof() const override
-    {
-        if (m_buffered.size() > 0)
-            return false;
-
-        if (m_file->eof())
-            return true;
-
-        m_buffered = m_file->read(4096);
-
-        return m_buffered.size() == 0;
-    }
+    bool unreliable_eof() const override { return m_buffered.size() == 0 && m_file->eof(); }
 
     void close()
     {

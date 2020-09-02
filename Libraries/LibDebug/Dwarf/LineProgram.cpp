@@ -74,7 +74,7 @@ void LineProgram::parse_source_directories()
 void LineProgram::parse_source_files()
 {
     m_source_files.append({ ".", 0 });
-    while (!m_stream.eof() && m_stream.peek_or_error()) {
+    while (!m_stream.guaranteed_eof() && m_stream.peek_or_error()) {
         String file_name;
         m_stream >> file_name;
         size_t directory_index = 0;

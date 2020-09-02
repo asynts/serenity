@@ -54,7 +54,7 @@ void DwarfInfo::populate_compilation_units()
         return;
 
     InputMemoryStream stream { m_debug_info_data };
-    while (!stream.eof()) {
+    while (!stream.guaranteed_eof()) {
         auto unit_offset = stream.offset();
         CompilationUnitHeader compilation_unit_header {};
 

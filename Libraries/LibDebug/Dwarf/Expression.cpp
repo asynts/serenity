@@ -35,7 +35,7 @@ Value evaluate(ReadonlyBytes bytes, const PtraceRegisters& regs)
 {
     InputMemoryStream stream(bytes);
 
-    while (!stream.eof()) {
+    while (!stream.guaranteed_eof()) {
         u8 opcode = 0;
         stream >> opcode;
 
