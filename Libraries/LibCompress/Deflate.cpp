@@ -287,7 +287,7 @@ bool DeflateDecompressor::discard_or_error(size_t count)
 
     size_t ndiscarded = 0;
     while (ndiscarded < count) {
-        if (eof()) {
+        if (guaranteed_eof()) {
             set_fatal_error();
             return false;
         }
@@ -298,7 +298,8 @@ bool DeflateDecompressor::discard_or_error(size_t count)
     return true;
 }
 
-bool DeflateDecompressor::eof() const { return m_state == State::Idle && m_read_final_bock; }
+// FIXME: This is not guarenteed.
+bool DeflateDecompressor::guaranteed_eof() const { return m_state == State::Idle && m_read_final_bock; }
 
 ByteBuffer DeflateDecompressor::decompress_all(ReadonlyBytes bytes)
 {
@@ -309,7 +310,7 @@ ByteBuffer DeflateDecompressor::decompress_all(ReadonlyBytes bytes)
     auto buffer = ByteBuffer::create_uninitialized(4096);
 
     size_t nread = 0;
-    while (!deflate_stream.eof()) {
+    while (!deflate_stream.guaranteed_eof()) {
         nread += deflate_stream.read(buffer.bytes().slice(nread));
         if (buffer.size() - nread < 4096)
             buffer.grow(buffer.size() + 4096);

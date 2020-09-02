@@ -110,7 +110,7 @@ void DebugInfo::prepare_lines()
     InputMemoryStream stream { buffer };
 
     Vector<Dwarf::LineProgram::LineInfo> all_lines;
-    while (!stream.eof()) {
+    while (!stream.guaranteed_eof()) {
         Dwarf::LineProgram program(stream);
         all_lines.append(program.lines());
     }

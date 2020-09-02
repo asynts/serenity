@@ -47,7 +47,7 @@ TEST_CASE(works_like_a_queue)
         EXPECT_EQ(queue.dequeue(), byte);
     }
 
-    EXPECT(stream.eof());
+    EXPECT(stream.guaranteed_eof());
 }
 
 TEST_CASE(overwritting_is_well_defined)
@@ -81,7 +81,7 @@ TEST_CASE(overwritting_is_well_defined)
             EXPECT_EQ(byte, idx % 256 - half_capacity);
     }
 
-    EXPECT(stream.eof());
+    EXPECT(stream.guaranteed_eof());
 }
 
 TEST_MAIN(CircularDuplexStream)

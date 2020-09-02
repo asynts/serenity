@@ -1023,7 +1023,7 @@ void Execute::for_each_entry(RefPtr<Shell> shell, Function<IterationDecision(Ref
             dbg() << "close() failed: " << strerror(errno);
         }
 
-        if (!stream.eof()) {
+        if (!stream.guaranteed_eof()) {
             auto action = Continue;
             do {
                 action = check_and_call();
@@ -1031,7 +1031,7 @@ void Execute::for_each_entry(RefPtr<Shell> shell, Function<IterationDecision(Ref
                     return;
             } while (action == Continue);
 
-            if (!stream.eof()) {
+            if (!stream.guaranteed_eof()) {
                 auto entry = ByteBuffer::create_uninitialized(stream.remaining());
                 auto rc = stream.read_or_error(entry);
                 ASSERT(rc);

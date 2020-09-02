@@ -285,7 +285,7 @@ inline InputStream& operator>>(InputStream& stream, String& string)
     StringBuilder builder;
 
     for (;;) {
-        if (stream.eof()) {
+        if (stream.guaranteed_eof()) {
             string = nullptr;
 
             stream.set_fatal_error();
