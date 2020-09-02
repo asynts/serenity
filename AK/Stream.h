@@ -77,8 +77,15 @@ class InputStream : public virtual AK::Detail::Stream {
 public:
     virtual size_t read(Bytes) = 0;
     virtual bool read_or_error(Bytes) = 0;
-    virtual bool eof() const = 0;
     virtual bool discard_or_error(size_t count) = 0;
+
+    // If this function returns true, no more data can be read. Otherwise no promise is made,
+    // false negatives are allowed. Some streams might define `bool StreamType::guaranteed_eof()`
+    // which promises to return true if and only if no more data can be read.
+    //
+    // This method can be backfilled with `bool Buffered<StreamType>::guaranteed_eof()` for streams
+    // that don't define it.
+    virtual bool unreliable_eof() const = 0;
 };
 
 class OutputStream : public virtual AK::Detail::Stream {

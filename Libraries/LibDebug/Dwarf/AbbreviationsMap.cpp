@@ -43,7 +43,7 @@ void AbbreviationsMap::populate_map()
     InputMemoryStream abbreviation_stream(m_dwarf_info.abbreviation_data());
     abbreviation_stream.discard_or_error(m_offset);
 
-    while (!abbreviation_stream.eof()) {
+    while (!abbreviation_stream.guaranteed_eof()) {
         size_t abbreviation_code = 0;
         abbreviation_stream.read_LEB128_unsigned(abbreviation_code);
         // An abbrevation code of 0 marks the end of the

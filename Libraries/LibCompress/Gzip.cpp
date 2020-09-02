@@ -94,7 +94,7 @@ size_t GzipDecompressor::read(Bytes bytes)
 
         return nread;
     } else {
-        if (m_input_stream.eof())
+        if (m_input_stream.guaranteed_eof())
             return 0;
 
         // FIXME: This fails with the new changes?
@@ -143,7 +143,7 @@ bool GzipDecompressor::discard_or_error(size_t count)
 
     size_t ndiscarded = 0;
     while (ndiscarded < count) {
-        if (eof()) {
+        if (guaranteed_eof()) {
             set_fatal_error();
             return false;
         }
@@ -162,7 +162,7 @@ ByteBuffer GzipDecompressor::decompress_all(ReadonlyBytes bytes)
     auto buffer = ByteBuffer::create_uninitialized(4096);
 
     size_t nread = 0;
-    while (!gzip_stream.eof()) {
+    while (!gzip_stream.guaranteed_eof()) {
         nread += gzip_stream.read(buffer.bytes().slice(nread));
 
         if (buffer.size() - nread < 4096)
@@ -173,14 +173,14 @@ ByteBuffer GzipDecompressor::decompress_all(ReadonlyBytes bytes)
     return buffer;
 }
 
-bool GzipDecompressor::eof() const
+bool GzipDecompressor::guaranteed_eof() const
 {
     if (m_current_member.has_value()) {
         // FIXME: There is an ugly edge case where we read the whole deflate block
         //        but haven't read CRC32 and ISIZE.
-        return current_member().m_stream.eof() && m_input_stream.eof();
+        return current_member().m_stream.guaranteed_eof() && m_input_stream.guaranteed_eof();
     } else {
-        return m_input_stream.eof();
+        return m_input_stream.guaranteed_eof();
     }
 }
 

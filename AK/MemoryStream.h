@@ -40,7 +40,8 @@ public:
     {
     }
 
-    bool eof() const override { return m_offset >= m_bytes.size(); }
+    bool guaranteed_eof() { return m_offset >= m_bytes.size(); }
+    bool unreliable_eof() const override { return m_offset >= m_bytes.size(); }
 
     size_t read(Bytes bytes) override
     {
@@ -97,9 +98,7 @@ public:
         result = 0;
         size_t num_bytes = 0;
         while (true) {
-            // Note. The implementation in AK::BufferStream::read_LEB128_unsigned read one
-            //       past the end, this is fixed here.
-            if (eof()) {
+            if (guaranteed_eof()) {
                 m_offset = backup;
                 set_recoverable_error();
                 return false;
@@ -126,9 +125,7 @@ public:
         u8 byte = 0;
 
         do {
-            // Note. The implementation in AK::BufferStream::read_LEB128_unsigned read one
-            //       past the end, this is fixed here.
-            if (eof()) {
+            if (guaranteed_eof()) {
                 m_offset = backup;
                 set_recoverable_error();
                 return false;
@@ -164,7 +161,8 @@ class DuplexMemoryStream final : public DuplexStream {
 public:
     static constexpr size_t chunk_size = 4 * 1024;
 
-    bool eof() const override { return m_write_offset == m_read_offset; }
+    bool guaranteed_eof() { return m_write_offset == m_read_offset; }
+    bool unreliable_eof() const { return m_write_offset == m_read_offset; }
 
     bool discard_or_error(size_t count) override
     {

@@ -26,6 +26,7 @@
 
 #pragma once
 
+#include <AK/BufferedStream.h>
 #include <AK/Stream.h>
 #include <LibCore/File.h>
 
@@ -50,7 +51,20 @@ public:
         return InputFileStream { file_result.value() };
     }
 
-    size_t read(Bytes bytes) override
+    static Result<Buffered<InputFileStream>, String> open_buffered(StringView filename, IODevice::OpenMode mode = IODevice::OpenMode::ReadOnly, mode_t permissions = 0644)
+    {
+        ASSERT((mode & 0xf) == IODevice::OpenMode::ReadOnly || (mode & 0xf) == IODevice::OpenMode::ReadWrite);
+
+        auto file_result = File::open(filename, mode, permissions);
+
+        if (file_result.is_error())
+            return file_result.error();
+
+        return Buffered<InputFileStream> { file_result.value() };
+    }
+
+    size_t
+    read(Bytes bytes) override
     {
         size_t nread = 0;
 
@@ -61,7 +75,7 @@ public:
             m_buffered.trim(m_buffered.size() - nread);
         }
 
-        while (nread < bytes.size() && !eof()) {
+        while (nread < bytes.size() && !guaranteed_eof()) {
             if (m_file->has_error()) {
                 set_fatal_error();
                 return 0;
@@ -89,10 +103,10 @@ public:
         u8 buffer[4096];
 
         size_t ndiscarded = 0;
-        while (ndiscarded < count && !eof())
+        while (ndiscarded < count && !guaranteed_eof())
             ndiscarded += read({ buffer, min<size_t>(count - ndiscarded, sizeof(buffer)) });
 
-        if (eof()) {
+        if (guaranteed_eof()) {
             set_fatal_error();
             return false;
         }
@@ -100,18 +114,7 @@ public:
         return true;
     }
 
-    bool eof() const override
-    {
-        if (m_buffered.size() > 0)
-            return false;
-
-        if (m_file->eof())
-            return true;
-
-        m_buffered = m_file->read(4096);
-
-        return m_buffered.size() == 0;
-    }
+    bool unreliable_eof() const override { return m_buffered.size() == 0 && m_file->eof(); }
 
     void close()
     {
