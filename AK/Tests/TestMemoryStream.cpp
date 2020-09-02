@@ -171,4 +171,20 @@ TEST_CASE(write_endian_values)
     EXPECT(compare({ expected, sizeof(expected) }, stream.copy_into_contiguous_buffer()));
 }
 
+TEST_CASE(unreliable_and_guaranteed_eof_are_equivalent)
+{
+    DuplexMemoryStream stream;
+
+    EXPECT_EQ(stream.guaranteed_eof(), stream.unreliable_eof());
+
+    stream << 42;
+
+    EXPECT_EQ(stream.guaranteed_eof(), stream.unreliable_eof());
+
+    int value;
+    stream >> value;
+
+    EXPECT_EQ(stream.guaranteed_eof(), stream.unreliable_eof());
+}
+
 TEST_MAIN(MemoryStream)
