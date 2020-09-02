@@ -84,4 +84,20 @@ TEST_CASE(overwritting_is_well_defined)
     EXPECT(stream.guaranteed_eof());
 }
 
+TEST_CASE(unreliable_and_guaranteed_eof_are_equivalent)
+{
+    CircularDuplexStream<4> stream;
+
+    EXPECT_EQ(stream.guaranteed_eof(), stream.unreliable_eof());
+
+    stream << 42;
+
+    EXPECT_EQ(stream.guaranteed_eof(), stream.unreliable_eof());
+
+    int value;
+    stream >> value;
+
+    EXPECT_EQ(stream.guaranteed_eof(), stream.unreliable_eof());
+}
+
 TEST_MAIN(CircularDuplexStream)
