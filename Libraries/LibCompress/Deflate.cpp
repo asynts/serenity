@@ -285,39 +285,34 @@ bool DeflateDecompressor::discard_or_error(size_t count)
 {
     u8 buffer[4096];
 
-    size_t ndiscarded = 0;
-    while (ndiscarded < count) {
-        if (guaranteed_eof()) {
+    size_t ntotal = 0;
+    while (ntotal < count) {
+        const auto ndiscarded = read({ buffer, min<size_t>(count - ntotal, 4096) });
+        ntotal += ndiscarded;
+
+        if (ndiscarded == 0) {
             set_fatal_error();
             return false;
         }
-
-        ndiscarded += read({ buffer, min<size_t>(count - ndiscarded, 4096) });
     }
 
     return true;
 }
 
-// FIXME: This is not guarenteed.
-bool DeflateDecompressor::guaranteed_eof() const { return m_state == State::Idle && m_read_final_bock; }
+bool DeflateDecompressor::unreliable_eof() const { return m_state == State::Idle && m_read_final_bock; }
 
 ByteBuffer DeflateDecompressor::decompress_all(ReadonlyBytes bytes)
 {
     InputMemoryStream memory_stream { bytes };
     InputBitStream bit_stream { memory_stream };
     DeflateDecompressor deflate_stream { bit_stream };
+    OutputMemoryStream output_stream;
 
-    auto buffer = ByteBuffer::create_uninitialized(4096);
-
-    size_t nread = 0;
-    while (!deflate_stream.guaranteed_eof()) {
-        nread += deflate_stream.read(buffer.bytes().slice(nread));
-        if (buffer.size() - nread < 4096)
-            buffer.grow(buffer.size() + 4096);
+    for (;;) {
+        deflate_stream.
     }
 
-    buffer.trim(nread);
-    return buffer;
+    return output_stream.copy_into_contiguous_buffer();
 }
 
 u32 DeflateDecompressor::decode_run_length(u32 symbol)

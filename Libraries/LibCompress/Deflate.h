@@ -92,7 +92,8 @@ public:
     size_t read(Bytes) override;
     bool read_or_error(Bytes) override;
     bool discard_or_error(size_t) override;
-    bool guaranteed_eof() const override;
+
+    bool unreliable_eof() const override;
 
     static ByteBuffer decompress_all(ReadonlyBytes);
 
