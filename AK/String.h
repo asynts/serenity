@@ -285,15 +285,15 @@ inline InputStream& operator>>(InputStream& stream, String& string)
     StringBuilder builder;
 
     for (;;) {
-        if (stream.eof()) {
+        char next_char;
+        stream >> next_char;
+
+        if (stream.handle_any_error()) {
             string = nullptr;
 
             stream.set_fatal_error();
             return stream;
         }
-
-        char next_char;
-        stream >> next_char;
 
         if (next_char) {
             builder.append(next_char);
