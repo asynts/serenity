@@ -56,11 +56,15 @@ public:
 
     size_t read(Bytes bytes) override
     {
-        auto nread = buffer().trim(m_buffer_remaining).copy_trimmed_to(bytes);
+        const auto nread = buffer().trim(m_buffer_remaining).copy_trimmed_to(bytes);
         m_buffer_remaining -= nread;
 
         if (nread < bytes.size()) {
             m_buffer_remaining = m_stream.read(buffer());
+
+            if (m_buffer_remaining == 0)
+                return nread;
+
             return nread + read(bytes.slice(nread));
         }
 
@@ -77,12 +81,7 @@ public:
         return true;
     }
 
-    virtual bool unreliable_eof() const override
-    {
-        return m_buffer_remaining == 0 && m_stream.unreliable_eof();
-    }
-
-    virtual bool guaranteed_eof()
+    virtual bool eof() const
     {
         if (m_buffer_remaining > 0)
             return false;
@@ -98,10 +97,8 @@ public:
         while (ndiscarded < count) {
             u8 dummy[Size];
 
-            if (!read_or_error({ dummy, min(Size, count - ndiscarded) })) {
-                set_fatal_error();
+            if (!read_or_error({ dummy, min(Size, count - ndiscarded) }))
                 return false;
-            }
 
             ndiscarded += min(Size, count - ndiscarded);
         }
@@ -112,9 +109,9 @@ public:
 private:
     Bytes buffer() const { return { m_buffer, Size }; }
 
-    StreamType m_stream;
-    u8 m_buffer[Size];
-    size_t m_buffer_remaining { 0 };
+    mutable StreamType m_stream;
+    mutable u8 m_buffer[Size];
+    mutable size_t m_buffer_remaining { 0 };
 };
 
 }
