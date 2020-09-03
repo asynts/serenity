@@ -26,7 +26,7 @@
 
 #pragma once
 
-#include <AK/BufferedStream.h>
+#include <AK/Buffered.h>
 #include <AK/Stream.h>
 #include <LibCore/File.h>
 
