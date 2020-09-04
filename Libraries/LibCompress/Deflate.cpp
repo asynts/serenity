@@ -401,8 +401,6 @@ void DeflateDecompressor::decode_codes(CanonicalCode& literal_code, Optional<Can
         } else {
             ASSERT(symbol == 16);
 
-            // FIXME: It seems to get stuck here.
-
             if (code_lengths.is_empty()) {
                 set_fatal_error();
                 return;
@@ -414,6 +412,7 @@ void DeflateDecompressor::decode_codes(CanonicalCode& literal_code, Optional<Can
         }
     }
 
+    // FIXME: Is this really forbidden?
     if (code_lengths.size() != literal_code_count + distance_code_count) {
         set_fatal_error();
         return;
