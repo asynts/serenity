@@ -28,7 +28,7 @@
 #include <LibCore/ArgsParser.h>
 #include <LibCore/FileStream.h>
 
-static void decompress_file(Buffered<Core::InputFileStream>& input_stream, Core::OutputFileStream& output_stream)
+static void decompress_file(Buffered<Core::InputFileStream>& input_stream, Buffered<Core::OutputFileStream>& output_stream)
 {
     auto gzip_stream = Compress::GzipDecompressor { input_stream };
 
@@ -64,10 +64,10 @@ int main(int argc, char** argv)
         auto input_stream_result = Core::InputFileStream::open_buffered(input_filename);
 
         if (write_to_stdout) {
-            auto stdout = Core::OutputFileStream::stdout();
+            auto stdout = Core::OutputFileStream::stdout_buffered();
             decompress_file(input_stream_result.value(), stdout);
         } else {
-            auto output_stream_result = Core::OutputFileStream::open(output_filename);
+            auto output_stream_result = Core::OutputFileStream::open_buffered(output_filename);
             decompress_file(input_stream_result.value(), output_stream_result.value());
         }
 
