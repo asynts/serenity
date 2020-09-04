@@ -406,13 +406,12 @@ void DeflateDecompressor::decode_codes(CanonicalCode& literal_code, Optional<Can
                 return;
             }
 
-            auto nrepeat = 3 + m_input_stream.read_bits(3);
+            auto nrepeat = 3 + m_input_stream.read_bits(2);
             for (size_t j = 0; j < nrepeat; ++j)
                 code_lengths.append(code_lengths.last());
         }
     }
 
-    // FIXME: Is this really forbidden?
     if (code_lengths.size() != literal_code_count + distance_code_count) {
         set_fatal_error();
         return;
