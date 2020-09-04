@@ -30,13 +30,14 @@
 
 namespace AK {
 
-// FIXME: Implement Buffered<T> for OutputStream and DuplexStream as well.
+// FIXME: Implement Buffered<T> for DuplexStream.
 
-template<typename StreamType, size_t Size = 4096>
-class Buffered final : public InputStream {
+template<typename StreamType, size_t Size = 4096, typename = void>
+class Buffered;
+
+template<typename StreamType, size_t Size>
+class Buffered<StreamType, Size, typename EnableIf<IsBaseOf<InputStream, StreamType>::value>::Type> final : public InputStream {
 public:
-    static_assert(IsBaseOf<InputStream, StreamType>::value);
-
     template<typename... Parameters>
     Buffered(Parameters&&... parameters)
         : m_stream(forward<Parameters>(parameters)...)
@@ -114,6 +115,71 @@ private:
     mutable StreamType m_stream;
     mutable u8 m_buffer[Size];
     mutable size_t m_buffer_remaining { 0 };
+};
+
+template<typename StreamType, size_t Size>
+class Buffered<StreamType, Size, typename EnableIf<IsBaseOf<OutputStream, StreamType>::value>::Type> final : public OutputStream {
+public:
+    template<typename... Parameters>
+    Buffered(Parameters&&... parameters)
+        : m_stream(forward<Parameters>(parameters)...)
+    {
+    }
+
+    ~Buffered()
+    {
+        flush();
+    }
+
+    bool has_recoverable_error() const override { return m_stream.has_recoverable_error(); }
+    bool has_fatal_error() const override { return m_stream.has_fatal_error(); }
+    bool has_any_error() const override { return m_stream.has_any_error(); }
+
+    bool handle_recoverable_error() override { return m_stream.handle_recoverable_error(); }
+    bool handle_fatal_error() override { return m_stream.handle_fatal_error(); }
+    bool handle_any_error() override { return m_stream.handle_any_error(); }
+
+    void set_recoverable_error() const override { return m_stream.set_recoverable_error(); }
+    void set_fatal_error() const override { return m_stream.set_fatal_error(); }
+
+    size_t write(ReadonlyBytes bytes) override
+    {
+        if (has_any_error())
+            return 0;
+
+        auto nwritten = bytes.copy_trimmed_to(buffer().slice(m_buffered));
+        m_buffered += nwritten;
+
+        if (m_buffered == Size) {
+            flush();
+
+            if (bytes.size() - nwritten >= Size)
+                nwritten += m_stream.write_or_error(bytes);
+
+            nwritten += write(bytes.slice(nwritten));
+        }
+
+        return nwritten;
+    }
+
+    bool write_or_error(ReadonlyBytes bytes) override
+    {
+        write(bytes);
+        return true;
+    }
+
+    void flush()
+    {
+        m_stream.write_or_error({ m_buffer, m_buffered });
+        m_buffered = 0;
+    }
+
+private:
+    Bytes buffer() { return { m_buffer, Size }; }
+
+    StreamType m_stream;
+    u8 m_buffer[Size];
+    size_t m_buffered { 0 };
 };
 
 }
