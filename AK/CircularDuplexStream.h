@@ -38,6 +38,8 @@ class CircularDuplexStream : public AK::DuplexStream {
 public:
     size_t write(ReadonlyBytes bytes) override
     {
+        ASSERT(!has_any_error());
+
         const auto nwritten = min(bytes.size(), Capacity - m_queue.size());
 
         for (size_t idx = 0; idx < nwritten; ++idx)
@@ -49,6 +51,8 @@ public:
 
     bool write_or_error(ReadonlyBytes bytes) override
     {
+        ASSERT(!has_any_error());
+
         if (Capacity - m_queue.size() < bytes.size()) {
             set_recoverable_error();
             return false;
@@ -60,6 +64,8 @@ public:
 
     size_t read(Bytes bytes) override
     {
+        ASSERT(!has_any_error());
+
         const auto nread = min(bytes.size(), m_queue.size());
 
         for (size_t idx = 0; idx < nread; ++idx)
@@ -70,6 +76,8 @@ public:
 
     size_t read(Bytes bytes, size_t seekback)
     {
+        ASSERT(!has_any_error());
+
         if (seekback > Capacity || seekback > m_total_written) {
             set_recoverable_error();
             return 0;
@@ -87,6 +95,8 @@ public:
 
     bool read_or_error(Bytes bytes) override
     {
+        ASSERT(!has_any_error());
+
         if (m_queue.size() < bytes.size()) {
             set_recoverable_error();
             return false;
@@ -98,6 +108,8 @@ public:
 
     bool discard_or_error(size_t count) override
     {
+        ASSERT(!has_any_error());
+
         if (m_queue.size() < count) {
             set_recoverable_error();
             return false;

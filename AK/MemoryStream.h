@@ -44,6 +44,8 @@ public:
 
     size_t read(Bytes bytes) override
     {
+        ASSERT(!has_any_error());
+
         const auto count = min(bytes.size(), remaining());
         __builtin_memcpy(bytes.data(), m_bytes.data() + m_offset, count);
         m_offset += count;
@@ -52,6 +54,8 @@ public:
 
     bool read_or_error(Bytes bytes) override
     {
+        ASSERT(!has_any_error());
+
         if (remaining() < bytes.size()) {
             set_recoverable_error();
             return false;
@@ -64,6 +68,8 @@ public:
 
     bool discard_or_error(size_t count) override
     {
+        ASSERT(!has_any_error());
+
         if (remaining() < count) {
             set_recoverable_error();
             return false;
@@ -168,6 +174,8 @@ public:
 
     bool discard_or_error(size_t count) override
     {
+        ASSERT(!has_any_error());
+
         if (m_write_offset - m_read_offset < count) {
             set_recoverable_error();
             return false;
@@ -227,6 +235,8 @@ public:
 
     size_t read_without_consuming(Bytes bytes) const
     {
+        ASSERT(!has_any_error());
+
         size_t nread = 0;
         while (bytes.size() - nread > 0 && m_write_offset - m_read_offset - nread > 0) {
             const auto chunk_index = (m_read_offset - m_base_offset) / chunk_size;
@@ -239,6 +249,8 @@ public:
 
     size_t read(Bytes bytes) override
     {
+        ASSERT(!has_any_error());
+
         const auto nread = read_without_consuming(bytes);
 
         m_read_offset += nread;
@@ -249,6 +261,8 @@ public:
 
     bool read_or_error(Bytes bytes) override
     {
+        ASSERT(!has_any_error());
+
         if (m_write_offset - m_read_offset < bytes.size()) {
             set_recoverable_error();
             return false;
@@ -260,6 +274,8 @@ public:
 
     size_t write(ReadonlyBytes bytes) override
     {
+        ASSERT(!has_any_error());
+
         size_t nwritten = 0;
         while (bytes.size() - nwritten > 0) {
             if ((m_write_offset + nwritten) % chunk_size == 0)
@@ -274,6 +290,8 @@ public:
 
     bool write_or_error(ReadonlyBytes bytes) override
     {
+        ASSERT(!has_any_error());
+
         write(bytes);
         return true;
     }

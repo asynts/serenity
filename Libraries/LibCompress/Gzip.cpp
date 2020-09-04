@@ -65,9 +65,10 @@ GzipDecompressor::~GzipDecompressor()
     m_current_member.clear();
 }
 
-// FIXME: Again, there are surely a ton of bugs because the code doesn't check for read errors.
 size_t GzipDecompressor::read(Bytes bytes)
 {
+    ASSERT(!has_any_error());
+
     if (m_current_member.has_value()) {
         size_t nread = current_member().m_stream.read(bytes);
         current_member().m_checksum.update(bytes.trim(nread));
@@ -128,6 +129,8 @@ size_t GzipDecompressor::read(Bytes bytes)
 
 bool GzipDecompressor::read_or_error(Bytes bytes)
 {
+    ASSERT(!has_any_error());
+
     if (read(bytes) < bytes.size()) {
         set_fatal_error();
         return false;
@@ -138,6 +141,8 @@ bool GzipDecompressor::read_or_error(Bytes bytes)
 
 bool GzipDecompressor::discard_or_error(size_t count)
 {
+    ASSERT(!has_any_error());
+
     u8 buffer[4096];
 
     size_t ndiscarded = 0;

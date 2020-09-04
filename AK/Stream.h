@@ -73,6 +73,7 @@ private:
 
 namespace AK {
 
+// Implementation should assert that has_any_error() returns false before doing any reading or writing.
 class InputStream : public virtual AK::Detail::Stream {
 public:
     virtual size_t read(Bytes) = 0;
@@ -81,6 +82,7 @@ public:
     virtual bool discard_or_error(size_t count) = 0;
 };
 
+// Implementation should assert that has_any_error() returns false before doing any reading or writing.
 class OutputStream : public virtual AK::Detail::Stream {
 public:
     virtual size_t write(ReadonlyBytes) = 0;

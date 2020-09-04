@@ -40,8 +40,9 @@ public:
 
     size_t read(Bytes bytes) override
     {
-        size_t nread = 0;
+        ASSERT(!has_any_error());
 
+        size_t nread = 0;
         if (bytes.size() >= 1) {
             if (m_next_byte.has_value()) {
                 bytes[0] = m_next_byte.value();
@@ -56,6 +57,8 @@ public:
 
     bool read_or_error(Bytes bytes) override
     {
+        ASSERT(!has_any_error());
+
         if (read(bytes) != bytes.size()) {
             set_fatal_error();
             return false;
@@ -68,6 +71,8 @@ public:
 
     bool discard_or_error(size_t count) override
     {
+        ASSERT(!has_any_error());
+
         if (count >= 1) {
             if (m_next_byte.has_value()) {
                 m_next_byte.clear();

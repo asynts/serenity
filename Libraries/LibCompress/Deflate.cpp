@@ -189,8 +189,7 @@ DeflateDecompressor::~DeflateDecompressor()
 
 size_t DeflateDecompressor::read(Bytes bytes)
 {
-    // FIXME: There are surely a ton of bugs because we don't check for read errors
-    //        very often.
+    ASSERT(!has_any_error());
 
     if (m_state == State::Idle) {
         if (m_read_final_bock)
@@ -275,6 +274,8 @@ size_t DeflateDecompressor::read(Bytes bytes)
 
 bool DeflateDecompressor::read_or_error(Bytes bytes)
 {
+    ASSERT(!has_any_error());
+
     if (read(bytes) < bytes.size()) {
         set_fatal_error();
         return false;
@@ -285,6 +286,8 @@ bool DeflateDecompressor::read_or_error(Bytes bytes)
 
 bool DeflateDecompressor::discard_or_error(size_t count)
 {
+    ASSERT(!has_any_error());
+
     u8 buffer[4096];
 
     size_t ndiscarded = 0;

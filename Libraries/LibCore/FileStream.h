@@ -65,6 +65,8 @@ public:
 
     size_t read(Bytes bytes) override
     {
+        ASSERT(!has_any_error());
+
         auto nread = m_buffered.bytes().copy_trimmed_to(bytes);
 
         m_buffered.bytes().slice(nread, m_buffered.size() - nread).copy_to(m_buffered);
@@ -88,6 +90,8 @@ public:
 
     bool read_or_error(Bytes bytes) override
     {
+        ASSERT(!has_any_error());
+
         if (read(bytes) < bytes.size()) {
             set_fatal_error();
             return false;
@@ -98,6 +102,8 @@ public:
 
     bool discard_or_error(size_t count) override
     {
+        ASSERT(!has_any_error());
+
         u8 buffer[4096];
 
         size_t ndiscarded = 0;
@@ -181,6 +187,8 @@ public:
 
     size_t write(ReadonlyBytes bytes) override
     {
+        ASSERT(!has_any_error());
+
         if (!m_file->write(bytes.data(), bytes.size())) {
             set_fatal_error();
             return 0;
@@ -191,6 +199,8 @@ public:
 
     bool write_or_error(ReadonlyBytes bytes) override
     {
+        ASSERT(!has_any_error());
+
         if (write(bytes) < bytes.size()) {
             set_fatal_error();
             return false;
