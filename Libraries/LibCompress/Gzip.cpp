@@ -97,7 +97,6 @@ size_t GzipDecompressor::read(Bytes bytes)
         if (m_input_stream.eof())
             return 0;
 
-        // FIXME: This fails with the new changes?
         BlockHeader header;
         m_input_stream >> Bytes { &header, sizeof(header) };
 
@@ -113,6 +112,7 @@ size_t GzipDecompressor::read(Bytes bytes)
         }
 
         if (header.flags & Flags::FNAME) {
+            // FIXME. This goes wrong for some reason. (A filename is present though, that's correct.)
             String original_filename;
             m_input_stream >> original_filename;
         }
