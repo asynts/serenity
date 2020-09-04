@@ -56,8 +56,10 @@ public:
 
     size_t read(Bytes bytes) override
     {
-        const auto nread = buffer().trim(m_buffer_remaining).copy_trimmed_to(bytes);
+        auto nread = buffer().trim(m_buffer_remaining).copy_trimmed_to(bytes);
+
         m_buffer_remaining -= nread;
+        buffer().slice(nread, m_buffer_remaining).copy_to(buffer());
 
         if (nread < bytes.size()) {
             m_buffer_remaining = m_stream.read(buffer());
@@ -65,7 +67,7 @@ public:
             if (m_buffer_remaining == 0)
                 return nread;
 
-            return nread + read(bytes.slice(nread));
+            nread += read(bytes.slice(nread));
         }
 
         return nread;
