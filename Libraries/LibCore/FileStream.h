@@ -65,11 +65,9 @@ public:
 
     size_t read(Bytes bytes) override
     {
-        dbg() << "FileStream::read(" << bytes << ")";
-
         auto nread = m_buffered.bytes().copy_trimmed_to(bytes);
 
-        m_buffered.bytes().slice(nread).copy_to(m_buffered);
+        m_buffered.bytes().slice(nread, m_buffered.size() - nread).copy_to(m_buffered);
         m_buffered.trim(m_buffered.size() - nread);
 
         while (nread < bytes.size()) {
