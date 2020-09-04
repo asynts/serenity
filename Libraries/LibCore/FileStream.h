@@ -157,9 +157,26 @@ public:
         return OutputFileStream { file_result.value() };
     }
 
+    static Result<Buffered<OutputFileStream>, String> open_buffered(StringView filename, IODevice::OpenMode mode = IODevice::OpenMode::WriteOnly, mode_t permissions = 0644)
+    {
+        ASSERT((mode & 0xf) == IODevice::OpenMode::WriteOnly || (mode & 0xf) == IODevice::OpenMode::ReadWrite);
+
+        auto file_result = File::open(filename, mode, permissions);
+
+        if (file_result.is_error())
+            return file_result.error();
+
+        return Buffered<OutputFileStream> { file_result.value() };
+    }
+
     static OutputFileStream stdout()
     {
         return OutputFileStream { Core::File::stdout() };
+    }
+
+    static Buffered<OutputFileStream> stdout_buffered()
+    {
+        return Buffered<OutputFileStream> { Core::File::stdout() };
     }
 
     size_t write(ReadonlyBytes bytes) override
