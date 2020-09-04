@@ -110,6 +110,7 @@ u32 DeflateDecompressor::CanonicalCode::read_symbol(InputBitStream& stream) cons
     for (;;) {
         code_bits = code_bits << 1 | stream.read_bits(1);
 
+        // FIXME: This seems really inefficent, this could be an index into an array instead.
         size_t index;
         if (AK::binary_search(m_symbol_codes.span(), code_bits, AK::integral_compare<u32>, &index))
             return m_symbol_values[index];
@@ -399,6 +400,8 @@ void DeflateDecompressor::decode_codes(CanonicalCode& literal_code, Optional<Can
             continue;
         } else {
             ASSERT(symbol == 16);
+
+            // FIXME: It seems to get stuck here.
 
             if (code_lengths.is_empty()) {
                 set_fatal_error();
