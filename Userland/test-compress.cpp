@@ -44,6 +44,47 @@ static bool compare(ReadonlyBytes lhs, ReadonlyBytes rhs)
     return true;
 }
 
+static void dump(ReadonlyBytes bytes)
+{
+    StringBuilder builder;
+
+    builder.append("{ ");
+
+    u8 last_byte = 0;
+    size_t repeat = 0;
+
+    auto put = [&]() {
+        if (repeat == 1)
+            builder.appendf("0x%02x, ", static_cast<int>(last_byte));
+        else
+            builder.appendf("%u * 0x%02x, ", static_cast<unsigned>(repeat), static_cast<int>(last_byte));
+        repeat = 0;
+    };
+
+    for (auto byte : bytes) {
+        if (repeat > 0) {
+            if (byte == last_byte) {
+                ++repeat;
+            } else {
+                put();
+
+                last_byte = byte;
+                repeat = 1;
+            }
+        } else {
+            last_byte = byte;
+            repeat = 1;
+        }
+    }
+
+    if (repeat > 0)
+        put();
+
+    builder.append("}");
+
+    dbg() << builder.to_string();
+}
+
 TEST_CASE(deflate_decompress_compressed_block)
 {
     const u8 compressed[] = {
