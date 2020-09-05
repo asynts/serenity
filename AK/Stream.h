@@ -33,6 +33,10 @@
 #include <AK/Span.h>
 #include <AK/StdLibExtras.h>
 
+#define STREAMS_DEBUG
+
+extern "C" __attribute__((noreturn)) void abort();
+
 namespace AK::Detail {
 
 class Stream {
@@ -61,8 +65,20 @@ public:
         return false;
     }
 
-    virtual void set_recoverable_error() const { m_recoverable_error = true; }
-    virtual void set_fatal_error() const { m_fatal_error = true; }
+    virtual void set_recoverable_error() const
+    {
+#ifdef STREAMS_DEBUG
+        abort();
+#endif
+        m_recoverable_error = true;
+    }
+    virtual void set_fatal_error() const
+    {
+#ifdef STREAMS_DEBUG
+        abort();
+#endif
+        m_fatal_error = true;
+    }
 
 private:
     mutable bool m_recoverable_error { false };

@@ -29,6 +29,8 @@
 #include <AK/MemoryStream.h>
 #include <AK/String.h>
 
+#define DEBUG_GZIP
+
 namespace Compress {
 
 bool GzipDecompressor::BlockHeader::valid_magic_number() const
@@ -78,13 +80,17 @@ size_t GzipDecompressor::read(Bytes bytes)
             m_input_stream >> crc32 >> input_size;
 
             if (crc32 != current_member().m_checksum.digest()) {
-                // FIXME: Somehow the checksum is incorrect?
-
+#ifdef DEBUG_GZIP
+                dbg() << "GzipDecompressor: CRC32 incorrect.";
+#endif
                 set_fatal_error();
                 return 0;
             }
 
             if (input_size != current_member().m_nread) {
+#ifdef DEBUG_GZIP
+                dbg() << "GzipDecompressor: ISIZE incorrect.";
+#endif
                 set_fatal_error();
                 return 0;
             }
