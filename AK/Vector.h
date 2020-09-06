@@ -564,7 +564,7 @@ public:
     {
         for (size_t i = 0; i < m_size; ++i) {
             if (finder(at(i)))
-                return Iterator(*this, i);
+                return Iterator { *this, i };
         }
         return end();
     }

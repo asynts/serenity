@@ -26,8 +26,9 @@
 
 #pragma once
 
+#include <AK/Iterator.h>
 #include <AK/Span.h>
-#include <AK/Vector.h>
+#include <AK/kmalloc.h>
 
 namespace AK {
 
