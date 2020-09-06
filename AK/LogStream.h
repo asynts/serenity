@@ -178,6 +178,7 @@ const LogStream& operator<<(const LogStream&, float);
 #endif
 
 const LogStream& operator<<(const LogStream&, const void*);
+const LogStream& operator<<(const LogStream&, ReadonlyBytes);
 
 inline const LogStream& operator<<(const LogStream& stream, char value)
 {
