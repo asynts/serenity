@@ -142,13 +142,14 @@ public:
         ::swap(m_size, other.m_size);
     }
 
-    using Iterator = VectorIterator<FixedArray, T>;
-    Iterator begin() { return Iterator(*this, 0); }
-    Iterator end() { return Iterator(*this, size()); }
+    using ConstIterator = SimpleIterator<FixedArray, const T>;
+    using Iterator = SimpleIterator<FixedArray, T>;
 
-    using ConstIterator = VectorIterator<const FixedArray, const T>;
-    ConstIterator begin() const { return ConstIterator(*this, 0); }
-    ConstIterator end() const { return ConstIterator(*this, size()); }
+    ConstIterator begin() const { return ConstIterator::begin(*this); }
+    Iterator begin() { return Iterator::begin(*this); }
+
+    ConstIterator end() const { return ConstIterator::end(*this); }
+    Iterator end() { return Iterator::end(*this); }
 
     operator Bytes() { return bytes(); }
     operator ReadonlyBytes() const { return bytes(); }
