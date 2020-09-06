@@ -47,7 +47,7 @@ public:
     int octave_base() const { return (m_octave - octave_min) * 12; }
     int time() const { return m_time; }
 
-    void fill_buffer(FixedArray<Sample>& buffer);
+    void fill_buffer(Span<Sample>);
     void reset();
     void set_should_loop(bool b) { m_should_loop = b; }
     void set_note_current_octave(int note, Switch);

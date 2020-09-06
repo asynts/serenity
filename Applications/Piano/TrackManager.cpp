@@ -36,7 +36,7 @@ TrackManager::~TrackManager()
 {
 }
 
-void TrackManager::fill_buffer(FixedArray<Sample>& buffer)
+void TrackManager::fill_buffer(Span<Sample> buffer)
 {
     memset(buffer.data(), 0, buffer_size);
 
