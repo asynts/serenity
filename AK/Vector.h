@@ -540,7 +540,7 @@ public:
         return resize(new_size, true);
     }
 
-    using ConstIterator = SimpleIterator<Vector, const T>;
+    using ConstIterator = SimpleIterator<const Vector, const T>;
     using Iterator = SimpleIterator<Vector, T>;
 
     ConstIterator begin() const { return ConstIterator::begin(*this); }

@@ -33,8 +33,8 @@ namespace AK {
 template<typename Container, typename ValueType>
 class SimpleIterator {
 public:
-    static constexpr SimpleIterator begin(const Container& container) { return { container, 0 }; }
-    static constexpr SimpleIterator end(const Container& container) { return { container, container.size() }; }
+    static constexpr SimpleIterator begin(Container& container) { return { container, 0 }; }
+    static constexpr SimpleIterator end(Container& container) { return { container, container.size() }; }
 
     constexpr bool is_end() const { return m_index == m_container.size(); }
     constexpr size_t index() const { return m_index; }
@@ -81,13 +81,13 @@ public:
     constexpr ValueType* operator->() { return &m_container[m_index]; }
 
 private:
-    constexpr SimpleIterator(const Container& container, size_t index)
+    constexpr SimpleIterator(Container& container, size_t index)
         : m_container(container)
         , m_index(index)
     {
     }
 
-    const Container& m_container;
+    Container& m_container;
     size_t m_index;
 };
 

@@ -63,7 +63,7 @@ struct Array {
     constexpr const T& operator[](size_t index) const { return __data[index]; }
     constexpr T& operator[](size_t index) { return __data[index]; }
 
-    using ConstIterator = SimpleIterator<Array, const T>;
+    using ConstIterator = SimpleIterator<const Array, const T>;
     using Iterator = SimpleIterator<Array, T>;
 
     constexpr ConstIterator begin() const { return ConstIterator::begin(*this); }

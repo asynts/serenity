@@ -142,7 +142,7 @@ public:
         ::swap(m_size, other.m_size);
     }
 
-    using ConstIterator = SimpleIterator<FixedArray, const T>;
+    using ConstIterator = SimpleIterator<const FixedArray, const T>;
     using Iterator = SimpleIterator<FixedArray, T>;
 
     ConstIterator begin() const { return ConstIterator::begin(*this); }
