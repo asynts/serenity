@@ -29,6 +29,7 @@
 
 #include "Music.h"
 #include "Track.h"
+#include <AK/FixedArray.h>
 #include <AK/Noncopyable.h>
 #include <AK/NonnullOwnPtr.h>
 #include <AK/Vector.h>
