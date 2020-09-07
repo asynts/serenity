@@ -303,7 +303,7 @@ bool DeflateDecompressor::discard_or_error(size_t count)
 
 bool DeflateDecompressor::eof() const { return m_state == State::Idle && m_read_final_bock; }
 
-ByteBuffer DeflateDecompressor::decompress_all(ReadonlyBytes bytes)
+Optional<ByteBuffer> DeflateDecompressor::decompress_all(ReadonlyBytes bytes)
 {
     InputMemoryStream memory_stream { bytes };
     InputBitStream bit_stream { memory_stream };
@@ -312,11 +312,14 @@ ByteBuffer DeflateDecompressor::decompress_all(ReadonlyBytes bytes)
     auto buffer = ByteBuffer::create_uninitialized(4096);
 
     size_t nread = 0;
-    while (!deflate_stream.eof()) {
+    while (!deflate_stream.eof() && !deflate_stream.has_any_error()) {
         nread += deflate_stream.read(buffer.bytes().slice(nread));
         if (buffer.size() - nread < 4096)
             buffer.grow(buffer.size() + 4096);
     }
+
+    if (deflate_stream.handle_any_error())
+        return {};
 
     buffer.trim(nread);
     return buffer;

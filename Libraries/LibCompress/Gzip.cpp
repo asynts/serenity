@@ -156,7 +156,7 @@ bool GzipDecompressor::discard_or_error(size_t count)
     return true;
 }
 
-ByteBuffer GzipDecompressor::decompress_all(ReadonlyBytes bytes)
+Optional<ByteBuffer> GzipDecompressor::decompress_all(ReadonlyBytes bytes)
 {
     InputMemoryStream memory_stream { bytes };
     GzipDecompressor gzip_stream { memory_stream };
@@ -164,12 +164,15 @@ ByteBuffer GzipDecompressor::decompress_all(ReadonlyBytes bytes)
     auto buffer = ByteBuffer::create_uninitialized(4096);
 
     size_t nread = 0;
-    while (!gzip_stream.eof()) {
+    while (!gzip_stream.eof() && !gzip_stream.has_any_error()) {
         nread += gzip_stream.read(buffer.bytes().slice(nread));
 
         if (buffer.size() - nread < 4096)
             buffer.grow(buffer.size() + 4096);
     }
+
+    if (gzip_stream.handle_any_error())
+        return {};
 
     buffer.trim(nread);
     return buffer;
