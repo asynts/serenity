@@ -143,7 +143,7 @@ bool DeflateDecompressor::CompressedBlock::try_read_more()
             return false;
         }
 
-        const auto run_length = m_decompressor.decode_run_length(symbol);
+        const auto run_length = m_decompressor.decode_length(symbol);
         const auto distance = m_decompressor.decode_distance(m_distance_codes.value().read_symbol(m_decompressor.m_input_stream));
 
         for (size_t idx = 0; idx < run_length; ++idx) {
@@ -322,37 +322,43 @@ ByteBuffer DeflateDecompressor::decompress_all(ReadonlyBytes bytes)
     return buffer;
 }
 
-u32 DeflateDecompressor::decode_run_length(u32 symbol)
+u32 DeflateDecompressor::decode_length(u32 symbol)
 {
-    // FIXME: I can't quite follow the algorithm here, but it seems to work.
+    ASSERT(symbol >= 257 && symbol <= 285);
 
     if (symbol <= 264)
         return symbol - 254;
 
-    if (symbol <= 284) {
-        auto extra_bits = (symbol - 261) / 4;
-        return (((symbol - 265) % 4 + 4) << extra_bits) + 3 + m_input_stream.read_bits(extra_bits);
-    }
-
     if (symbol == 285)
         return 258;
 
-    ASSERT_NOT_REACHED();
+    static constexpr u16 extra_bits_for_symbol[29] {
+        0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 0
+    };
+
+    static constexpr u16 base_length_for_symbol[29] {
+        3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 15, 17, 19, 23, 27, 31, 35, 43, 51, 59, 67, 83, 99, 115, 131, 163, 195, 227, 258
+    };
+
+    return base_length_for_symbol[symbol - 257] + m_input_stream.read_bits(extra_bits_for_symbol[symbol - 257]);
 }
 
 u32 DeflateDecompressor::decode_distance(u32 symbol)
 {
-    // FIXME: I can't quite follow the algorithm here, but it seems to work.
+    ASSERT(symbol <= 29);
 
     if (symbol <= 3)
         return symbol + 1;
 
-    if (symbol <= 29) {
-        auto extra_bits = (symbol / 2) - 1;
-        return ((symbol % 2 + 2) << extra_bits) + 1 + m_input_stream.read_bits(extra_bits);
-    }
+    static constexpr u16 extra_bits_for_symbol[30] {
+        0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13, 13
+    };
 
-    ASSERT_NOT_REACHED();
+    static constexpr u16 base_distance_for_symbol[30] {
+        1, 2, 3, 4, 5, 7, 9, 13, 17, 25, 33, 49, 65, 97, 129, 193, 257, 385, 513, 769, 1025, 1537, 2049, 3073, 4097, 6145, 8193, 12289, 16385, 24577
+    };
+
+    return base_distance_for_symbol[symbol] + m_input_stream.read_bits(extra_bits_for_symbol[symbol]);
 }
 
 void DeflateDecompressor::decode_codes(CanonicalCode& literal_code, Optional<CanonicalCode>& distance_code)

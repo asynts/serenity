@@ -81,8 +81,6 @@ size_t GzipDecompressor::read(Bytes bytes)
             m_input_stream >> crc32 >> input_size;
 
             if (crc32 != current_member().m_checksum.digest()) {
-                // FIXME: Somehow the checksum is incorrect?
-
                 set_fatal_error();
                 return 0;
             }
