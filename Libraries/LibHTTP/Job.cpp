@@ -24,7 +24,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <LibCore/Gzip.h>
+#include <LibCompress/Gzip.h>
 #include <LibCore/TCPSocket.h>
 #include <LibHTTP/HttpResponse.h>
 #include <LibHTTP/Job.h>
@@ -42,15 +42,7 @@ static ByteBuffer handle_content_encoding(const ByteBuffer& buf, const String& c
 #endif
 
     if (content_encoding == "gzip") {
-        if (!Core::Gzip::is_compressed(buf)) {
-            dbg() << "Job::handle_content_encoding: buf is not gzip compressed!";
-        }
-
-#ifdef JOB_DEBUG
-        dbg() << "Job::handle_content_encoding: buf is gzip compressed!";
-#endif
-
-        auto uncompressed = Core::Gzip::decompress(buf);
+        auto uncompressed = Compress::GzipDecompressor::decompress_all(buf);
         if (!uncompressed.has_value()) {
             dbg() << "Job::handle_content_encoding: Gzip::decompress() failed. Returning original buffer.";
             return buf;

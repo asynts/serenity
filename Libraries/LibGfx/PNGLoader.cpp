@@ -28,7 +28,7 @@
 #include <AK/Endian.h>
 #include <AK/LexicalPath.h>
 #include <AK/MappedFile.h>
-#include <LibCore/puff.h>
+#include <LibCompress/Deflate.h>
 #include <LibGfx/PNGLoader.h>
 #include <fcntl.h>
 #include <math.h>
@@ -743,25 +743,14 @@ static bool decode_png_bitmap(PNGLoadingContext& context)
     if (context.state >= PNGLoadingContext::State::BitmapDecoded)
         return true;
 
-    unsigned long srclen = context.compressed_data.size() - 6;
-    unsigned long destlen = 0;
-    int ret = puff(NULL, &destlen, context.compressed_data.data() + 2, &srclen);
-    if (ret != 0) {
+    auto uncompressed = Compress::DeflateDecompressor::decompress_all({ context.compressed_data.data() + 2, context.compressed_data.size() - 6 });
+    if (!uncompressed.has_value()) {
         context.state = PNGLoadingContext::State::Error;
         return false;
     }
-    context.decompression_buffer_size = destlen;
-#ifdef __serenity__
-    context.decompression_buffer = (u8*)mmap_with_name(nullptr, context.decompression_buffer_size, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, 0, 0, "PNG decompression buffer");
-#else
-    context.decompression_buffer = (u8*)mmap(nullptr, context.decompression_buffer_size, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, 0, 0);
-#endif
 
-    ret = puff(context.decompression_buffer, &destlen, context.compressed_data.data() + 2, &srclen);
-    if (ret != 0) {
-        context.state = PNGLoadingContext::State::Error;
-        return false;
-    }
+    context.decompression_buffer = uncompressed.value().data();
+    context.decompression_buffer_size = uncompressed.value().size();
     context.compressed_data.clear();
 
     context.scanlines.ensure_capacity(context.height);
@@ -778,7 +767,6 @@ static bool decode_png_bitmap(PNGLoadingContext& context)
         ASSERT_NOT_REACHED();
     }
 
-    munmap(context.decompression_buffer, context.decompression_buffer_size);
     context.decompression_buffer = nullptr;
     context.decompression_buffer_size = 0;
 
