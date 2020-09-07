@@ -55,8 +55,8 @@ struct Array {
     constexpr const T& front() const { return at(0); }
     constexpr T& front() { return at(0); }
 
-    constexpr const T& back() const {return at(max(1, size()) - 1; }
-    constexpr T& back() {return at(max(1, size()) - 1; }
+    constexpr const T& back() const { return at(max(1, size()) - 1); }
+    constexpr T& back() { return at(max(1, size()) - 1); }
 
     constexpr bool is_empty() const { return size() == 0; }
 
