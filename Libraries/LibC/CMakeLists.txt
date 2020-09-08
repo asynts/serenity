@@ -46,6 +46,7 @@ set(LIBC_SOURCES
     utime.cpp
     utsname.cpp
     wchar.cpp
+    err.cpp
 )
 
 file(GLOB AK_SOURCES "../../AK/*.cpp")
