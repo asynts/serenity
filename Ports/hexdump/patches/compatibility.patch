@@ -1,0 +1,11 @@
+--- util-linux-2.36/include/c.h	2020-09-08 21:36:15.208879219 +0200
++++ util-linux-2.36/include/c.h	2020-09-08 21:36:40.552212644 +0200
+@@ -168,7 +168,7 @@
+
+ #ifndef HAVE_PROGRAM_INVOCATION_SHORT_NAME
+ # ifdef HAVE___PROGNAME
+-extern char *__progname;
++extern const char *__progname;
+ #  define program_invocation_short_name __progname
+ # else
+ #  ifdef HAVE_GETEXECNAME
