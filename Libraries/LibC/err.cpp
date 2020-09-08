@@ -26,7 +26,32 @@
 
 #include <AK/kmalloc.h>
 #include <err.h>
+#include <errno.h>
 #include <stdio.h>
+#include <string.h>
+
+__attribute__((noreturn)) void err(int eval, const char* fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+    verr(eval, fmt, ap);
+    va_end(ap);
+}
+
+__attribute__((noreturn)) void verr(int eval, const char* fmt, va_list ap)
+{
+    if (fmt) {
+        char* message = nullptr;
+        vasprintf(&message, fmt, ap);
+        fprintf(stderr, "%s: %s: %s\n", getprogname(), message, strerror(errno));
+        free(message);
+    } else {
+        fprintf(stderr, "%s: %s\n", getprogname(), strerror(errno));
+    }
+
+    fprintf(stderr, "%s: %s\n", getprogname(), strerror(errno));
+    exit(eval);
+}
 
 __attribute__((noreturn)) void errx(int eval, const char* fmt, ...)
 {
@@ -38,14 +63,14 @@ __attribute__((noreturn)) void errx(int eval, const char* fmt, ...)
 
 __attribute__((noreturn)) void verrx(int eval, const char* fmt, va_list ap)
 {
-    char* message = nullptr;
-    if (fmt)
+    if (fmt) {
+        char* message = nullptr;
         vasprintf(&message, fmt, ap);
-
-    fprintf(stderr, "%s: %s\n", __progname, message);
-
-    if (message)
+        fprintf(stderr, "%s: %s\n", getprogname(), message);
         free(message);
+    } else {
+        fprintf(stderr, "%s: \n", getprogname());
+    }
 
     exit(eval);
 }
