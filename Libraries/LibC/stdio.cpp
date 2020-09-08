@@ -931,6 +931,37 @@ int snprintf(char* buffer, size_t size, const char* fmt, ...)
     return ret;
 }
 
+int asprintf(char** strp, const char* fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+    int ret = vasprintf(strp, fmt, ap);
+    va_end(ap);
+    return ret;
+}
+
+int vasprintf(char** strp, const char* fmt, va_list ap)
+{
+    va_list ap_copy;
+    va_copy(ap_copy, ap);
+
+    int size = vsnprintf(NULL, 0, fmt, ap);
+
+    if (size < 0) {
+        va_end(ap_copy);
+        return size;
+    }
+
+    *strp = static_cast<char*>(malloc(static_cast<size_t>(size) + 1));
+
+    if (*strp == nullptr) {
+        va_end(ap_copy);
+        return -1;
+    }
+
+    return vsnprintf(*strp, size, fmt, ap_copy);
+}
+
 void perror(const char* s)
 {
     int saved_errno = errno;
