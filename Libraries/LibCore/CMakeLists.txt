@@ -8,7 +8,6 @@ set(SOURCES
     EventLoop.cpp
     File.cpp
     GetPassword.cpp
-    Gzip.cpp
     IODevice.cpp
     LocalServer.cpp
     LocalSocket.cpp
@@ -18,7 +17,6 @@ set(SOURCES
     Notifier.cpp
     Object.cpp
     ProcessStatisticsReader.cpp
-    puff.cpp
     SocketAddress.cpp
     Socket.cpp
     StandardPaths.cpp
