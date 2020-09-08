@@ -177,7 +177,7 @@ const LogStream& operator<<(const LogStream&, double);
 const LogStream& operator<<(const LogStream&, float);
 #endif
 
-template<typename T>
+template<typename T, typename EnableIf<!IsSame<typename RemoveCV<T>::Type, u8>::value, int>::Type = 0>
 const LogStream& operator<<(const LogStream& stream, Span<T> span)
 {
     return stream << "{ " << span.data() << ", " << span.size() << " }";
