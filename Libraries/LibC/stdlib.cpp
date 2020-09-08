@@ -1076,4 +1076,16 @@ int unlockpt(int fd)
     (void)fd;
     return 0;
 }
+
+const char* __progname = nullptr;
+
+const char* getprogname()
+{
+    return __progname;
+}
+
+void setprogname(const char* progname)
+{
+    __progname = progname;
+}
 }

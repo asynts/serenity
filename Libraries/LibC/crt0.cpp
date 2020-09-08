@@ -40,6 +40,9 @@ int _start(int argc, char** argv, char** env);
 
 int _start(int argc, char** argv, char** env)
 {
+    if (argc > 0)
+        __progname = argv[0];
+
     environ = env;
     __environ_is_malloced = false;
 

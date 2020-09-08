@@ -38,6 +38,8 @@ __BEGIN_DECLS
 #define EXIT_FAILURE 1
 #define MB_CUR_MAX 1
 
+extern const char* __progname;
+
 __attribute__((malloc)) __attribute__((alloc_size(1))) void* malloc(size_t);
 __attribute__((malloc)) __attribute__((alloc_size(1, 2))) void* calloc(size_t nmemb, size_t);
 size_t malloc_size(void*);
@@ -78,6 +80,8 @@ size_t mbtowc(wchar_t*, const char*, size_t);
 int wctomb(char*, wchar_t);
 size_t wcstombs(char*, const wchar_t*, size_t);
 char* realpath(const char* pathname, char* buffer);
+const char* getprogname(void);
+void setprogname(const char* progname);
 
 #define RAND_MAX 32767
 int rand();
