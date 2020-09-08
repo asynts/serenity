@@ -1,0 +1,68 @@
+--- util-linux-2.36/include/c.h	2020-07-01 12:38:43.426829242 +0200
++++ util-linux-2.36/include/c.h	2020-09-08 20:21:59.705529835 +0200
+@@ -303,24 +303,6 @@
+ #endif
+
+ /*
+- * MAXHOSTNAMELEN replacement
+- */
+-static inline size_t get_hostname_max(void)
+-{
+-	long len = sysconf(_SC_HOST_NAME_MAX);
+-
+-	if (0 < len)
+-		return len;
+-
+-#ifdef MAXHOSTNAMELEN
+-	return MAXHOSTNAMELEN;
+-#elif HOST_NAME_MAX
+-	return HOST_NAME_MAX;
+-#endif
+-	return 64;
+-}
+-
+-/*
+  * The usleep function was marked obsolete in POSIX.1-2001 and was removed
+  * in POSIX.1-2008.  It was replaced with nanosleep() that provides more
+  * advantages (like no interaction with signals and other timer functions).
+--- util-linux-2.36/include/xalloc.h	2020-07-01 12:35:59.970754334 +0200
++++ util-linux-2.36/include/xalloc.h	2020-09-08 20:25:05.162197180 +0200
+@@ -119,21 +119,4 @@
+ 	return ret;
+ }
+
+-
+-static inline
+-__attribute__((warn_unused_result))
+-char *xgethostname(void)
+-{
+-	char *name;
+-	size_t sz = get_hostname_max() + 1;
+-
+-	name = xmalloc(sizeof(char) * sz);
+-	if (gethostname(name, sz) != 0) {
+-		free(name);
+-		return NULL;
+-	}
+-	name[sz - 1] = '\0';
+-	return name;
+-}
+-
+ #endif
+--- util-linux-2.36/include/strutils.h	2020-07-21 12:20:01.865790264 +0200
++++ util-linux-2.36/include/strutils.h	2020-09-08 21:01:36.998871701 +0200
+@@ -251,14 +251,6 @@
+ 	return p;
+ }
+
+-static inline const char *skip_blank(const char *p)
+-{
+-	while (isblank(*p))
+-		++p;
+-	return p;
+-}
+-
+-
+ /* Removes whitespace from the right-hand side of a string (trailing
+  * whitespace).
+  *
