@@ -14,4 +14,4 @@ install() {
     run install hexdump "$SERENITY_ROOT/Build/Root/usr/local/bin/hexdump"
 }
 
-export CFLAGS="-Wno-deprecated-declarations"
+export CFLAGS="-Wno-deprecated-declarations -Wno-redundant-decls"
