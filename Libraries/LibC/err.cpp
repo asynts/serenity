@@ -40,6 +40,20 @@ __attribute__((noreturn)) void err(int eval, const char* fmt, ...)
 
 __attribute__((noreturn)) void verr(int eval, const char* fmt, va_list ap)
 {
+    vwarn(fmt, ap);
+    exit(eval);
+}
+
+void warn(const char* fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+    vwarn(fmt, ap);
+    va_end(ap);
+}
+
+void vwarn(const char* fmt, va_list ap)
+{
     if (fmt) {
         char* message = nullptr;
         vasprintf(&message, fmt, ap);
@@ -50,7 +64,26 @@ __attribute__((noreturn)) void verr(int eval, const char* fmt, va_list ap)
     }
 
     fprintf(stderr, "%s: %s\n", getprogname(), strerror(errno));
-    exit(eval);
+}
+
+void warnx(const char* fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+    vwarn(fmt, ap);
+    va_end(ap);
+}
+
+void vwarnx(const char* fmt, va_list ap)
+{
+    if (fmt) {
+        char* message = nullptr;
+        vasprintf(&message, fmt, ap);
+        fprintf(stderr, "%s: %s\n", getprogname(), message);
+        free(message);
+    } else {
+        fprintf(stderr, "%s: \n", getprogname());
+    }
 }
 
 __attribute__((noreturn)) void errx(int eval, const char* fmt, ...)
@@ -63,14 +96,6 @@ __attribute__((noreturn)) void errx(int eval, const char* fmt, ...)
 
 __attribute__((noreturn)) void verrx(int eval, const char* fmt, va_list ap)
 {
-    if (fmt) {
-        char* message = nullptr;
-        vasprintf(&message, fmt, ap);
-        fprintf(stderr, "%s: %s\n", getprogname(), message);
-        free(message);
-    } else {
-        fprintf(stderr, "%s: \n", getprogname());
-    }
-
+    vwarnx(fmt, ap);
     exit(eval);
 }

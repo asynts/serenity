@@ -34,6 +34,12 @@ __BEGIN_DECLS
 __attribute__((noreturn)) void err(int eval, const char* fmt, ...);
 __attribute__((noreturn)) void verr(int eval, const char* fmt, va_list);
 
+void warn(const char* fmt, ...);
+void vwarn(const char* fmt, va_list);
+
+void warnx(const char* fmt, ...);
+void vwarnx(const char* fmt, va_list);
+
 __attribute__((noreturn)) void errx(int eval, const char* fmt, ...);
 __attribute__((noreturn)) void verrx(int eval, const char* fmt, va_list);
 
