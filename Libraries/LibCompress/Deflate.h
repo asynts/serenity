@@ -44,7 +44,10 @@ public:
 
     static Optional<CanonicalCode> from_bytes(ReadonlyBytes);
 
+#ifndef AK_TEST_SUITE
 private:
+#endif
+
     Vector<u32> m_symbol_codes;
     Vector<u32> m_symbol_values;
 };
