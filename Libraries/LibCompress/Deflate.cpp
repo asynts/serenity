@@ -321,7 +321,7 @@ Optional<ByteBuffer> DeflateDecompressor::decompress_all(ReadonlyBytes bytes)
     return output_stream.copy_into_contiguous_buffer();
 }
 
-u32 DeflateDecompressor::decode_run_length(u32 symbol)
+u32 DeflateDecompressor::decode_length(u32 symbol)
 {
     // FIXME: I can't quite follow the algorithm here, but it seems to work.
 
