@@ -27,6 +27,7 @@
 #include <AK/TestSuite.h>
 
 #include <AK/Array.h>
+#include <AK/MemoryStream.h>
 #include <LibCompress/Deflate.h>
 #include <LibCompress/Gzip.h>
 #include <LibCompress/Zlib.h>
@@ -42,6 +43,38 @@ static bool compare(ReadonlyBytes lhs, ReadonlyBytes rhs)
     }
 
     return true;
+}
+
+TEST_CASE(canonical_code_construct_simple_code)
+{
+    const Array<u8, 32> code_lengths { 5 };
+    const auto code = Compress::CanonicalCode::from_bytes(code_lengths).value();
+
+    EXPECT_EQ(code.m_symbol_codes.size(), 32u);
+    EXPECT_EQ(code.m_symbol_values.size(), 32u);
+
+    for (size_t idx = 0; idx < 32; ++idx) {
+        EXPECT_EQ(code.m_symbol_values[idx], idx);
+        EXPECT_EQ(code.m_symbol_codes[idx], idx);
+    }
+}
+
+TEST_CASE(canonical_code_decode_simple_code)
+{
+    const Array<u8, 32> code_lengths { 5 };
+    const auto code = Compress::CanonicalCode::from_bytes(code_lengths).value();
+
+    const Array<u8, 6> input { 0b001'00000, 0b0'00001'00, 0b0011'0001, 0b00'00101'0, 0b01101'010, 0b111'10101 };
+    const Array<u32, 9> output { 0, 1, 1, 2, 3, 5, 8, 13, 21 };
+
+    InputMemoryStream memory_stream { input };
+    InputBitStream bit_stream { memory_stream };
+
+    for (size_t idx = 0; idx < output.size(); ++idx)
+        EXPECT_EQ(code.read_symbol(bit_stream), output[idx]);
+
+    EXPECT_EQ(bit_stream.read_bits(3), 0b111u);
+    EXPECT(bit_stream.eof() && memory_stream.eof());
 }
 
 TEST_CASE(deflate_decompress_compressed_block)
