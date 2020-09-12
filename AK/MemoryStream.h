@@ -294,6 +294,28 @@ public:
         return buffer;
     }
 
+    size_t fill(u8 value, size_t count)
+    {
+        size_t nwritten = 0;
+        while (nwritten < count) {
+            if ((m_write_offset + nwritten) % chunk_size == 0)
+                m_chunks.append(ByteBuffer::create_uninitialized(chunk_size));
+
+            auto bytes = m_chunks.last().bytes().slice((m_write_offset + nwritten) % chunk_size).trim(count - nwritten);
+            nwritten += bytes.fill(value);
+        }
+
+        m_write_offset += nwritten;
+        return nwritten;
+    }
+
+    size_t pad_to_offset(u8 value, size_t offset)
+    {
+        ASSERT(offset >= m_write_offset);
+
+        return fill(value, offset - m_write_offset);
+    }
+
     size_t roffset() const { return m_read_offset; }
     size_t woffset() const { return m_write_offset; }
 
@@ -324,6 +346,9 @@ public:
     Optional<size_t> offset_of(ReadonlyBytes value) const { return m_stream.offset_of(value); }
 
     size_t size() const { return m_stream.woffset(); }
+
+    size_t fill(u8 value, size_t count) { return m_stream.fill(value, count); }
+    size_t pad_to_offset(u8 value, size_t offset) { return m_stream.pad_to_offset(value, offset); }
 
 private:
     DuplexMemoryStream m_stream;

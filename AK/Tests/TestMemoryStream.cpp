@@ -171,4 +171,20 @@ TEST_CASE(write_endian_values)
     EXPECT(compare({ expected, sizeof(expected) }, stream.copy_into_contiguous_buffer()));
 }
 
+TEST_CASE(fill_and_pad)
+{
+    OutputMemoryStream stream;
+    stream.fill(0xff, 0x0100);
+    stream.fill(0x11, 0x1000);
+    stream.pad_to_offset(0x13, 0x1200);
+    const auto actual = stream.copy_into_contiguous_buffer();
+
+    Array<u8, 0x1200> expected;
+    expected.span().slice(0x0000, 0x0100).fill(0xff);
+    expected.span().slice(0x0100, 0x1000).fill(0x11);
+    expected.span().slice(0x1100, 0x0100).fill(0x13);
+
+    EXPECT_EQ(actual.bytes(), expected.span());
+}
+
 TEST_MAIN(MemoryStream)
