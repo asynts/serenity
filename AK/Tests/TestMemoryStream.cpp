@@ -129,17 +129,17 @@ TEST_CASE(duplex_large_buffer)
 
     Array<u8, 1024> one_kibibyte;
 
-    EXPECT_EQ(stream.remaining(), 0ul);
+    EXPECT_EQ(stream.size(), 0ul);
 
     for (size_t idx = 0; idx < 256; ++idx)
         stream << one_kibibyte;
 
-    EXPECT_EQ(stream.remaining(), 256 * 1024ul);
+    EXPECT_EQ(stream.size(), 256 * 1024ul);
 
     for (size_t idx = 0; idx < 128; ++idx)
         stream >> one_kibibyte;
 
-    EXPECT_EQ(stream.remaining(), 128 * 1024ul);
+    EXPECT_EQ(stream.size(), 128 * 1024ul);
 
     for (size_t idx = 0; idx < 128; ++idx)
         stream >> one_kibibyte;
@@ -169,6 +169,27 @@ TEST_CASE(write_endian_values)
 
     EXPECT_EQ(stream.size(), 8u);
     EXPECT(compare({ expected, sizeof(expected) }, stream.copy_into_contiguous_buffer()));
+}
+
+TEST_CASE(offset_of_without_inline_buffer)
+{
+    const Array<u8, 8> bytes { 0, 1, 2, 3, 4, 5, 6, 7 };
+
+    DuplexMemoryStream stream;
+    stream << bytes;
+
+    EXPECT_EQ(stream.offset_of(bytes.span().slice(3, 4)).value(), 3u);
+}
+
+TEST_CASE(offset_of_with_inline_buffer)
+{
+    const Array<u8, 8> bytes { 0, 1, 2, 3, 4, 5, 6, 7 };
+    Array<u8, 16> inline_buffer;
+
+    DuplexMemoryStream stream { inline_buffer };
+    stream << bytes;
+
+    EXPECT_EQ(stream.offset_of(bytes.span().slice(2, 3)).value(), 2u);
 }
 
 TEST_MAIN(MemoryStream)
