@@ -24,7 +24,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <AK/BufferStream.h>
+#include <AK/MemoryStream.h>
 #include <Kernel/Devices/BlockDevice.h>
 #include <Kernel/Devices/CharacterDevice.h>
 #include <Kernel/FileSystem/Custody.h>
@@ -178,7 +178,8 @@ ssize_t FileDescription::get_dir_entries(u8* buffer, ssize_t size)
     size_t size_to_allocate = max(static_cast<size_t>(PAGE_SIZE), static_cast<size_t>(metadata.size));
 
     auto temp_buffer = ByteBuffer::create_uninitialized(size_to_allocate);
-    BufferStream stream(temp_buffer);
+    OutputMemoryStream stream { temp_buffer };
+
     KResult result = VFS::the().traverse_directory_inode(*m_inode, [&stream, this](auto& entry) {
         stream << (u32)entry.inode.index();
         stream << m_inode->fs().internal_file_type_to_directory_entry_type(entry);
@@ -190,13 +191,11 @@ ssize_t FileDescription::get_dir_entries(u8* buffer, ssize_t size)
     if (result.is_error())
         return result;
 
-    stream.snip();
-
     if (static_cast<size_t>(size) < temp_buffer.size())
         return -EINVAL;
 
-    copy_to_user(buffer, temp_buffer.data(), temp_buffer.size());
-    return stream.offset();
+    copy_to_user(buffer, temp_buffer.data(), stream.size());
+    return stream.size();
 }
 
 bool FileDescription::is_device() const
