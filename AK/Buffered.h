@@ -47,11 +47,9 @@ public:
     bool has_recoverable_error() const override { return m_stream.has_recoverable_error(); }
     bool has_fatal_error() const override { return m_stream.has_fatal_error(); }
     bool has_any_error() const override { return m_stream.has_any_error(); }
-
     bool handle_recoverable_error() override { return m_stream.handle_recoverable_error(); }
     bool handle_fatal_error() override { return m_stream.handle_fatal_error(); }
     bool handle_any_error() override { return m_stream.handle_any_error(); }
-
     void set_recoverable_error() const override { return m_stream.set_recoverable_error(); }
     void set_fatal_error() const override { return m_stream.set_fatal_error(); }
 
@@ -139,11 +137,9 @@ public:
     bool has_recoverable_error() const override { return m_stream.has_recoverable_error(); }
     bool has_fatal_error() const override { return m_stream.has_fatal_error(); }
     bool has_any_error() const override { return m_stream.has_any_error(); }
-
     bool handle_recoverable_error() override { return m_stream.handle_recoverable_error(); }
     bool handle_fatal_error() override { return m_stream.handle_fatal_error(); }
     bool handle_any_error() override { return m_stream.handle_any_error(); }
-
     void set_recoverable_error() const override { return m_stream.set_recoverable_error(); }
     void set_fatal_error() const override { return m_stream.set_fatal_error(); }
 
