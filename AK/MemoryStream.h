@@ -192,7 +192,36 @@ public:
         return true;
     }
 
-    Optional<size_t> offset_of(ReadonlyBytes value) const; // FIXME
+    Optional<size_t> offset_of(ReadonlyBytes value) const
+    {
+        // FIXME: This implementation (and the previous implementation silently) does not consider chunk
+        //        boundaries. That seems tough to implement so let's do that when it comes up.
+        //
+        //        We are only dealing with the cases where an inline buffer was provided and no additional
+        //        chunks were allocated or where no inline buffer was provided and at most one chunk was allocated.
+        if (m_first_buffer.size() > 0)
+            ASSERT(m_chunks.size() == 0);
+        else
+            ASSERT(m_chunks.size() <= 1);
+
+        if (m_first_buffer.size() > 0) {
+            const auto position = AK::memmem(m_first_buffer.data(), m_first_buffer.size(), value.data(), value.size());
+
+            if (!position)
+                return {};
+
+            return static_cast<size_t>(reinterpret_cast<const u8*>(position) - m_first_buffer.data());
+        } else {
+            const auto chunk = m_chunks.first();
+
+            const auto position = AK::memmem(chunk.data(), chunk.size(), value.data(), value.size());
+
+            if (!position)
+                return {};
+
+            return static_cast<size_t>(reinterpret_cast<const u8*>(position) - chunk.data());
+        }
+    }
 
     size_t read_without_consuming(Bytes bytes) const
     {
