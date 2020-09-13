@@ -161,19 +161,28 @@ private:
     size_t m_offset { 0 };
 };
 
-// All data written to this stream can be read from it. Reading and writing is done
-// using different offsets, meaning that it is not necessary to seek to the start
-// before reading; this behaviour differs from BufferStream.
 class DuplexMemoryStream final : public DuplexStream {
 public:
-    static constexpr size_t chunk_size = 4 * 1024;
+    static constexpr size_t chunk_size = 4096;
+
+    DuplexMemoryStream() { }
+
+    DuplexMemoryStream(Bytes buffer, bool allow_growth = false)
+        : m_first_buffer(buffer)
+        , m_allow_growth(allow_growth)
+        , m_base_offset(buffer.size())
+    {
+    }
+
+    Bytes m_first_buffer;
+    bool m_allow_growth { true };
 
     bool unreliable_eof() const override { return eof(); }
-    bool eof() const { return m_write_offset == m_read_offset; }
+    bool eof() const { return size() == 0; }
 
     bool discard_or_error(size_t count) override
     {
-        if (m_write_offset - m_read_offset < count) {
+        if (size() < count) {
             set_recoverable_error();
             return false;
         }
@@ -183,60 +192,23 @@ public:
         return true;
     }
 
-    Optional<size_t> offset_of(ReadonlyBytes value) const
-    {
-        if (value.size() > remaining())
-            return {};
-
-        // First, find which chunk we're in.
-        auto chunk_index = (m_read_offset - m_base_offset) / chunk_size;
-        auto last_written_chunk_index = (m_write_offset - m_base_offset) / chunk_size;
-        auto first_chunk_index = chunk_index;
-        auto last_written_chunk_offset = m_write_offset % chunk_size;
-        auto first_chunk_offset = m_read_offset % chunk_size;
-        size_t last_chunk_offset = 0;
-        auto found_value = false;
-
-        for (; chunk_index <= last_written_chunk_index; ++chunk_index) {
-            auto chunk_bytes = m_chunks[chunk_index].bytes();
-            size_t chunk_offset = 0;
-            if (chunk_index == last_written_chunk_index) {
-                chunk_bytes = chunk_bytes.slice(0, last_written_chunk_offset);
-            }
-            if (chunk_index == first_chunk_index) {
-                chunk_bytes = chunk_bytes.slice(first_chunk_offset);
-                chunk_offset = first_chunk_offset;
-            }
-
-            // See if 'value' is in this chunk,
-            auto position = AK::memmem(chunk_bytes.data(), chunk_bytes.size(), value.data(), value.size());
-            if (!position)
-                continue; // Not in this chunk either :(
-
-            // We found it!
-            found_value = true;
-            last_chunk_offset = (const u8*)position - chunk_bytes.data() + chunk_offset;
-            break;
-        }
-
-        if (found_value) {
-            if (first_chunk_index == chunk_index)
-                return last_chunk_offset - first_chunk_offset;
-
-            return (chunk_index - first_chunk_index) * chunk_size + last_chunk_offset - first_chunk_offset;
-        }
-
-        // No dice.
-        return {};
-    }
+    Optional<size_t> offset_of(ReadonlyBytes value) const; // FIXME
 
     size_t read_without_consuming(Bytes bytes) const
     {
+        if (has_any_error())
+            return 0;
+
         size_t nread = 0;
-        while (bytes.size() - nread > 0 && m_write_offset - m_read_offset - nread > 0) {
-            const auto chunk_index = (m_read_offset - m_base_offset + nread) / chunk_size;
-            const auto chunk_bytes = m_chunks[chunk_index].bytes().slice(m_read_offset % chunk_size).trim(m_write_offset - m_read_offset - nread);
-            nread += chunk_bytes.copy_trimmed_to(bytes.slice(nread));
+        while (bytes.size() - nread > 0 && size() - nread > 0) {
+            if (m_read_offset + nread < m_first_buffer.size()) {
+                nread += m_first_buffer.copy_trimmed_to(bytes.slice(nread));
+            } else {
+                const auto offset_into_chunks = m_read_offset + nread - m_base_offset;
+                const auto chunk_index = offset_into_chunks / chunk_size;
+                const auto chunk_bytes = m_chunks[chunk_index].bytes().slice(offset_into_chunks % chunk_size).trim(size() - nread);
+                nread += chunk_bytes.copy_trimmed_to(bytes.slice(nread));
+            }
         }
 
         return nread;
@@ -257,7 +229,7 @@ public:
 
     bool read_or_error(Bytes bytes) override
     {
-        if (m_write_offset - m_read_offset < bytes.size()) {
+        if (size() < bytes.size()) {
             set_recoverable_error();
             return false;
         }
@@ -268,12 +240,15 @@ public:
 
     size_t write(ReadonlyBytes bytes) override
     {
-        size_t nwritten = 0;
+        auto nwritten = bytes.copy_trimmed_to(m_first_buffer.slice(min(m_write_offset, m_first_buffer.size())));
+
         while (bytes.size() - nwritten > 0) {
-            if ((m_write_offset + nwritten) % chunk_size == 0)
+            const auto offset_into_chunks = m_write_offset + nwritten - m_first_buffer.size();
+
+            if (offset_into_chunks % chunk_size == 0)
                 m_chunks.append(ByteBuffer::create_uninitialized(chunk_size));
 
-            nwritten += bytes.copy_trimmed_to(m_chunks.last().bytes().slice(m_write_offset % chunk_size));
+            nwritten += bytes.copy_trimmed_to(m_chunks.last().bytes().slice(offset_into_chunks % chunk_size));
         }
 
         m_write_offset += nwritten;
@@ -282,24 +257,24 @@ public:
 
     bool write_or_error(ReadonlyBytes bytes) override
     {
+        if (!m_allow_growth && m_first_buffer.size() - m_write_offset < bytes.size()) {
+            set_recoverable_error();
+            return false;
+        }
+
         write(bytes);
         return true;
     }
 
     ByteBuffer copy_into_contiguous_buffer() const
     {
-        auto buffer = ByteBuffer::create_uninitialized(remaining());
-
-        const auto nread = read_without_consuming(buffer);
-        ASSERT(nread == buffer.size());
+        auto buffer = ByteBuffer::create_uninitialized(size());
+        read_without_consuming(buffer);
 
         return buffer;
     }
 
-    size_t roffset() const { return m_read_offset; }
-    size_t woffset() const { return m_write_offset; }
-
-    size_t remaining() const { return m_write_offset - m_read_offset; }
+    size_t size() const { return m_write_offset - m_read_offset; }
 
 private:
     void try_discard_chunks()
@@ -325,7 +300,16 @@ public:
 
     Optional<size_t> offset_of(ReadonlyBytes value) const { return m_stream.offset_of(value); }
 
-    size_t size() const { return m_stream.woffset(); }
+    size_t size() const { return m_stream.size(); }
+
+    bool has_recoverable_error() const override { return m_stream.has_recoverable_error(); }
+    bool has_fatal_error() const override { return m_stream.has_fatal_error(); }
+    bool has_any_error() const override { return m_stream.has_any_error(); }
+    bool handle_recoverable_error() override { return m_stream.handle_recoverable_error(); }
+    bool handle_fatal_error() override { return m_stream.handle_fatal_error(); }
+    bool handle_any_error() override { return m_stream.handle_any_error(); }
+    void set_recoverable_error() const override { return m_stream.set_recoverable_error(); }
+    void set_fatal_error() const override { return m_stream.set_fatal_error(); }
 
 private:
     DuplexMemoryStream m_stream;
