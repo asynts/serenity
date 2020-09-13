@@ -115,7 +115,9 @@ public:
         return true;
     }
 
-    bool eof() const override
+    bool unreliable_eof() const override { return m_buffered.size() == 0 && m_file->eof(); }
+
+    bool eof() const
     {
         if (m_buffered.size() > 0)
             return false;
