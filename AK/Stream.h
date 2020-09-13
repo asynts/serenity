@@ -78,7 +78,7 @@ public:
     // Does nothing and returns zero if there is already an error.
     virtual size_t read(Bytes) = 0;
     virtual bool read_or_error(Bytes) = 0;
-    virtual bool eof() const = 0;
+    virtual bool unreliable_eof() const = 0;
     virtual bool discard_or_error(size_t count) = 0;
 };
 
