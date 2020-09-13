@@ -167,7 +167,7 @@ public:
 
     DuplexMemoryStream() { }
 
-    DuplexMemoryStream(Bytes buffer, bool allow_growth = false)
+    explicit DuplexMemoryStream(Bytes buffer, bool allow_growth = false)
         : m_first_buffer(buffer)
         , m_allow_growth(allow_growth)
         , m_base_offset(buffer.size())
@@ -293,11 +293,15 @@ private:
 
 class OutputMemoryStream final : public OutputStream {
 public:
+    explicit OutputMemoryStream(Bytes buffer, bool allow_growth = false)
+        : m_stream(buffer, allow_growth)
+    {
+    }
+
     size_t write(ReadonlyBytes bytes) override { return m_stream.write(bytes); }
     bool write_or_error(ReadonlyBytes bytes) override { return m_stream.write_or_error(bytes); }
 
     ByteBuffer copy_into_contiguous_buffer() const { return m_stream.copy_into_contiguous_buffer(); }
-
     Optional<size_t> offset_of(ReadonlyBytes value) const { return m_stream.offset_of(value); }
 
     size_t size() const { return m_stream.size(); }
