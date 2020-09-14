@@ -266,6 +266,9 @@ public:
         auto nwritten = bytes.copy_trimmed_to(m_first_buffer.slice(min(m_write_offset, m_first_buffer.size())));
 
         while (bytes.size() - nwritten > 0) {
+            if (!m_allow_growth)
+                ASSERT_NOT_REACHED();
+
             const auto offset_into_chunks = m_write_offset + nwritten - m_first_buffer.size();
 
             if (offset_into_chunks % chunk_size == 0)
@@ -299,9 +302,12 @@ public:
 
     size_t fill(u8 value, size_t count)
     {
-        size_t nwritten = m_first_buffer.slice(min(m_write_offset, m_first_buffer.size(), count)).fill(value);
+        auto nwritten = m_first_buffer.slice(min(m_write_offset, m_first_buffer.size(), count)).fill(value);
 
         while (nwritten < count) {
+            if (!m_allow_growth)
+                ASSERT_NOT_REACHED();
+
             const auto offset_into_chunks = m_write_offset + nwritten - m_first_buffer.size();
 
             if (offset_into_chunks % chunk_size == 0)
@@ -354,7 +360,7 @@ public:
     Optional<size_t> offset_of(ReadonlyBytes value) const { return m_stream.offset_of(value); }
 
     size_t fill(u8 value, size_t count) { return m_stream.fill(value, count); }
-    size_t fill_to_offset(u8 value, size_t offset) { return m_stream.fill(value, offset); }
+    size_t fill_to_offset(u8 value, size_t offset) { return m_stream.fill_to_offset(value, offset); }
 
     size_t size() const { return m_stream.size(); }
 
