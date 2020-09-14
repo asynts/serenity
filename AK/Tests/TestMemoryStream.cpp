@@ -184,13 +184,13 @@ TEST_CASE(fixed_output_memory_stream)
     EXPECT_EQ(stream.bytes().size(), 5u);
     EXPECT_EQ(stream.size(), 5u);
     EXPECT_EQ(stream.bytes().data(), actual.data());
-    EXPECT(!stream.is_end());
+    EXPECT(!stream.at_end());
 
     stream.fill_to_end(0x33);
 
     EXPECT_EQ(stream.size(), 8u);
     EXPECT_EQ(actual.span(), expected.span());
-    EXPECT(stream.is_end());
+    EXPECT(stream.at_end());
 
     AK::dump_bytes(actual);
     AK::dump_bytes(expected);

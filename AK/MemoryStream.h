@@ -186,7 +186,7 @@ public:
         return true;
     }
 
-    bool is_end() const { return m_offset == m_bytes.size(); }
+    bool at_end() const { return m_offset == m_bytes.size(); }
 
     size_t fill_to_end(u8 value)
     {

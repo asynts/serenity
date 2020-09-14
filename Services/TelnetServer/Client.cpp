@@ -178,7 +178,7 @@ void Client::send_commands(Vector<Command> commands)
     for (auto& command : commands)
         stream << (u8)IAC << command.command << command.subcommand;
 
-    ASSERT(stream.is_end());
+    ASSERT(stream.at_end());
     m_socket->write(stream.data(), stream.size());
 }
 
