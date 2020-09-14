@@ -54,6 +54,7 @@ class DuplexMemoryStream;
 class OutputStream;
 class InputBitStream;
 class OutputMemoryStream;
+class FixedOutputMemoryStream;
 
 template<size_t Capacity>
 class CircularDuplexStream;
@@ -138,6 +139,7 @@ using AK::CircularQueue;
 using AK::DebugLogStream;
 using AK::DoublyLinkedList;
 using AK::DuplexMemoryStream;
+using AK::FixedOutputMemoryStream;
 using AK::FlyString;
 using AK::Function;
 using AK::HashMap;
