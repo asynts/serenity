@@ -318,7 +318,7 @@ public:
     {
         ASSERT(offset >= m_write_offset);
 
-        fill(value, offset - m_write_offset);
+        return fill(value, offset - m_write_offset);
     }
 
     size_t size() const { return m_write_offset - m_read_offset; }
