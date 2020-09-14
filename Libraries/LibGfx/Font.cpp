@@ -27,21 +27,16 @@
 #include "Font.h"
 #include "Bitmap.h"
 #include "Emoji.h"
-#include <AK/BufferStream.h>
 #include <AK/MappedFile.h>
+#include <AK/MemoryStream.h>
 #include <AK/StdLibExtras.h>
 #include <AK/StringBuilder.h>
 #include <AK/Utf32View.h>
 #include <AK/Utf8View.h>
 #include <AK/Vector.h>
 #include <AK/kmalloc.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <LibCore/FileStream.h>
 #include <string.h>
-#include <sys/mman.h>
-#include <unistd.h>
 
 namespace Gfx {
 
@@ -220,20 +215,6 @@ RefPtr<Font> Font::load_from_file(const StringView& path)
 
 bool Font::write_to_file(const StringView& path)
 {
-    int fd;
-#ifdef __serenity__
-    fd = creat_with_path_length(path.characters_without_null_termination(), path.length(), 0644);
-#else
-    {
-        String null_terminated_path = path;
-        fd = creat(null_terminated_path.characters(), 0644);
-    }
-#endif
-    if (fd < 0) {
-        perror("open");
-        return false;
-    }
-
     FontFileHeader header;
     memset(&header, 0, sizeof(FontFileHeader));
     memcpy(header.magic, "!Fnt", 4);
@@ -247,18 +228,15 @@ bool Font::write_to_file(const StringView& path)
     size_t bytes_per_glyph = sizeof(unsigned) * m_glyph_height;
     size_t count = glyph_count_by_type(m_type);
 
-    auto buffer = ByteBuffer::create_uninitialized(sizeof(FontFileHeader) + (count * bytes_per_glyph) + count);
-    BufferStream stream(buffer);
+    auto stream_result = Core::OutputFileStream::open_buffered(path);
+    if (stream_result.is_error())
+        return false;
+    auto stream = stream_result.value();
 
-    stream << ByteBuffer::wrap(&header, sizeof(FontFileHeader));
-    stream << ByteBuffer::wrap(m_rows, (count * bytes_per_glyph));
-    stream << ByteBuffer::wrap(m_glyph_widths, count);
+    stream << ReadonlyBytes { &header, sizeof(header) };
+    stream << ReadonlyBytes { m_rows, count * bytes_per_glyph };
+    stream << ReadonlyBytes { m_glyph_widths, count };
 
-    ASSERT(stream.at_end());
-    ssize_t nwritten = write(fd, buffer.data(), buffer.size());
-    ASSERT(nwritten == (ssize_t)buffer.size());
-    int rc = close(fd);
-    ASSERT(rc == 0);
     return true;
 }
 
@@ -377,5 +355,4 @@ void Font::set_family_fonts()
         path.clear();
     }
 }
-
 }
