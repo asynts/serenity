@@ -55,7 +55,7 @@ inline constexpr T min(const T& a, const T& b)
     return b < a ? b : a;
 }
 
-template<typename... Parameters>
+template<typename T, typename... Parameters>
 inline constexpr T min(const T& value, const Parameters&... parameters)
 {
     return min(value, min(parameters)...);
@@ -67,7 +67,7 @@ inline constexpr T max(const T& a, const T& b)
     return a < b ? b : a;
 }
 
-template<typename... Parameters>
+template<typename T, typename... Parameters>
 constexpr T max(const T& value, const Parameters&... parameters)
 {
     return max(value, max(parameters)...);
