@@ -25,8 +25,8 @@
  */
 
 #include "Client.h"
-#include <AK/BufferStream.h>
 #include <AK/ByteBuffer.h>
+#include <AK/MemoryStream.h>
 #include <AK/String.h>
 #include <AK/StringBuilder.h>
 #include <AK/StringView.h>
@@ -171,11 +171,13 @@ void Client::send_command(Command command)
 void Client::send_commands(Vector<Command> commands)
 {
     auto buffer = ByteBuffer::create_uninitialized(commands.size() * 3);
-    BufferStream stream(buffer);
+    FixedOutputMemoryStream stream { buffer };
+
     for (auto& command : commands)
         stream << (u8)IAC << command.command << command.subcommand;
-    stream.snip();
-    m_socket->write(buffer.data(), buffer.size());
+
+    ASSERT(stream.is_end());
+    m_socket->write(stream.data(), stream.size());
 }
 
 void Client::quit()
