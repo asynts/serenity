@@ -102,6 +102,8 @@ void Mixer::mix()
             }
         }
 
+        dbg() << "'void Mixer::mix()' called";
+
         if (m_muted) {
             m_device->write(m_zero_filled_buffer, 4096);
         } else {

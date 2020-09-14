@@ -290,6 +290,8 @@ static double read_norm_sample_8(InputMemoryStream& stream)
 
 RefPtr<Buffer> Buffer::from_pcm_data(ReadonlyBytes data, ResampleHelper& resampler, int num_channels, int bits_per_sample)
 {
+    dbg() << "'" << __PRETTY_FUNCTION__ << "' called";
+
     InputMemoryStream stream { data };
     Vector<Sample> fdata;
     fdata.ensure_capacity(data.size() / (bits_per_sample / 8));
