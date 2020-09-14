@@ -302,7 +302,7 @@ public:
 
     size_t fill(u8 value, size_t count)
     {
-        auto nwritten = m_first_buffer.slice(min(m_write_offset, m_first_buffer.size(), count)).fill(value);
+        auto nwritten = m_first_buffer.slice(min(m_write_offset, m_first_buffer.size())).trim(count).fill(value);
 
         while (nwritten < count) {
             if (!m_allow_growth)
