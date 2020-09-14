@@ -297,6 +297,33 @@ public:
         return buffer;
     }
 
+    size_t fill(u8 value, size_t count)
+    {
+        auto nwritten = m_first_buffer.slice(min(m_write_offset, m_first_buffer.size())).trim(count).fill(value);
+
+        while (nwritten < count) {
+            if (!m_allow_growth)
+                ASSERT_NOT_REACHED();
+
+            const auto offset_into_chunks = m_write_offset + nwritten - m_first_buffer.size();
+
+            if (offset_into_chunks % chunk_size == 0)
+                m_chunks.append(ByteBuffer::create_uninitialized(chunk_size));
+
+            nwritten += m_chunks.last().bytes().slice(offset_into_chunks % chunk_size).trim(count - nwritten).fill(value);
+        }
+
+        m_write_offset += nwritten;
+        return nwritten;
+    }
+
+    size_t fill_to_offset(u8 value, size_t offset)
+    {
+        ASSERT(offset >= m_write_offset);
+
+        return fill(value, offset - m_write_offset);
+    }
+
     size_t size() const { return m_write_offset - m_read_offset; }
 
 private:
@@ -330,6 +357,9 @@ public:
 
     ByteBuffer copy_into_contiguous_buffer() const { return m_stream.copy_into_contiguous_buffer(); }
     Optional<size_t> offset_of(ReadonlyBytes value) const { return m_stream.offset_of(value); }
+
+    size_t fill(u8 value, size_t count) { return m_stream.fill(value, count); }
+    size_t fill_to_offset(u8 value, size_t offset) { return m_stream.fill_to_offset(value, offset); }
 
     size_t size() const { return m_stream.size(); }
 
