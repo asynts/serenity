@@ -178,7 +178,7 @@ ssize_t FileDescription::get_dir_entries(u8* buffer, ssize_t size)
     size_t size_to_allocate = max(static_cast<size_t>(PAGE_SIZE), static_cast<size_t>(metadata.size));
 
     auto temp_buffer = ByteBuffer::create_uninitialized(size_to_allocate);
-    OutputMemoryStream stream { temp_buffer };
+    FixedOutputMemoryStream stream { temp_buffer };
 
     KResult result = VFS::the().traverse_directory_inode(*m_inode, [&stream, this](auto& entry) {
         stream << (u32)entry.inode.index();
@@ -194,7 +194,7 @@ ssize_t FileDescription::get_dir_entries(u8* buffer, ssize_t size)
     if (static_cast<size_t>(size) < temp_buffer.size())
         return -EINVAL;
 
-    copy_to_user(buffer, temp_buffer.data(), stream.size());
+    copy_to_user(buffer, stream.data(), stream.size());
     return stream.size();
 }
 

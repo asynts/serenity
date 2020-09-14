@@ -286,15 +286,16 @@ bool Ext2FS::write_block_list_for_inode(InodeIndex inode_index, ext2_inode& e2in
         ASSERT(new_shape.indirect_blocks <= entries_per_block);
 
         auto block_contents = ByteBuffer::create_uninitialized(block_size());
-        OutputMemoryStream stream { block_contents };
+        FixedOutputMemoryStream stream { block_contents };
 
         for (unsigned i = 0; i < new_shape.indirect_blocks; ++i) {
             stream << blocks[output_block_index++];
             --remaining_blocks;
         }
-        stream.fill_to_offset(0, block_size());
 
-        bool success = write_block(e2inode.i_block[EXT2_IND_BLOCK], block_contents.data(), block_size());
+        stream.fill_to_end(0);
+
+        bool success = write_block(e2inode.i_block[EXT2_IND_BLOCK], stream.data(), stream.size());
         ASSERT(success);
     }
 
@@ -931,7 +932,7 @@ bool Ext2FSInode::write_directory(const Vector<Ext2FSDirectoryEntry>& entries)
 #endif
 
     auto directory_data = ByteBuffer::create_uninitialized(occupied_size);
-    OutputMemoryStream stream { directory_data };
+    FixedOutputMemoryStream stream { directory_data };
 
     for (size_t i = 0; i < entries.size(); ++i) {
         auto& entry = entries[i];
@@ -959,9 +960,9 @@ bool Ext2FSInode::write_directory(const Vector<Ext2FSDirectoryEntry>& entries)
             stream << u8(0);
     }
 
-    stream.fill_to_offset(0, occupied_size);
+    stream.fill_to_end(0);
 
-    ssize_t nwritten = write_bytes(0, directory_data.size(), directory_data.data(), nullptr);
+    ssize_t nwritten = write_bytes(0, stream.size(), stream.data(), nullptr);
     if (nwritten < 0)
         return false;
     set_metadata_dirty(true);
