@@ -171,4 +171,29 @@ TEST_CASE(write_endian_values)
     EXPECT(compare({ expected, sizeof(expected) }, stream.copy_into_contiguous_buffer()));
 }
 
+TEST_CASE(fixed_output_memory_stream)
+{
+    Array<u8, 8> actual { 0 };
+    const Array<u8, 8> expected { 42, 0x3a, 0xfa, 0xff, 0xff, 0x33, 0x33, 0x33 };
+
+    FixedOutputMemoryStream stream { actual };
+
+    stream << u8(42);
+    stream << LittleEndian<int>(-1478);
+
+    EXPECT_EQ(stream.bytes().size(), 5u);
+    EXPECT_EQ(stream.size(), 5u);
+    EXPECT_EQ(stream.bytes().data(), actual.data());
+    EXPECT(!stream.is_end());
+
+    stream.fill_to_end(0x33);
+
+    EXPECT_EQ(stream.size(), 8u);
+    EXPECT_EQ(actual.span(), expected.span());
+    EXPECT(stream.is_end());
+
+    AK::dump_bytes(actual);
+    AK::dump_bytes(expected);
+}
+
 TEST_MAIN(MemoryStream)
