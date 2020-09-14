@@ -155,6 +155,50 @@ private:
     size_t m_offset { 0 };
 };
 
+class FixedOutputMemoryStream final : public OutputStream {
+public:
+    explicit FixedOutputMemoryStream(Bytes bytes)
+        : m_bytes(bytes)
+    {
+    }
+
+    size_t write(ReadonlyBytes bytes) override
+    {
+        const auto nwritten = bytes.copy_trimmed_to(m_bytes.slice(m_offset));
+        m_offset += nwritten;
+        return nwritten;
+    }
+
+    bool write_or_error(ReadonlyBytes bytes) override
+    {
+        if (m_bytes.size() - m_offset < bytes.size()) {
+            set_recoverable_error();
+            return false;
+        }
+
+        write(bytes);
+        return true;
+    }
+
+    bool is_end() const { return m_offset == m_bytes.size(); }
+
+    size_t fill_to_end(u8 value)
+    {
+        const auto nwritten = m_bytes.slice(m_offset).fill(value);
+        m_offset += nwritten;
+        return nwritten;
+    }
+
+    size_t size() const { return m_offset; }
+
+    Bytes bytes() { return m_bytes.trim(m_offset); }
+    ReadonlyBytes bytes() const { return m_bytes.trim(m_offset); }
+
+private:
+    Bytes m_bytes;
+    size_t m_offset { 0 };
+};
+
 class DuplexMemoryStream final : public DuplexStream {
 public:
     static constexpr size_t chunk_size = 4096;
@@ -379,6 +423,7 @@ private:
 }
 
 using AK::DuplexMemoryStream;
+using AK::FixedOutputMemoryStream;
 using AK::InputMemoryStream;
 using AK::InputStream;
 using AK::OutputMemoryStream;
