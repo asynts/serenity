@@ -25,8 +25,8 @@
  */
 
 #include "Client.h"
-#include <AK/BufferStream.h>
 #include <AK/ByteBuffer.h>
+#include <AK/MemoryStream.h>
 #include <AK/String.h>
 #include <AK/StringBuilder.h>
 #include <AK/StringView.h>
@@ -170,11 +170,15 @@ void Client::send_command(Command command)
 
 void Client::send_commands(Vector<Command> commands)
 {
-    auto buffer = ByteBuffer::create_uninitialized(commands.size() * 3);
-    BufferStream stream(buffer);
+    // FIXME: Create a NetworkStream class and use a Buffered<NetworkStream> for m_socket.
+
+    dbg() << "'void Client::send_commands(Vector<Command>)' called";
+
+    OutputMemoryStream stream;
     for (auto& command : commands)
         stream << (u8)IAC << command.command << command.subcommand;
-    stream.snip();
+
+    auto buffer = stream.copy_into_contiguous_buffer();
     m_socket->write(buffer.data(), buffer.size());
 }
 
