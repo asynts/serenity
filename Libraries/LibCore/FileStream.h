@@ -105,6 +105,11 @@ public:
     {
     }
 
+    ~OutputFileStream()
+    {
+        close();
+    }
+
     static Result<OutputFileStream, String> open(StringView filename, IODevice::OpenMode mode = IODevice::OpenMode::WriteOnly, mode_t permissions = 0644)
     {
         ASSERT((mode & 0xf) == IODevice::OpenMode::WriteOnly || (mode & 0xf) == IODevice::OpenMode::ReadWrite);
