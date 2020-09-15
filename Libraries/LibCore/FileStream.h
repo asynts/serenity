@@ -100,9 +100,17 @@ private:
 
 class OutputFileStream : public OutputStream {
 public:
+    AK_MAKE_NONCOPYABLE(OutputFileStream);
+
     explicit OutputFileStream(NonnullRefPtr<File> file)
         : m_file(file)
     {
+    }
+
+    OutputFileStream(OutputFileStream&& other)
+    {
+        m_file = other.m_file;
+        other.m_file.clear();
     }
 
     ~OutputFileStream()
@@ -110,7 +118,7 @@ public:
         close();
     }
 
-    static Result<OutputFileStream, String> open(StringView filename, IODevice::OpenMode mode = IODevice::OpenMode::WriteOnly, mode_t permissions = 0644)
+    static Result<NonnullRefPtr<OutputFileStream>, String> open(StringView filename, IODevice::OpenMode mode = IODevice::OpenMode::WriteOnly, mode_t permissions = 0644)
     {
         ASSERT((mode & 0xf) == IODevice::OpenMode::WriteOnly || (mode & 0xf) == IODevice::OpenMode::ReadWrite);
 
@@ -119,10 +127,10 @@ public:
         if (file_result.is_error())
             return file_result.error();
 
-        return OutputFileStream { file_result.value() };
+        return adopt(*new OutputFileStream { file_result.value() });
     }
 
-    static Result<Buffered<OutputFileStream>, String> open_buffered(StringView filename, IODevice::OpenMode mode = IODevice::OpenMode::WriteOnly, mode_t permissions = 0644)
+    static Result<NonnullRefPtr<Buffered<OutputFileStream>>, String> open_buffered(StringView filename, IODevice::OpenMode mode = IODevice::OpenMode::WriteOnly, mode_t permissions = 0644)
     {
         ASSERT((mode & 0xf) == IODevice::OpenMode::WriteOnly || (mode & 0xf) == IODevice::OpenMode::ReadWrite);
 
@@ -131,7 +139,7 @@ public:
         if (file_result.is_error())
             return file_result.error();
 
-        return Buffered<OutputFileStream> { file_result.value() };
+        return adopt(*new Buffered<OutputFileStream> { file_result.value() });
     }
 
     static OutputFileStream stdout()
@@ -166,12 +174,14 @@ public:
 
     void close()
     {
-        if (!m_file->close())
+        if (!m_file.is_null() && !m_file->close())
             set_fatal_error();
+
+        m_file.clear();
     }
 
 private:
-    NonnullRefPtr<File> m_file;
+    RefPtr<File> m_file;
 };
 
 }
