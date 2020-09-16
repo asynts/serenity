@@ -350,6 +350,18 @@ int putenv(char* new_var)
     return 0;
 }
 
+int clearenv(void)
+{
+    if (__environ_is_malloced)
+        free(environ);
+
+    __environ_is_malloced = true;
+    environ = static_cast<char**>(malloc(sizeof(char*)));
+    *environ = nullptr;
+
+    return 0;
+}
+
 double strtod(const char* str, char** endptr)
 {
     // Parse spaces, sign, and base
