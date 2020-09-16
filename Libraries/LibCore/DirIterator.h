@@ -26,7 +26,6 @@
 
 #pragma once
 
-#include <AK/Function.h>
 #include <AK/String.h>
 #include <dirent.h>
 #include <string.h>
@@ -61,7 +60,6 @@ private:
     bool advance_next();
 };
 
-void for_each_executable_in_path(Function<IterationDecision(String)> callback);
 String find_executable_in_path(String filename);
 
 }

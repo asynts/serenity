@@ -24,7 +24,6 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <AK/LexicalPath.h>
 #include <LibCore/DirIterator.h>
 #include <errno.h>
 
@@ -99,42 +98,23 @@ String DirIterator::next_full_path()
     return String::format("%s/%s", m_path.characters(), next_path().characters());
 }
 
-void for_each_executable_in_path(Function<IterationDecision(String)> callback)
-{
-    const char* PATH = getenv("PATH");
-    ASSERT(PATH);
-
-    for (auto directory : StringView { PATH }.split_view(':')) {
-        for (Core::DirIterator it { directory }; it.has_next();) {
-            auto path = it.next_full_path();
-
-            if (access(path.characters(), X_OK) == 0) {
-                if (callback(path) == IterationDecision::Break)
-                    return;
-            }
-        }
-    }
-}
-
 String find_executable_in_path(String filename)
 {
-    if (LexicalPath { filename }.is_absolute()) {
+    if (filename.starts_with('/')) {
         if (access(filename.characters(), X_OK) == 0)
             return filename;
 
         return {};
     }
 
-    String executable;
-    for_each_executable_in_path([&](auto path) {
-        if (LexicalPath { path }.basename() == filename) {
-            executable = path;
-            return IterationDecision::Break;
-        }
+    for (auto directory : StringView { getenv("PATH") }.split_view(':')) {
+        auto fullpath = String::format("%s/%s", directory, filename);
 
-        return IterationDecision::Continue;
-    });
+        if (access(fullpath.characters(), X_OK) == 0)
+            return fullpath;
+    }
 
-    return executable;
+    return {};
 }
+
 }
