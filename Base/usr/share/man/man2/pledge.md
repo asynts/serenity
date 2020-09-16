@@ -30,6 +30,7 @@ If the process later attempts to use any system functionality it has previously 
 
 ## Promises
 
+* `all`: An alias for all promises that have not been removed yet. (\*)
 * `stdio`: Basic I/O, memory allocation, information about self, various non-destructive syscalls
 * `thread`: The POSIX threading API (\*)
 * `id`: Ability to change UID/GID
@@ -55,6 +56,9 @@ If the process later attempts to use any system functionality it has previously 
 * `recvfd`: Receive file descriptors over a local socket
 
 Promises marked with an asterisk (\*) are SerenityOS specific extensions not supported by the original OpenBSD `pledge()`.
+
+Promises can also be removed with `-promise`, this is intended to be used with `all` to drop permissions.
+This is an SerenityOS specific extension and is not supported by the original OpenBSD `pledge()`.
 
 ## Errors
 
