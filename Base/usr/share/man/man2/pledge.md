@@ -66,6 +66,26 @@ This is an SerenityOS specific extension and is not supported by the original Op
 * `EINVAL`: One or more invalid promises were specified.
 * `EPERM`: An attempt to increase capabilities was rejected.
 
+## Examples
+
+~~~
+if(pledge("stdio rpath") < 0) {
+    perror("pledge");
+    exit(1);
+}
+
+int fd = open("example.txt", O_WRONLY | O_CREAT);
+if(fd < 0) {
+    perror("open");
+    exit(1);
+}
+
+if(pledge("all -rpath") < 0) {
+    perror("pledge");
+    exit(1);
+}
+~~~
+
 ## History
 
 The `pledge()` system call was first introduced by OpenBSD. The implementation in SerenityOS differs in many ways and is by no means final.
