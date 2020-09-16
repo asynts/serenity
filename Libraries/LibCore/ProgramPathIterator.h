@@ -42,11 +42,20 @@ public:
         m_directories = StringView { getenv("PATH") }.split_view(':');
     }
 
-    bool has_next() const
+    bool has_next()
     {
+        if (m_next_program.has_value())
+            return true;
+
         if (m_dir_iterator.has_value()) {
             if (m_dir_iterator.value().has_next()) {
-                return true;
+                m_next_program = m_dir_iterator.value().next_full_path();
+
+                if (access(m_next_program.value().characters(), X_OK) == 0)
+                    return true;
+
+                m_next_program.clear();
+                return has_next();
             } else {
                 m_dir_iterator.clear();
                 return has_next();
@@ -61,11 +70,20 @@ public:
         return false;
     }
 
-    String next_program() { return m_dir_iterator.value().next_full_path(); }
+    String next_program()
+    {
+        has_next();
+
+        auto program = m_next_program.value();
+        m_next_program.clear();
+
+        return program;
+    }
 
 private:
-    mutable Vector<StringView> m_directories;
-    mutable Optional<DirIterator> m_dir_iterator;
+    Vector<StringView> m_directories;
+    Optional<DirIterator> m_dir_iterator;
+    Optional<String> m_next_program;
 };
 
 }
