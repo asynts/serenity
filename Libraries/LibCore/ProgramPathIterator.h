@@ -70,7 +70,7 @@ public:
         return false;
     }
 
-    String next_program()
+    String next_executable()
     {
         has_next();
 

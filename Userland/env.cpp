@@ -75,7 +75,7 @@ int main(int argc, char** argv)
         exit(0);
     } else {
         for (Core::ProgramPathIterator programs; programs.has_next();) {
-            auto program = programs.next_program();
+            auto program = programs.next_executable();
             auto basename = LexicalPath { program }.basename();
 
             if (basename == exec_filename) {

@@ -41,7 +41,7 @@ int main(int argc, char** argv)
     args_parser.parse(argc, argv);
 
     for (Core::ProgramPathIterator programs; programs.has_next();) {
-        auto program = programs.next_program();
+        auto program = programs.next_executable();
 
         if (program == filename) {
             out() << program;
