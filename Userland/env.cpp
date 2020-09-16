@@ -24,17 +24,72 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <AK/LexicalPath.h>
+#include <LibCore/ArgsParser.h>
+#include <LibCore/ProgramPathIterator.h>
+
 #include <stdio.h>
 #include <unistd.h>
 
-int main(int, char**)
+int main(int argc, char** argv)
 {
-    if (pledge("stdio", nullptr) < 0) {
+    if (pledge("stdio exec rpath", nullptr) < 0) {
         perror("pledge");
-        return 1;
+        exit(1);
     }
 
-    for (size_t i = 0; environ[i]; ++i)
-        printf("%s\n", environ[i]);
-    return 0;
+    bool ignore_environment { false };
+    Vector<const char*> arguments;
+
+    Core::ArgsParser args_parser;
+    args_parser.add_option(ignore_environment, "Ignore environment", "ignore-environment", 'i');
+    args_parser.add_positional_argument(arguments, "Arguments", "arguments", Core::ArgsParser::Required::No);
+    args_parser.parse(argc, argv);
+
+    const char* exec_filename = nullptr;
+    Vector<char*> exec_argv;
+    Vector<char*> exec_environ;
+
+    bool parse_environ = true;
+    for (auto argument : arguments) {
+        if (parse_environ && StringView { argument }.contains('=')) {
+            exec_environ.append(strdup(argument));
+        } else if (exec_filename == nullptr) {
+            exec_filename = argument;
+            parse_environ = false;
+        } else {
+            exec_argv.append(strdup(argument));
+        }
+    }
+
+    if (ignore_environment)
+        clearenv();
+
+    for (auto env : exec_environ)
+        putenv(env);
+
+    if (exec_filename == nullptr) {
+        for (auto env = environ; *env != nullptr; ++env)
+            out() << *env;
+
+        exit(0);
+    } else {
+        for (Core::ProgramPathIterator programs; programs.has_next();) {
+            auto program = programs.next_program();
+            auto basename = LexicalPath { program }.basename();
+
+            if (basename == exec_filename) {
+                exec_argv.prepend(strdup(basename.characters()));
+                exec_argv.append(nullptr);
+
+                execv(program.characters(), exec_argv.data());
+
+                perror("environ");
+                exit(1);
+            }
+        }
+
+        warn() << "No such file or directory";
+        exit(1);
+    }
 }
