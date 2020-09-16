@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2020, Andreas Kling <kling@serenityos.org>
+ * Copyright (c) 2020, the SerenityOS developers.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -24,74 +24,35 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <AK/LexicalPath.h>
-#include <LibCore/ArgsParser.h>
-#include <LibCore/ProgramPathIterator.h>
-
+#include <LibCore/DirIterator.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 
 int main(int argc, char** argv)
 {
-    if (pledge("stdio exec rpath", nullptr) < 0) {
-        perror("pledge");
-        exit(1);
-    }
+    String filename;
 
-    bool ignore_environment { false };
-    Vector<const char*> arguments;
-
-    Core::ArgsParser args_parser;
-    args_parser.add_option(ignore_environment, "Ignore environment", "ignore-environment", 'i');
-    args_parser.add_positional_argument(arguments, "Arguments", "arguments", Core::ArgsParser::Required::No);
-    args_parser.parse(argc, argv);
-
-    const char* exec_filename = nullptr;
-    Vector<char*> exec_argv;
-    Vector<char*> exec_environ;
-
-    bool parse_environ = true;
-    for (auto argument : arguments) {
-        if (parse_environ && StringView { argument }.contains('=')) {
-            exec_environ.append(strdup(argument));
-        } else if (exec_filename == nullptr) {
-            exec_filename = argument;
-            parse_environ = false;
+    for (int idx = 1; idx < argc; ++idx) {
+        if (StringView { argv[idx] }.contains('=')) {
+            putenv(argv[idx]);
         } else {
-            exec_argv.append(strdup(argument));
+            filename = argv[idx];
+            argv += idx;
+            break;
         }
     }
 
-    if (ignore_environment)
-        clearenv();
+    if (filename.is_null()) {
+        for (auto entry = environ; *entry != nullptr; ++entry)
+            printf("%s\n", *entry);
 
-    for (auto env : exec_environ)
-        putenv(env);
-
-    if (exec_filename == nullptr) {
-        for (auto env = environ; *env != nullptr; ++env)
-            out() << *env;
-
-        exit(0);
-    } else {
-        auto executable = Core::ProgramPathIterator::locate_executable(exec_filename);
-
-        for (Core::ProgramPathIterator programs; programs.has_next();) {
-            auto program = programs.next_executable();
-            auto basename = LexicalPath { program }.basename();
-
-            if (basename == exec_filename) {
-                exec_argv.prepend(strdup(basename.characters()));
-                exec_argv.append(nullptr);
-
-                execv(program.characters(), exec_argv.data());
-
-                perror("environ");
-                exit(1);
-            }
-        }
-
-        warn() << "No such file or directory";
-        exit(1);
+        return 0;
     }
+
+    filename = Core::find_executable_in_path(filename);
+    execv(filename.characters(), argv);
+
+    perror("execv");
+    return 1;
 }

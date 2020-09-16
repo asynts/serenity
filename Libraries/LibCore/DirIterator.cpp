@@ -126,7 +126,7 @@ String find_executable_in_path(String filename)
     }
 
     String executable;
-    for_each_executable_in_path([](auto path) {
+    for_each_executable_in_path([&](auto path) {
         if (LexicalPath { path }.basename() == filename) {
             executable = path;
             return IterationDecision::Break;
