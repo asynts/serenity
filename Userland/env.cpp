@@ -74,6 +74,8 @@ int main(int argc, char** argv)
 
         exit(0);
     } else {
+        auto executable = Core::ProgramPathIterator::locate_executable(exec_filename);
+
         for (Core::ProgramPathIterator programs; programs.has_next();) {
             auto program = programs.next_executable();
             auto basename = LexicalPath { program }.basename();

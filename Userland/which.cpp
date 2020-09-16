@@ -40,15 +40,11 @@ int main(int argc, char** argv)
     args_parser.add_positional_argument(filename, "Name of executable", "executable");
     args_parser.parse(argc, argv);
 
-    for (Core::ProgramPathIterator programs; programs.has_next();) {
-        auto program = programs.next_executable();
-
-        if (program == filename) {
-            out() << program;
-            exit(0);
-        }
+    auto executable = Core::ProgramPathIterator::locate_executable(filename);
+    if (executable.is_null()) {
+        warn() << "no " << filename << " in path";
+        exit(1);
     }
 
-    warn() << "no " << filename << " in path";
-    exit(1);
+    out() << executable;
 }

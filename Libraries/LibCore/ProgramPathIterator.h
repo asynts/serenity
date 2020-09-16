@@ -26,6 +26,7 @@
 
 #pragma once
 
+#include <AK/LexicalPath.h>
 #include <AK/Optional.h>
 #include <AK/StringView.h>
 #include <AK/Vector.h>
@@ -40,6 +41,19 @@ public:
     ProgramPathIterator()
     {
         m_directories = StringView { getenv("PATH") }.split_view(':');
+    }
+
+    static String locate_executable(StringView filename)
+    {
+        for (Core::ProgramPathIterator executables; executables.has_next();) {
+            auto executable = executables.next_executable();
+            auto basename = LexicalPath { executable }.basename();
+
+            if (LexicalPath { executable }.basename() == filename)
+                return executable;
+        }
+
+        return {};
     }
 
     bool has_next()
