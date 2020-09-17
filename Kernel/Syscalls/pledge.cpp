@@ -53,22 +53,39 @@ int Process::sys$pledge(Userspace<const Syscall::SC_pledge_params*> user_params)
     }
 
     auto parse_pledge = [&](auto& pledge_spec, u32& mask) {
+        u32 keep_mask = 0, drop_mask = 0;
+
         auto parts = pledge_spec.split_view(' ');
         for (auto& part : parts) {
-#define __ENUMERATE_PLEDGE_PROMISE(x)   \
-    if (part == #x) {                   \
-        mask |= (1u << (u32)Pledge::x); \
-        continue;                       \
+#define __ENUMERATE_PLEDGE_PROMISE(x)        \
+    if (part == #x) {                        \
+        keep_mask |= (1u << (u32)Pledge::x); \
+        continue;                            \
+    }                                        \
+    if (part == "-" #x) {                    \
+        drop_mask |= (1u << (u32)Pledge::x); \
+        continue;                            \
     }
             ENUMERATE_PLEDGE_PROMISES
 #undef __ENUMERATE_PLEDGE_PROMISE
-            if (part == "dns") {
-                // "dns" is an alias for "unix" since DNS queries go via LookupServer
-                mask |= (1u << (u32)Pledge::unix);
+            if (part == "all") {
+                keep_mask = m_promises;
                 continue;
             }
+            if (part == "-all") {
+                drop_mask = (u32)-1;
+                continue;
+            }
+            if (part == "dns") {
+                // "dns" is an alias for "unix" since DNS queries go via LookupServer
+                keep_mask |= (1u << (u32)Pledge::unix);
+                continue;
+            }
+
+            mask = keep_mask & ~drop_mask;
             return false;
         }
+        mask = keep_mask & ~drop_mask;
         return true;
     };
 
