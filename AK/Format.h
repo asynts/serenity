@@ -51,15 +51,15 @@ struct Tuple<T, Parameters...> {
 };
 
 template<size_t Index, typename... Parameters>
-class TupleElement;
+struct TupleElement;
 
 template<typename T, typename... Parameters>
-class TupleElement<0, T, Parameters...> {
+struct TupleElement<0, T, Parameters...> {
     using Type = T;
 };
 
 template<size_t Index, typename T, typename... Parameters>
-class TupleElement<Index, T, Parameters...> {
+struct TupleElement<Index, T, Parameters...> {
     using Type = typename TupleElement<sizeof...(Parameters), Parameters...>::Type;
 };
 
@@ -142,7 +142,7 @@ bool parse(Context& context, StringView fmtstr)
 
     ++begin;
 
-    if (!get<Index>(context.formatters).parse(fmtstr.substr(begin, end - begin)))
+    if (!get<Index>(context.formatters).parse(fmtstr.substring_view(begin, end - begin)))
         return false;
 
     return parse<Index + 1, Context, Parameters...>(context, fmtstr.substring_view(end + 1));

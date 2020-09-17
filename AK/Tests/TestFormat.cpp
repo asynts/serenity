@@ -45,7 +45,7 @@ struct AK::Formatter<A> {
         return format == "";
     }
 
-    void format(StringBuilder builder, const A& value)
+    void format(StringBuilder builder, A)
     {
         if (has_x)
             builder.append('X');
@@ -56,6 +56,10 @@ struct AK::Formatter<A> {
 
 TEST_CASE(custom_formatter)
 {
+    StringView expected = "Y X";
+    auto actual = AK::format("{} {x}", A {}, A {});
+
+    EXPECT_EQ(expected, actual);
 }
 
 TEST_MAIN(Format)
