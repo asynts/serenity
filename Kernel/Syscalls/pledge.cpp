@@ -72,6 +72,10 @@ int Process::sys$pledge(Userspace<const Syscall::SC_pledge_params*> user_params)
                 mask = max_mask;
                 continue;
             }
+            if (part == "-all") {
+                max_mask = 0;
+                continue;
+            }
             if (part == "dns") {
                 // "dns" is an alias for "unix" since DNS queries go via LookupServer
                 mask |= (1u << (u32)Pledge::unix);
