@@ -32,60 +32,78 @@
 namespace AK {
 
 template<typename T>
-class Formatter;
+class Formatter {
+    // FIXME: Propagate constexpr through StringView and make this constexpr.
+    bool parse(StringView);
+
+    void format(StringBuilder, const T&);
+};
 
 } // namespace AK
 
-namespace AK::Detail {
+namespace AK::Detail::Format {
 
+// This looks a lot worse than it really is.
+//
+// This class is very similar to std::tuple, it is used as follows:
+//
+//     // Aggregate initialization constructors are awesome!
+//     Tuple<int, char, double> tuple { 1, 'a', 3.14 };
+//
+//     // The the second element from the tuple.
+//     get<1>(tuple);
+//
+// Below we are doing a ton of template magic that mostly deals with variadic template arguments
+// and recursion. It helps to think of recursion of two distinct steps:
+//
+//  1. We find one or more base conditions for which we can solve the problem easily.
+//
+//  2. We reduce the generic problem to a slightly simpler problem and assume that we already know
+//     the answer to that problem.
+
+// Any tuple is build of one value and a tuple with more values.
 template<typename T, typename... Types>
 struct Tuple {
     T value;
     Tuple<Types...> remaining;
 };
+// We know what a tuple with one element looks like.
 template<typename T>
 struct Tuple<T> {
     T value;
 };
 
+// The value of the n-th element in a tuple is the value of (n-1)-th element in the same tuple without the first element.
 template<size_t Index, typename T, typename... Types>
 struct TupleElement {
     static_assert(Index < sizeof...(Types) + 1, "index out of range");
 
     using Type = typename TupleElement<Index - 1, Types...>::Type;
 
-    static const Type& value(const Tuple<T, Types...>& tuple) { return TupleElement<Index - 1, Types...>::value(tuple.remaining); }
-    static Type& value(Tuple<T, Types...>& tuple) { return TupleElement<Index - 1, Types...>::value(tuple.remaining); }
+    static constexpr const Type& value(const Tuple<T, Types...>& tuple) { return TupleElement<Index - 1, Types...>::value(tuple.remaining); }
+    static constexpr Type& value(Tuple<T, Types...>& tuple) { return TupleElement<Index - 1, Types...>::value(tuple.remaining); }
 };
+// We know how to get the value of the first element in a tuple.
 template<typename T, typename... Types>
 struct TupleElement<0, T, Types...> {
     using Type = T;
 
-    static const Type& value(const Tuple<T, Types...>& tuple) { return tuple.value; }
-    static Type& value(Tuple<T, Types...>& tuple) { return tuple.value; }
+    static constexpr const Type& value(const Tuple<T, Types...>& tuple) { return tuple.value; }
+    static constexpr Type& value(Tuple<T, Types...>& tuple) { return tuple.value; }
 };
 
 template<size_t Index, typename... Types>
-const typename TupleElement<Index, Types...>::Type& get(const Tuple<Types...>& tuple) { return TupleElement<Index, Types...>::value(tuple); }
-
+constexpr const typename TupleElement<Index, Types...>::Type& get(const Tuple<Types...>& tuple) { return TupleElement<Index, Types...>::value(tuple); }
 template<size_t Index, typename... Types>
-typename TupleElement<Index, Types...>::Type& get(Tuple<Types...>& tuple) { return TupleElement<Index, Types...>::value(tuple); }
+constexpr typename TupleElement<Index, Types...>::Type& get(Tuple<Types...>& tuple) { return TupleElement<Index, Types...>::value(tuple); }
 
 template<typename... Types>
 struct Context {
-    Detail::Tuple<Formatter<Types>...> formatters;
+    Tuple<Formatter<Types>...> formatters;
     Array<StringView, sizeof...(Types) + 1> literals;
 };
 
-template<size_t Index, typename Context>
-bool parse(Context& context, StringView fmtstr)
-{
-    // FIXME: Verify that there are no dangling format specifiers.
-
-    context.literals[Index] = fmtstr;
-    return true;
-}
-
+// We parse the first format specifier and have one less to deal with.
 template<size_t Index, typename Context, typename Parameter, typename... Parameters>
 bool parse(Context& context, StringView fmtstr)
 {
@@ -96,13 +114,22 @@ bool parse(Context& context, StringView fmtstr)
 
     context.literals[Index] = fmtstr.substring_view(0, begin);
 
-    if (!Detail::get<Index>(context.formatters).parse(fmtstr.substring_view(begin + 1, end - (begin + 1))))
+    if (!get<Index>(context.formatters).parse(fmtstr.substring_view(begin + 1, end - (begin + 1))))
         return false;
 
     return parse<Index - 1, Context, Parameters...>(context, fmtstr.substring_view(end + 1));
 }
+// We know how to deal with a format string without format specifiers.
+template<size_t Index, typename Context>
+bool parse(Context& context, StringView fmtstr)
+{
+    // FIXME: Verify that there are no dangling format specifiers.
 
-} // namespace AK::Detail
+    context.literals[Index] = fmtstr;
+    return true;
+}
+
+} // namespace AK::Detail::Format
 
 namespace AK {
 
