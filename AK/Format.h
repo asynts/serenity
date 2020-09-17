@@ -26,9 +26,17 @@
 
 #pragma once
 
-#include <AK/Forward.h>
+#include <AK/Array.h>
+#include <AK/StringView.h>
 
 namespace AK {
+
+template<typename T>
+class Formatter;
+
+} // namespace AK
+
+namespace AK::Detail {
 
 template<typename T, typename... Types>
 struct Tuple {
@@ -57,4 +65,45 @@ struct TupleElement<0, T, Types...> {
     static Type& value(Tuple<T, Types...>& tuple) { return tuple.value; }
 };
 
+template<size_t Index, typename... Types>
+const typename TupleElement<Index, Types...>::Type& get(const Tuple<Types...>& tuple) { return TupleElement<Index, Types...>::value(tuple); }
+
+template<size_t Index, typename... Types>
+typename TupleElement<Index, Types...>::Type& get(Tuple<Types...>& tuple) { return TupleElement<Index, Types...>::value(tuple); }
+
+template<typename... Types>
+struct Context {
+    Detail::Tuple<Formatter<Types>...> formatters;
+    Array<StringView, sizeof...(Types) + 1> literals;
+};
+
+template<size_t Index, typename Context>
+bool parse(Context& context, StringView fmtstr)
+{
+    // FIXME: Verify that there are no dangling format specifiers.
+
+    context.literals[Index] = fmtstr;
+    return true;
 }
+
+template<size_t Index, typename Context, typename Parameter, typename... Parameters>
+bool parse(Context& context, StringView fmtstr)
+{
+    // FIXME: Allow escaping curly braces with double braces.
+    // FIXME: Verify that the format specifier is correct.
+    auto begin = fmtstr.find_first_of('{').value();
+    auto end = fmtstr.find_first_of('}').value();
+
+    context.literals[Index] = fmtstr.substring_view(0, begin);
+
+    if (!Detail::get<Index>(context.formatters).parse(fmtstr.substring_view(begin + 1, end - (begin + 1))))
+        return false;
+
+    return parse<Index - 1, Context, Parameters...>(context, fmtstr.substring_view(end + 1));
+}
+
+} // namespace AK::Detail
+
+namespace AK {
+
+} // namespace AK

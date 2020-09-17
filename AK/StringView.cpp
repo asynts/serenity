@@ -196,7 +196,7 @@ StringView StringView::substring_view(size_t start, size_t length) const
 
 StringView StringView::substring_view(size_t start) const
 {
-    ASSERT(start < m_length);
+    ASSERT(start <= m_length);
     return { m_characters + start, length() - start };
 }
 

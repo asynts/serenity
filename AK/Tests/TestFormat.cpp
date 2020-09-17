@@ -26,22 +26,44 @@
 
 #include <AK/TestSuite.h>
 
+#include <AK/Format.h>
 #include <AK/StdLibExtras.h>
-#include <AK/Tuple.h>
 
-TEST_CASE(initialize_tuple)
+TEST_CASE(tuple)
 {
-    [[maybe_unused]] const AK::Tuple<int, float, int> tuple { 3, 3.14f, 7 };
+    const AK::Detail::Tuple<int, float, int> tuple { 1, 2.11f, 3 };
+
+    static_assert(IsSame<decltype(AK::Detail::get<1>(tuple)), const float&>::value);
+
+    EXPECT_EQ(AK::Detail::get<0>(tuple), 1);
+    EXPECT_EQ(AK::Detail::get<1>(tuple), 2.11f);
+    EXPECT_EQ(AK::Detail::get<2>(tuple), 3);
 }
 
-TEST_CASE(get_tuple_value)
+struct A {
+};
+
+template<>
+struct AK::Formatter<A> {
+    bool parse(StringView fmtstr)
+    {
+        EXPECT_EQ(fmtstr, "x");
+
+        b_parsed = true;
+        return true;
+    }
+
+    bool b_parsed = false;
+};
+
+TEST_CASE(parse_trivial)
 {
-    const AK::Tuple<int, float, int> tuple { 1, 1.11f, 2 };
+    AK::Detail::Context<A> context;
 
-    static_assert(IsSame<typename AK::TupleElement<1, int, float, int>::Type, float>::value);
-    static_assert(IsSame<decltype(AK::TupleElement<1, int, float, int>::value(tuple)), const float&>::value);
-
-    EXPECT_EQ((AK::TupleElement<1, int, float, int>::value(tuple)), 1.11f);
+    EXPECT((AK::Detail::parse<0, decltype(context), A>(context, "a {x} b ")));
+    EXPECT(context.formatters.value.b_parsed);
+    EXPECT_EQ(context.literals[0], "a ");
+    EXPECT_EQ(context.literals[1], " b ");
 }
 
-TEST_MAIN(Tuple)
+TEST_MAIN(Format)
