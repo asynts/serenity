@@ -438,7 +438,7 @@ public:
     }
     bool has_promised(Pledge pledge) const
     {
-        return m_promises.value() & (1u << (u32)pledge);
+        return m_promises.value_or((u32)-1) & (1u << (u32)pledge);
     }
 
     VeilState veil_state() const

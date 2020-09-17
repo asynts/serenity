@@ -12,7 +12,7 @@ int main()
 
     int fd = open("example.txt", O_WRONLY | O_CREAT, 0644);
 
-    if (pledge("all -stdio -wpath -cpath", nullptr) < 0) {
+    if (pledge("all -wpath -cpath", nullptr) < 0) {
         perror("pledge");
         exit(1);
     }
