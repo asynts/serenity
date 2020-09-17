@@ -69,7 +69,7 @@ int Process::sys$pledge(Userspace<const Syscall::SC_pledge_params*> user_params)
             ENUMERATE_PLEDGE_PROMISES
 #undef __ENUMERATE_PLEDGE_PROMISE
             if (part == "all") {
-                keep_mask = m_promises;
+                keep_mask = m_promises.value_or((u32)-1);
                 continue;
             }
             if (part == "-all") {
@@ -89,31 +89,23 @@ int Process::sys$pledge(Userspace<const Syscall::SC_pledge_params*> user_params)
         return true;
     };
 
-    u32 new_promises;
-    u32 new_execpromises;
-
     if (!promises.is_null()) {
-        new_promises = 0;
+        u32 new_promises;
         if (!parse_pledge(promises, new_promises))
             return -EINVAL;
-        if (m_promises && (!new_promises || new_promises & ~m_promises))
+        if (new_promises & ~m_promises.value_or((u32)-1))
             return -EPERM;
-    } else {
-        new_promises = m_promises;
+
+        m_promises = new_promises;
     }
 
     if (!execpromises.is_null()) {
-        new_execpromises = 0;
+        u32 new_execpromises;
         if (!parse_pledge(execpromises, new_execpromises))
             return -EINVAL;
-        if (m_execpromises && (!new_execpromises || new_execpromises & ~m_execpromises))
+        if (new_execpromises & ~m_execpromises.value_or((u32)-1))
             return -EPERM;
-    } else {
-        new_execpromises = m_execpromises;
     }
-
-    m_promises = new_promises;
-    m_execpromises = new_execpromises;
 
     return 0;
 }
