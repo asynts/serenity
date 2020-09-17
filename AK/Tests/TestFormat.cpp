@@ -58,7 +58,7 @@ struct AK::Formatter<A> {
     bool b_parsed = false;
 };
 
-TEST_CASE(custom_formatter)
+TEST_CASE(custom_formatter_parse)
 {
     Context<A> context;
 
@@ -66,6 +66,14 @@ TEST_CASE(custom_formatter)
     EXPECT(context.formatters.value.b_parsed);
     EXPECT_EQ(context.literals[0], "a ");
     EXPECT_EQ(context.literals[1], " b ");
+}
+
+TEST_CASE(format_string_view)
+{
+    StringView expected = "a xyz - 1 - 42 b";
+    auto actual = AK::format("a {} - {} - {} b", StringView { "xyz" }, StringView { "1" }, StringView { "42" });
+
+    EXPECT_EQ(expected, actual);
 }
 
 TEST_MAIN(Format)

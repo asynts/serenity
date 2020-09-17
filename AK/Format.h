@@ -33,7 +33,6 @@ namespace AK {
 
 template<typename T>
 class Formatter {
-    // FIXME: Propagate constexpr through StringView and make this constexpr.
     bool parse(StringView);
 
     void format(StringBuilder, const T&);
@@ -129,8 +128,43 @@ bool parse(Context& context, StringView fmtstr)
     return true;
 }
 
+template<size_t Index, typename Context, typename Parameter, typename... Parameters>
+void format(StringBuilder& builder, Context& context, const Parameter& parameter, const Parameters&... parameters)
+{
+    builder.append(context.literals[Index]);
+
+    get<Index>(context.formatters).format(builder, parameter);
+
+    format<Index + 1, Context, Parameters...>(builder, context, parameters...);
+}
+template<size_t Index, typename Context>
+void format(StringBuilder& builder, Context& context)
+{
+    builder.append(context.literals[Index]);
+}
+
 } // namespace AK::Detail::Format
 
 namespace AK {
+
+template<typename... Parameters>
+String format(StringView fmtstr, const Parameters&... parameters)
+{
+    Detail::Format::Context<Parameters...> context;
+
+    if (!Detail::Format::parse<0, decltype(context), Parameters...>(context, fmtstr))
+        ASSERT_NOT_REACHED();
+
+    StringBuilder builder;
+    Detail::Format::format<0, decltype(context), Parameters...>(builder, context, parameters...);
+
+    return builder.to_string();
+}
+
+template<>
+struct Formatter<StringView> {
+    bool parse(StringView) { return true; }
+    void format(StringBuilder& builder, StringView value) { builder.append(value); }
+};
 
 } // namespace AK
