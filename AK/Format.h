@@ -117,7 +117,7 @@ bool parse(Context& context, StringView fmtstr)
     if (!get<Index>(context.formatters).parse(fmtstr.substring_view(begin + 1, end - (begin + 1))))
         return false;
 
-    return parse<Index - 1, Context, Parameters...>(context, fmtstr.substring_view(end + 1));
+    return parse<Index + 1, Context, Parameters...>(context, fmtstr.substring_view(end + 1));
 }
 // We know how to deal with a format string without format specifiers.
 template<size_t Index, typename Context>

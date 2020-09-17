@@ -58,7 +58,7 @@ struct AK::Formatter<A> {
     bool b_parsed = false;
 };
 
-TEST_CASE(parse_trivial)
+TEST_CASE(custom_formatter)
 {
     Context<A> context;
 
