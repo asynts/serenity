@@ -142,7 +142,8 @@ bool parse(Context& context, StringView fmtstr)
 
     ++begin;
 
-    get<Index>(context.formatters).parse(fmtstr.substr(begin, end - begin));
+    if (!get<Index>(context.formatters).parse(fmtstr.substr(begin, end - begin)))
+        return false;
 
     return parse<Index + 1, Context, Parameters...>(context, fmtstr.substring_view(end + 1));
 }
