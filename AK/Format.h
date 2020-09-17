@@ -26,7 +26,6 @@
 
 #pragma once
 
-#include <AK/Array.h>
 #include <AK/StringView.h>
 
 namespace AK {
@@ -34,113 +33,57 @@ namespace AK {
 template<typename T>
 class Formatter {
     bool parse(StringView);
-
-    void format(StringBuilder, const T&);
+    void format(StringBuilder&, const T&);
 };
 
 } // namespace AK
 
 namespace AK::Detail::Format {
 
-// This looks a lot worse than it really is.
-//
-// This class is very similar to std::tuple, it is used as follows:
-//
-//     // Aggregate initialization constructors are awesome!
-//     Tuple<int, char, double> tuple { 1, 'a', 3.14 };
-//
-//     // The the second element from the tuple.
-//     get<1>(tuple);
-//
-// Below we are doing a ton of template magic that mostly deals with variadic template arguments
-// and recursion. It helps to think of recursion of two distinct steps:
-//
-//  1. We find one or more base conditions for which we can solve the problem easily.
-//
-//  2. We reduce the generic problem to a slightly simpler problem and assume that we already know
-//     the answer to that problem.
-
-// Any tuple is build of one value and a tuple with more values.
-template<typename T, typename... Types>
-struct Tuple {
-    T value;
-    Tuple<Types...> remaining;
-};
-// We know what a tuple with one element looks like.
-template<typename T>
-struct Tuple<T> {
-    T value;
-};
-
-// The value of the n-th element in a tuple is the value of (n-1)-th element in the same tuple without the first element.
-template<size_t Index, typename T, typename... Types>
-struct TupleElement {
-    static_assert(Index < sizeof...(Types) + 1, "index out of range");
-
-    using Type = typename TupleElement<Index - 1, Types...>::Type;
-
-    static constexpr const Type& value(const Tuple<T, Types...>& tuple) { return TupleElement<Index - 1, Types...>::value(tuple.remaining); }
-    static constexpr Type& value(Tuple<T, Types...>& tuple) { return TupleElement<Index - 1, Types...>::value(tuple.remaining); }
-};
-// We know how to get the value of the first element in a tuple.
-template<typename T, typename... Types>
-struct TupleElement<0, T, Types...> {
-    using Type = T;
-
-    static constexpr const Type& value(const Tuple<T, Types...>& tuple) { return tuple.value; }
-    static constexpr Type& value(Tuple<T, Types...>& tuple) { return tuple.value; }
-};
-
-template<size_t Index, typename... Types>
-constexpr const typename TupleElement<Index, Types...>::Type& get(const Tuple<Types...>& tuple) { return TupleElement<Index, Types...>::value(tuple); }
-template<size_t Index, typename... Types>
-constexpr typename TupleElement<Index, Types...>::Type& get(Tuple<Types...>& tuple) { return TupleElement<Index, Types...>::value(tuple); }
-
 template<typename... Types>
 struct Context {
-    Tuple<Formatter<Types>...> formatters;
-    Array<StringView, sizeof...(Types) + 1> literals;
+    StringView literal;
+};
+template<typename T, typename... Types>
+struct Context<T, Types...> {
+    StringView literal;
+    Formatter<T> formatter;
+
+    Context<Types...> next;
 };
 
-// We parse the first format specifier and have one less to deal with.
-template<size_t Index, typename Context, typename Parameter, typename... Parameters>
-bool parse(Context& context, StringView fmtstr)
+template<size_t Index, typename Parameter, typename... Parameters>
+bool parse(Context<Parameter, Parameters...>& context, StringView fmtstr)
 {
-    // FIXME: Allow escaping curly braces with double braces.
-    // FIXME: Verify that the format specifier is correct.
     auto begin = fmtstr.find_first_of('{').value();
     auto end = fmtstr.find_first_of('}').value();
 
-    context.literals[Index] = fmtstr.substring_view(0, begin);
+    context.literal = fmtstr.substring_view(0, begin);
 
-    if (!get<Index>(context.formatters).parse(fmtstr.substring_view(begin + 1, end - (begin + 1))))
-        return false;
+    context.formatter.parse(fmtstr.substring_view(begin + 1, end - (begin + 1)));
 
-    return parse<Index + 1, Context, Parameters...>(context, fmtstr.substring_view(end + 1));
+    return parse<Index + 1, Parameters...>(context.next, fmtstr.substring_view(end + 1));
 }
-// We know how to deal with a format string without format specifiers.
-template<size_t Index, typename Context>
-bool parse(Context& context, StringView fmtstr)
+template<size_t Index>
+bool parse(Context<>& context, StringView fmtstr)
 {
-    // FIXME: Verify that there are no dangling format specifiers.
-
-    context.literals[Index] = fmtstr;
+    context.literal = fmtstr;
     return true;
 }
 
-template<size_t Index, typename Context, typename Parameter, typename... Parameters>
-void format(StringBuilder& builder, Context& context, const Parameter& parameter, const Parameters&... parameters)
+template<size_t Index, typename Parameter, typename... Parameters>
+void format(StringBuilder& builder, Context<Parameter, Parameters...>& context, const Parameter& parameter, const Parameters&... parameters)
 {
-    builder.append(context.literals[Index]);
+    builder.append(context.literal);
 
-    get<Index>(context.formatters).format(builder, parameter);
+    context.formatter.format(builder, parameter);
 
-    format<Index + 1, Context, Parameters...>(builder, context, parameters...);
+    format<Index + 1, Parameters...>(builder, context.next, parameters...);
 }
-template<size_t Index, typename Context>
-void format(StringBuilder& builder, Context& context)
+template<size_t Index>
+void format(StringBuilder& builder, Context<>& context)
 {
-    builder.append(context.literals[Index]);
+    builder.append(context.literal);
 }
 
 } // namespace AK::Detail::Format
@@ -152,11 +95,11 @@ String format(StringView fmtstr, const Parameters&... parameters)
 {
     Detail::Format::Context<Parameters...> context;
 
-    if (!Detail::Format::parse<0, decltype(context), Parameters...>(context, fmtstr))
+    if (!Detail::Format::parse<0, Parameters...>(context, fmtstr))
         ASSERT_NOT_REACHED();
 
     StringBuilder builder;
-    Detail::Format::format<0, decltype(context), Parameters...>(builder, context, parameters...);
+    Detail::Format::format<0, Parameters...>(builder, context, parameters...);
 
     return builder.to_string();
 }

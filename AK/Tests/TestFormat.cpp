@@ -29,19 +29,6 @@
 #include <AK/Format.h>
 #include <AK/StdLibExtras.h>
 
-using namespace AK::Detail::Format;
-
-TEST_CASE(tuple)
-{
-    const Tuple<int, float, int> tuple { 1, 2.11f, 3 };
-
-    static_assert(IsSame<decltype(get<1>(tuple)), const float&>::value);
-
-    EXPECT_EQ(get<0>(tuple), 1);
-    EXPECT_EQ(get<1>(tuple), 2.11f);
-    EXPECT_EQ(get<2>(tuple), 3);
-}
-
 struct A {
 };
 
@@ -60,12 +47,12 @@ struct AK::Formatter<A> {
 
 TEST_CASE(custom_formatter_parse)
 {
-    Context<A> context;
+    AK::Detail::Format::Context<A> context;
 
-    EXPECT((parse<0, decltype(context), A>(context, "a {x} b ")));
-    EXPECT(context.formatters.value.b_parsed);
-    EXPECT_EQ(context.literals[0], "a ");
-    EXPECT_EQ(context.literals[1], " b ");
+    EXPECT((AK::Detail::Format::parse<0, A>(context, "a {x} b ")));
+    EXPECT(context.formatter.b_parsed);
+    EXPECT_EQ(context.literal, "a ");
+    EXPECT_EQ(context.next.literal, " b ");
 }
 
 TEST_CASE(format_string_view)
