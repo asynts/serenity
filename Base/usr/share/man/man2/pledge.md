@@ -30,6 +30,7 @@ If the process later attempts to use any system functionality it has previously 
 
 ## Promises
 
+* `all`: Placeholder for all promises that haven't been dropped yet. (\*)
 * `stdio`: Basic I/O, memory allocation, information about self, various non-destructive syscalls
 * `thread`: The POSIX threading API (\*)
 * `id`: Ability to change UID/GID
@@ -56,11 +57,30 @@ If the process later attempts to use any system functionality it has previously 
 
 Promises marked with an asterisk (\*) are SerenityOS specific extensions not supported by the original OpenBSD `pledge()`.
 
+Promises preceded by a minus sign drop said privilege, this is intended to be used with `all`.
+This is an SerenityOS specific extension and is not supported by the original OpenBSD `pledge()`.
+
 ## Errors
 
 * `EFAULT`: `promises` and/or `execpromises` are not null and not in readable memory.
 * `EINVAL`: One or more invalid promises were specified.
 * `EPERM`: An attempt to increase capabilities was rejected.
+
+## Examples
+
+~~~
+if (pledge("stdio wpath", nullptr) < 0) {
+    perror("pledge");
+    exit(1);
+}
+
+// do something here
+
+if (pledge("all -wpath", nullptr) < 0) {
+    perror("pledge");
+    exit(1);
+}
+~~~
 
 ## History
 
