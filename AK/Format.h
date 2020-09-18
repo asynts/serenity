@@ -26,6 +26,7 @@
 
 #pragma once
 
+#include <AK/Optional.h>
 #include <AK/StringView.h>
 
 namespace AK {
@@ -52,21 +53,46 @@ struct Context<T, Types...> {
     Context<Types...> next;
 };
 
+Optional<size_t> find_next_unescaped(StringView input, char ch)
+{
+    Optional<size_t> index;
+    for (size_t idx = 0; idx < input.length(); ++idx) {
+        if (input[idx] == ch) {
+            if (index.has_value())
+                index.clear();
+            else
+                index = idx;
+        } else if (index.has_value()) {
+            return index;
+        }
+    }
+
+    return index;
+}
+
 template<size_t Index, typename Parameter, typename... Parameters>
 bool parse(Context<Parameter, Parameters...>& context, StringView fmtstr)
 {
-    auto begin = fmtstr.find_first_of('{').value();
-    auto end = fmtstr.find_first_of('}').value();
+    auto begin = find_next_unescaped(fmtstr, '{');
+    if (!begin.has_value())
+        return false;
 
-    context.literal = fmtstr.substring_view(0, begin);
+    auto end = begin.value() + fmtstr.substring_view(begin.value()).find_first_of('}');
+    if (!end.has_value())
+        return false;
 
-    context.formatter.parse(fmtstr.substring_view(begin + 1, end - (begin + 1)));
+    context.literal = fmtstr.substring_view(0, begin.value());
 
-    return parse<Index + 1, Parameters...>(context.next, fmtstr.substring_view(end + 1));
+    context.formatter.parse(fmtstr.substring_view(begin.value() + 1, end.value - (begin.value() + 1)));
+
+    return parse<Index + 1, Parameters...>(context.next, fmtstr.substring_view(end.value() + 1));
 }
 template<size_t Index>
 bool parse(Context<>& context, StringView fmtstr)
 {
+    if (find_next_unescaped(fmtstr, '{') || find_next_unescaped(fmtstr, '}'))
+        return false;
+
     context.literal = fmtstr;
     return true;
 }
@@ -74,6 +100,12 @@ bool parse(Context<>& context, StringView fmtstr)
 template<size_t Index, typename Parameter, typename... Parameters>
 void format(StringBuilder& builder, Context<Parameter, Parameters...>& context, const Parameter& parameter, const Parameters&... parameters)
 {
+    for (size_t idx = 0; idx < context.literal.length(); ++idx) {
+        builder.append(context.literal[idx]);
+        if (context.literal[idx] == '{' || context.literal[idx] == '}')
+            ++idx;
+    }
+
     builder.append(context.literal);
 
     context.formatter.format(builder, parameter);
@@ -107,7 +139,7 @@ String format(StringView fmtstr, const Parameters&... parameters)
 template<>
 struct Formatter<StringView> {
     bool parse(StringView) { return true; }
-    void format(StringBuilder& builder, StringView value) { builder.append(value); }
+    void format(StringBuilder&, StringView);
 };
 
 } // namespace AK
