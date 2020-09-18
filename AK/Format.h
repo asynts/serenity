@@ -189,13 +189,35 @@ String format(Detail::Format::View fmtstr, const Parameters&... parameters)
 
 template<>
 struct Formatter<StringView> {
-    bool parse(Detail::Format::View) { return true; }
+    bool parse(Detail::Format::View fmtstr)
+    {
+        dbg() << "'" << __PRETTY_FUNCTION__ << "' called with " << fmtstr;
+        return true;
+    }
     void format(StringBuilder& builder, StringView value) { builder.append(value); }
 };
 
 template<>
 struct Formatter<u32> {
-    bool parse(Detail::Format::View);
+    bool parse(Detail::Format::View fmtstr)
+    {
+        dbg() << "'" << __PRETTY_FUNCTION__ << "' called with " << fmtstr;
+
+        if (fmtstr.length == 0)
+            return true;
+
+        if (fmtstr[0] != ':')
+            return false;
+
+        if (fmtstr.length >= 2 && fmtstr[1] == '0')
+            zero_pad = true;
+
+        char* endptr = nullptr;
+        field_width = strtoul(String { fmtstr.data + 1, fmtstr.length - 1 }.characters(), &endptr, 10);
+
+        return endptr == fmtstr.data + fmtstr.length;
+    }
+
     void format(StringBuilder&, u32);
 
     bool zero_pad { false };

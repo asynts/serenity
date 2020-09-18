@@ -82,8 +82,8 @@ TEST_CASE(parse_braces_properly)
 TEST_CASE(format_integers)
 {
     EXPECT_EQ(AK::format("prefix-{}-suffix", 42u), "prefix-42-suffix");
-    EXPECT_EQ(AK::format("prefix-{4}-suffix", 42u), "prefix-  42-suffix");
-    EXPECT_EQ(AK::format("prefix-{04}-suffix", 42u), "prefix-0042-suffix");
+    EXPECT_EQ(AK::format("prefix-{:4}-suffix", 42u), "prefix-  42-suffix");
+    EXPECT_EQ(AK::format("prefix-{:04}-suffix", 42u), "prefix-0042-suffix");
 }
 
 TEST_MAIN(Format)
