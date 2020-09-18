@@ -27,6 +27,7 @@
 #pragma once
 
 #include <AK/Optional.h>
+#include <AK/String.h>
 #include <AK/StringBuilder.h>
 #include <AK/StringView.h>
 
@@ -145,6 +146,15 @@ template<>
 struct Formatter<StringView> {
     bool parse(StringView) { return true; }
     void format(StringBuilder& builder, StringView value) { builder.append(value); }
+};
+
+template<>
+struct Formatter<u32> {
+    bool parse(StringView);
+    void format(StringBuilder&, u32);
+
+    bool zero_pad { false };
+    u32 field_width { 0 };
 };
 
 } // namespace AK
