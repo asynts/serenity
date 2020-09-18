@@ -24,29 +24,32 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <AK/TestSuite.h>
-
 #include <AK/Format.h>
-#include <AK/StdLibExtras.h>
+#include <AK/PrintfImplementation.h>
 
-using namespace AK::Detail::Format;
+namespace AK {
 
-TEST_CASE(format_string_view)
+bool Formatter<u32>::parse(String fmt)
 {
-    EXPECT_EQ(AK::format("a {} - {} - {} b", "xyz", "1", "42"), "a xyz - 1 - 42 b");
+    if (fmt.length() == 0)
+        return true;
+
+    if (fmt[0] != ':')
+        return false;
+
+    if (fmt.length() >= 2 && fmt[1] == '0')
+        zero_pad = true;
+
+    // Hack alert! The substring_view is null terminated because fmt is null terminated.
+    char* endptr = nullptr;
+    field_width = strtoul(fmt.substring_view(1).characters_without_null_termination(), &endptr, 10);
+
+    return endptr == fmt.characters() + fmt.length();
+}
+void Formatter<u32>::format(StringBuilder& builder, u32 value)
+{
+    char* bufptr;
+    PrintfImplementation::print_number([&builder](auto, auto ch) { builder.append(ch); }, bufptr, value, false, zero_pad, field_width);
 }
 
-TEST_CASE(escape_braces)
-{
-    EXPECT_EQ(AK::format("prefix-{{{}-suffix", StringView { "abc" }), "prefix-{abc-suffix");
-    EXPECT_EQ(AK::format("prefix-{}}}-suffix", StringView { "abc" }), "prefix-abc}-suffix");
 }
-
-TEST_CASE(format_integers)
-{
-    EXPECT_EQ(AK::format("prefix-{}-suffix", 42u), "prefix-42-suffix");
-    EXPECT_EQ(AK::format("prefix-{:4}-suffix", 42u), "prefix-  42-suffix");
-    EXPECT_EQ(AK::format("prefix-{:04}-suffix", 42u), "prefix-0042-suffix");
-}
-
-TEST_MAIN(Format)

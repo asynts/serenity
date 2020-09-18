@@ -145,5 +145,13 @@ struct Formatter<String> {
     bool parse(StringView) { return true; }
     void format(StringBuilder& builder, const String& value) { builder.append(value); }
 };
+template<>
+struct Formatter<u32> {
+    bool parse(String);
+    void format(StringBuilder& builder, u32 value);
+
+    bool zero_pad { false };
+    u32 field_width { 0 };
+};
 
 } // namespace AK
