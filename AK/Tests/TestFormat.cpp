@@ -53,8 +53,8 @@ TEST_CASE(custom_formatter_parse)
 
     EXPECT((parse<0, A>(context, "a {x} b ")));
     EXPECT(context.formatter.b_parsed);
-    EXPECT_EQ(context.literal, "a ");
-    EXPECT_EQ(context.next.literal, " b ");
+    EXPECT_EQ(StringView { context.literal }, "a ");
+    EXPECT_EQ(StringView { context.next.literal }, " b ");
 }
 
 TEST_CASE(format_string_view)

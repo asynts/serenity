@@ -31,15 +31,15 @@
 
 namespace AK {
 
-bool Formatter<u32>::parse(StringView fmtstr)
+bool Formatter<u32>::parse(Detail::Format::View fmtstr)
 {
-    if (fmtstr.starts_with('0'))
+    if (fmtstr.length > 0 && fmtstr[0] == '0')
         zero_pad = true;
 
     char* endptr = nullptr;
-    field_width = strtoul(String { fmtstr }.characters(), &endptr, 10);
+    field_width = strtoul(String { fmtstr.data, fmtstr.length }.characters(), &endptr, 10);
 
-    return endptr == fmtstr.characters_without_null_termination() + fmtstr.length();
+    return endptr == fmtstr.data + fmtstr.length;
 }
 void Formatter<u32>::format(StringBuilder& builder, u32 value)
 {

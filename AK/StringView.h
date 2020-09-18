@@ -68,8 +68,8 @@ public:
     bool is_null() const { return !m_characters; }
     bool is_empty() const { return m_length == 0; }
 
-    const char* characters_without_null_termination() const { return m_characters; }
-    size_t length() const { return m_length; }
+    constexpr const char* characters_without_null_termination() const { return m_characters; }
+    constexpr size_t length() const { return m_length; }
 
     ReadonlyBytes bytes() const { return { m_characters, m_length }; }
 
