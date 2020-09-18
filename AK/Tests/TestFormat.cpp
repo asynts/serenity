@@ -31,59 +31,15 @@
 
 using namespace AK::Detail::Format;
 
-struct A {
-};
-
-template<>
-struct AK::Formatter<A> {
-    bool parse(StringView fmtstr)
-    {
-        EXPECT_EQ(fmtstr, "x");
-
-        b_parsed = true;
-        return true;
-    }
-
-    bool b_parsed = false;
-};
-
-TEST_CASE(custom_formatter_parse)
+TEST_CASE(format_strings)
 {
-    Context<A> context;
-
-    EXPECT((parse<0, A>(context, "a {x} b ")));
-    EXPECT(context.formatter.b_parsed);
-    EXPECT_EQ(StringView { context.literal }, "a ");
-    EXPECT_EQ(StringView { context.next.literal }, " b ");
-}
-
-TEST_CASE(format_string_view)
-{
-    StringView expected = "a xyz - 1 - 42 b";
-    auto actual = AK::format("a {} - {} - {} b", StringView { "xyz" }, StringView { "1" }, StringView { "42" });
-
-    EXPECT_EQ(expected, actual);
+    EXPECT_EQ(AK::format("a {} - {} - {} b", "xyz", "1", "42"), "a xyz - 1 - 42 b");
 }
 
 TEST_CASE(escape_braces)
 {
     EXPECT_EQ(AK::format("prefix-{{{}-suffix", StringView { "abc" }), "prefix-{abc-suffix");
     EXPECT_EQ(AK::format("prefix-{}}}-suffix", StringView { "abc" }), "prefix-abc}-suffix");
-}
-
-TEST_CASE(parse_braces_properly)
-{
-    Context<> context;
-    EXPECT(!(parse<0>(context, "{{}")));
-    EXPECT(!(parse<0>(context, "{}}")));
-    EXPECT((parse<0>(context, "}}{{")));
-}
-
-TEST_CASE(format_integers)
-{
-    EXPECT_EQ(AK::format("prefix-{}-suffix", 42u), "prefix-42-suffix");
-    EXPECT_EQ(AK::format("prefix-{:4}-suffix", 42u), "prefix-  42-suffix");
-    EXPECT_EQ(AK::format("prefix-{:04}-suffix", 42u), "prefix-0042-suffix");
 }
 
 TEST_MAIN(Format)

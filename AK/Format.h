@@ -34,7 +34,7 @@
 namespace AK {
 
 template<typename T>
-class Formatter {
+struct Formatter {
     bool parse(StringView);
     void format(StringBuilder&, const T&);
 };
@@ -43,185 +43,107 @@ class Formatter {
 
 namespace AK::Detail::Format {
 
-struct View {
-    constexpr View()
-        : data(nullptr)
-        , length(0)
-    {
-    }
-    constexpr View(const char* data, size_t length)
-        : data(data)
-        , length(length)
-    {
-    }
-    constexpr View(const char* cstring)
-        : data(cstring)
-        , length(__builtin_strlen(cstring))
-    {
-    }
-    constexpr View(StringView view)
-        : data(view.characters_without_null_termination())
-        , length(view.length())
-    {
-    }
-
-    constexpr View substring(size_t start) const { return View { data + start, length - start }; }
-    constexpr View substring(size_t start, size_t count) const { return View { data + start, count }; }
-
-    constexpr char operator[](size_t index) const { return data[index]; }
-    constexpr operator StringView() const { return StringView { data, length }; }
-
-    constexpr bool find_first_of(size_t& index, char ch)
-    {
-        for (index = 0; index < length; ++index) {
-            if (data[index] == ch)
-                return true;
-        }
-
-        return false;
-    }
-
-    constexpr bool find_next_unescaped(size_t& index, char ch)
-    {
-        constexpr size_t unset = NumericLimits<size_t>::max();
-
-        index = unset;
-        for (size_t idx = 0; idx < length; ++idx) {
-            if (data[idx] == ch) {
-                if (index == unset)
-                    index = idx;
-                else
-                    return true;
-            } else if (index != unset) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    const char* data;
-    size_t length;
-};
-
-template<typename... Types>
-struct Context {
-    View literal;
-};
-template<typename T, typename... Types>
-struct Context<T, Types...> {
-    View literal;
-    Formatter<T> formatter;
-
-    Context<Types...> next;
-};
-
-inline void write_escaped_literal(StringBuilder& builder, View literal)
+inline bool find_next_unescaped(size_t& index, StringView input, char ch)
 {
-    for (size_t idx = 0; idx < literal.length; ++idx) {
+    constexpr size_t unset = NumericLimits<size_t>::max();
+
+    index = unset;
+    for (size_t idx = 0; idx < input.length(); ++idx) {
+        if (input[idx] == ch) {
+            if (index == unset)
+                index = idx;
+            else
+                index = unset;
+        } else if (index != unset) {
+            return true;
+        }
+    }
+
+    return false;
+}
+inline bool find_next(size_t& index, StringView input, char ch)
+{
+    for (index = 0; index < input.length(); ++index) {
+        if (input[index] == ch)
+            return true;
+    }
+
+    return false;
+}
+inline void write_escaped_literal(StringBuilder& builder, StringView literal)
+{
+    for (size_t idx = 0; idx < literal.length(); ++idx) {
         builder.append(literal[idx]);
         if (literal[idx] == '{' || literal[idx] == '}')
             ++idx;
     }
 }
 
-template<size_t Index, typename Parameter, typename... Parameters>
-bool parse(Context<Parameter, Parameters...>& context, View fmtstr)
-{
-    size_t start;
-    if (!fmtstr.find_next_unescaped(start, '{'))
-        return false;
-    ++start;
-
-    size_t length;
-    if (!fmtstr.substring(start).find_first_of(length, '}'))
-        return false;
-
-    context.literal = fmtstr.substring(0, start - 1);
-
-    context.formatter.parse(fmtstr.substring(start, length));
-
-    return parse<Index + 1, Parameters...>(context.next, fmtstr.substring(start + length + 1));
-}
-template<size_t Index>
-bool parse(Context<>& context, View fmtstr)
+inline bool format(StringBuilder& builder, StringView fmt)
 {
     size_t dummy;
-    if (fmtstr.find_next_unescaped(dummy, '{') || fmtstr.find_next_unescaped(dummy, '}'))
+    if (find_next_unescaped(dummy, fmt, '{') || find_next_unescaped(dummy, fmt, '}'))
         return false;
 
-    context.literal = fmtstr;
+    write_escaped_literal(builder, fmt);
     return true;
 }
-
-template<size_t Index, typename Parameter, typename... Parameters>
-void format(StringBuilder& builder, Context<Parameter, Parameters...>& context, const Parameter& parameter, const Parameters&... parameters)
+template<typename Parameter, typename... Parameters>
+bool format(StringBuilder& builder, StringView fmt, const Parameter& parameter, const Parameters&... parameters)
 {
-    write_escaped_literal(builder, context.literal);
+    size_t opening_index;
+    if (!find_next_unescaped(opening_index, fmt, '{'))
+        return false;
 
-    context.formatter.format(builder, parameter);
+    size_t closing_index;
+    if (!find_next(closing_index, fmt.substring_view(opening_index), '}'))
+        return false;
+    closing_index += opening_index;
 
-    format<Index + 1, Parameters...>(builder, context.next, parameters...);
+    write_escaped_literal(builder, fmt.substring_view(0, opening_index));
+
+    Formatter<Parameter> formatter;
+    if (!formatter.parse(fmt.substring_view(opening_index + 1, closing_index - (opening_index + 1))))
+        return false;
+
+    formatter.format(builder, parameter);
+
+    return format(builder, fmt.substring_view(closing_index + 1), parameters...);
 }
-template<size_t Index>
-void format(StringBuilder& builder, Context<>& context)
-{
-    write_escaped_literal(builder, context.literal);
-}
 
-} // namespace AK::Detail::Format
+}
 
 namespace AK {
 
 template<typename... Parameters>
-String format(Detail::Format::View fmtstr, const Parameters&... parameters)
+String format(StringView fmt, const Parameters&... parameters)
 {
-    Detail::Format::Context<Parameters...> context;
-
-    if (!Detail::Format::parse<0, Parameters...>(context, fmtstr))
-        ASSERT_NOT_REACHED();
-
     StringBuilder builder;
-    Detail::Format::format<0, Parameters...>(builder, context, parameters...);
+    if (!Detail::Format::format(builder, fmt, parameters...))
+        ASSERT_NOT_REACHED();
 
     return builder.to_string();
 }
 
 template<>
+struct Formatter<const char*> {
+    bool parse(StringView) { return true; }
+    void format(StringBuilder& builder, const char* value) { builder.append(value); }
+};
+template<size_t Size>
+struct Formatter<char[Size]> {
+    bool parse(StringView) { return true; }
+    void format(StringBuilder& builder, const char* value) { builder.append(value); }
+};
+template<>
 struct Formatter<StringView> {
-    bool parse(Detail::Format::View fmtstr)
-    {
-        dbg() << "'" << __PRETTY_FUNCTION__ << "' called with " << fmtstr;
-        return true;
-    }
+    bool parse(StringView) { return true; }
     void format(StringBuilder& builder, StringView value) { builder.append(value); }
 };
-
 template<>
-struct Formatter<u32> {
-    bool parse(Detail::Format::View fmtstr)
-    {
-        dbg() << "'" << __PRETTY_FUNCTION__ << "' called with " << fmtstr;
-
-        if (fmtstr.length == 0)
-            return true;
-
-        if (fmtstr[0] != ':')
-            return false;
-
-        if (fmtstr.length >= 2 && fmtstr[1] == '0')
-            zero_pad = true;
-
-        char* endptr = nullptr;
-        field_width = strtoul(String { fmtstr.data + 1, fmtstr.length - 1 }.characters(), &endptr, 10);
-
-        return endptr == fmtstr.data + fmtstr.length;
-    }
-
-    void format(StringBuilder&, u32);
-
-    bool zero_pad { false };
-    u32 field_width { 0 };
+struct Formatter<String> {
+    bool parse(StringView) { return true; }
+    void format(StringBuilder& builder, const String& value) { builder.append(value); }
 };
 
 } // namespace AK
