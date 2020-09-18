@@ -79,36 +79,27 @@ inline void write_escaped_literal(StringBuilder& builder, StringView literal)
     }
 }
 
+[[gnu::noinline]] [[gnu::hot]] bool format_impl_head(StringBuilder& builder, StringView& fmt, StringView& specifier);
+[[gnu::noinline]] [[gnu::hot]] bool format_impl_tail(StringBuilder& builder, StringView& fmt);
+
 inline bool format(StringBuilder& builder, StringView fmt)
 {
-    size_t dummy;
-    if (find_next_unescaped(dummy, fmt, '{') || find_next_unescaped(dummy, fmt, '}'))
-        return false;
-
-    write_escaped_literal(builder, fmt);
-    return true;
+    return format_impl_tail(builder, fmt);
 }
 template<typename Parameter, typename... Parameters>
 bool format(StringBuilder& builder, StringView fmt, const Parameter& parameter, const Parameters&... parameters)
 {
-    size_t opening_index;
-    if (!find_next_unescaped(opening_index, fmt, '{'))
+    StringView specifier;
+    if(!format_impl_head(builder, fmt, specifier))
         return false;
-
-    size_t closing_index;
-    if (!find_next(closing_index, fmt.substring_view(opening_index), '}'))
-        return false;
-    closing_index += opening_index;
-
-    write_escaped_literal(builder, fmt.substring_view(0, opening_index));
 
     Formatter<Parameter> formatter;
-    if (!formatter.parse(fmt.substring_view(opening_index + 1, closing_index - (opening_index + 1))))
+    if (!formatter.parse(specifier))
         return false;
 
     formatter.format(builder, parameter);
 
-    return format(builder, fmt.substring_view(closing_index + 1), parameters...);
+    return format(builder, fmt, parameters...);
 }
 
 }
@@ -127,28 +118,28 @@ String format(StringView fmt, const Parameters&... parameters)
 
 template<>
 struct Formatter<const char*> {
-    bool parse(StringView) { return true; }
-    void format(StringBuilder& builder, const char* value) { builder.append(value); }
+    [[gnu::noinline]] bool parse(StringView) { return true; }
+    [[gnu::noinline]] void format(StringBuilder& builder, const char* value) { builder.append(value); }
 };
 template<size_t Size>
 struct Formatter<char[Size]> {
-    bool parse(StringView) { return true; }
-    void format(StringBuilder& builder, const char* value) { builder.append(value); }
+    [[gnu::noinline]] bool parse(StringView) { return true; }
+    [[gnu::noinline]] void format(StringBuilder& builder, const char* value) { builder.append(value); }
 };
 template<>
 struct Formatter<StringView> {
-    bool parse(StringView) { return true; }
-    void format(StringBuilder& builder, StringView value) { builder.append(value); }
+    [[gnu::noinline]] bool parse(StringView) { return true; }
+    [[gnu::noinline]] void format(StringBuilder& builder, StringView value) { builder.append(value); }
 };
 template<>
 struct Formatter<String> {
-    bool parse(StringView) { return true; }
-    void format(StringBuilder& builder, const String& value) { builder.append(value); }
+    [[gnu::noinline]] bool parse(StringView) { return true; }
+    [[gnu::noinline]] void format(StringBuilder& builder, const String& value) { builder.append(value); }
 };
 template<>
 struct Formatter<u32> {
-    bool parse(String);
-    void format(StringBuilder& builder, u32 value);
+    [[gnu::noinline]] bool parse(StringView);
+    [[gnu::noinline]] void format(StringBuilder& builder, u32 value);
 
     bool zero_pad { false };
     u32 field_width { 0 };

@@ -27,9 +27,46 @@
 #include <AK/Format.h>
 #include <AK/PrintfImplementation.h>
 
+namespace AK::Detail::Format {
+
+[[gnu::noinline]]
+[[gnu::hot]]
+bool format_impl_head(StringBuilder& builder, StringView& fmt, StringView& specifier)
+{
+    size_t opening_index;
+    if (!find_next_unescaped(opening_index, fmt, '{'))
+        return false;
+
+    size_t closing_index;
+    if (!find_next(closing_index, fmt.substring_view(opening_index), '}'))
+        return false;
+    closing_index += opening_index;
+
+    write_escaped_literal(builder, fmt.substring_view(0, opening_index));
+
+    specifier = fmt.substring_view(opening_index + 1, closing_index - (opening_index + 1));
+    fmt = fmt.substring_view(closing_index + 1);
+
+    return true;
+}
+
+[[gnu::noinline]]
+[[gnu::hot]]
+bool format_impl_tail(StringBuilder& builder, StringView& fmt)
+{
+    size_t dummy;
+    if (find_next_unescaped(dummy, fmt, '{') || find_next_unescaped(dummy, fmt, '}'))
+        return false;
+
+    write_escaped_literal(builder, fmt);
+    return true;
+}
+
+} // namespace AK::Detail::Format
+
 namespace AK {
 
-bool Formatter<u32>::parse(String fmt)
+bool Formatter<u32>::parse(StringView fmt)
 {
     if (fmt.length() == 0)
         return true;
@@ -40,11 +77,12 @@ bool Formatter<u32>::parse(String fmt)
     if (fmt.length() >= 2 && fmt[1] == '0')
         zero_pad = true;
 
-    // Hack alert! The substring_view is null terminated because fmt is null terminated.
-    char* endptr = nullptr;
-    field_width = strtoul(fmt.substring_view(1).characters_without_null_termination(), &endptr, 10);
+    String null_terminated = fmt.substring_view(1);
 
-    return endptr == fmt.characters() + fmt.length();
+    char* endptr = nullptr;
+    field_width = strtoul(null_terminated.characters(), &endptr, 10);
+
+    return endptr == null_terminated.characters() + null_terminated.length();
 }
 void Formatter<u32>::format(StringBuilder& builder, u32 value)
 {
@@ -52,4 +90,4 @@ void Formatter<u32>::format(StringBuilder& builder, u32 value)
     PrintfImplementation::print_number([&builder](auto, auto ch) { builder.append(ch); }, bufptr, value, false, zero_pad, field_width);
 }
 
-}
+} // namespace AK
