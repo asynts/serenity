@@ -129,7 +129,7 @@ void format(StringBuilder& builder, Context<>& context)
 namespace AK {
 
 template<typename... Parameters>
-String format(StringView fmtstr, const Parameters&... parameters)
+[[gnu::flatten]] String format(StringView fmtstr, const Parameters&... parameters)
 {
     Detail::Format::Context<Parameters...> context;
 
