@@ -27,6 +27,7 @@
 #pragma once
 
 #include <AK/Optional.h>
+#include <AK/StringBuilder.h>
 #include <AK/StringView.h>
 
 namespace AK {
@@ -53,7 +54,7 @@ struct Context<T, Types...> {
     Context<Types...> next;
 };
 
-Optional<size_t> find_next_unescaped(StringView input, char ch)
+inline Optional<size_t> find_next_unescaped(StringView input, char ch)
 {
     Optional<size_t> index;
     for (size_t idx = 0; idx < input.length(); ++idx) {
@@ -70,27 +71,37 @@ Optional<size_t> find_next_unescaped(StringView input, char ch)
     return index;
 }
 
+inline void write_escaped_literal(StringBuilder& builder, StringView literal)
+{
+    for (size_t idx = 0; idx < literal.length(); ++idx) {
+        builder.append(literal[idx]);
+        if (literal[idx] == '{' || literal[idx] == '}')
+            ++idx;
+    }
+}
+
 template<size_t Index, typename Parameter, typename... Parameters>
 bool parse(Context<Parameter, Parameters...>& context, StringView fmtstr)
 {
-    auto begin = find_next_unescaped(fmtstr, '{');
-    if (!begin.has_value())
+    auto start = find_next_unescaped(fmtstr, '{');
+    if (!start.has_value())
+        return false;
+    ++start.value();
+
+    auto length = fmtstr.substring_view(start.value()).find_first_of('}');
+    if (!length.has_value())
         return false;
 
-    auto end = begin.value() + fmtstr.substring_view(begin.value()).find_first_of('}');
-    if (!end.has_value())
-        return false;
+    context.literal = fmtstr.substring_view(0, start.value() - 1);
 
-    context.literal = fmtstr.substring_view(0, begin.value());
+    context.formatter.parse(fmtstr.substring_view(start.value(), length.value()));
 
-    context.formatter.parse(fmtstr.substring_view(begin.value() + 1, end.value - (begin.value() + 1)));
-
-    return parse<Index + 1, Parameters...>(context.next, fmtstr.substring_view(end.value() + 1));
+    return parse<Index + 1, Parameters...>(context.next, fmtstr.substring_view(start.value() + length.value() + 1));
 }
 template<size_t Index>
 bool parse(Context<>& context, StringView fmtstr)
 {
-    if (find_next_unescaped(fmtstr, '{') || find_next_unescaped(fmtstr, '}'))
+    if (find_next_unescaped(fmtstr, '{').has_value() || find_next_unescaped(fmtstr, '}').has_value())
         return false;
 
     context.literal = fmtstr;
@@ -100,13 +111,7 @@ bool parse(Context<>& context, StringView fmtstr)
 template<size_t Index, typename Parameter, typename... Parameters>
 void format(StringBuilder& builder, Context<Parameter, Parameters...>& context, const Parameter& parameter, const Parameters&... parameters)
 {
-    for (size_t idx = 0; idx < context.literal.length(); ++idx) {
-        builder.append(context.literal[idx]);
-        if (context.literal[idx] == '{' || context.literal[idx] == '}')
-            ++idx;
-    }
-
-    builder.append(context.literal);
+    write_escaped_literal(builder, context.literal);
 
     context.formatter.format(builder, parameter);
 
@@ -115,7 +120,7 @@ void format(StringBuilder& builder, Context<Parameter, Parameters...>& context, 
 template<size_t Index>
 void format(StringBuilder& builder, Context<>& context)
 {
-    builder.append(context.literal);
+    write_escaped_literal(builder, context.literal);
 }
 
 } // namespace AK::Detail::Format
@@ -139,7 +144,7 @@ String format(StringView fmtstr, const Parameters&... parameters)
 template<>
 struct Formatter<StringView> {
     bool parse(StringView) { return true; }
-    void format(StringBuilder&, StringView);
+    void format(StringBuilder& builder, StringView value) { builder.append(value); }
 };
 
 } // namespace AK
