@@ -292,22 +292,22 @@ using AK::TestSuite;
         TestSuite::release();                                       \
     }
 
-#define EXPECT_EQ(a, b)                                                                                                                              \
-    do {                                                                                                                                             \
-        auto lhs = (a);                                                                                                                              \
-        auto rhs = (b);                                                                                                                              \
-        if (lhs != rhs)                                                                                                                              \
-            AK::maybe_print_rhs_lhs(warn() << "\033[31;1mFAIL\033[0m: " __FILE__ ":" << __LINE__ << ": EXPECT_EQ(" #a ", " #b ") failed", lhs, rhs); \
+#define EXPECT_EQ(a, b)                                                                                                                                  \
+    do {                                                                                                                                                 \
+        auto __lhs = (a);                                                                                                                                \
+        auto __rhs = (b);                                                                                                                                \
+        if (__lhs != __rhs)                                                                                                                              \
+            AK::maybe_print_rhs_lhs(warn() << "\033[31;1mFAIL\033[0m: " __FILE__ ":" << __LINE__ << ": EXPECT_EQ(" #a ", " #b ") failed", __lhs, __rhs); \
     } while (false)
 
 // If you're stuck and `EXPECT_EQ` seems to refuse to print anything useful,
 // try this: It'll spit out a nice compiler error telling you why it doesn't print.
-#define EXPECT_EQ_FORCE(a, b)                                                                                                                        \
-    do {                                                                                                                                             \
-        auto lhs = (a);                                                                                                                              \
-        auto rhs = (b);                                                                                                                              \
-        if (lhs != rhs)                                                                                                                              \
-            AK::force_print_rhs_lhs(warn() << "\033[31;1mFAIL\033[0m: " __FILE__ ":" << __LINE__ << ": EXPECT_EQ(" #a ", " #b ") failed", lhs, rhs); \
+#define EXPECT_EQ_FORCE(a, b)                                                                                                                            \
+    do {                                                                                                                                                 \
+        auto __lhs = (a);                                                                                                                                \
+        auto __rhs = (b);                                                                                                                                \
+        if (__lhs != __rhs)                                                                                                                              \
+            AK::force_print_rhs_lhs(warn() << "\033[31;1mFAIL\033[0m: " __FILE__ ":" << __LINE__ << ": EXPECT_EQ(" #a ", " #b ") failed", __lhs, __rhs); \
     } while (false)
 
 #define EXPECT(x)                                                                                      \
