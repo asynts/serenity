@@ -27,8 +27,6 @@
 #pragma once
 
 #include <AK/Array.h>
-#include <AK/GenericLexer.h>
-#include <AK/PrintfImplementation.h>
 #include <AK/String.h>
 #include <AK/StringBuilder.h>
 
@@ -56,110 +54,7 @@ bool format_value(StringBuilder& builder, const void* value, StringView flags)
     return true;
 }
 
-struct FormatSpecifier {
-    StringView flags;
-    size_t index { 0 };
-};
-
-inline bool find_next_unescaped(size_t& index, StringView input, char ch)
-{
-    constexpr size_t unset = NumericLimits<size_t>::max();
-
-    index = unset;
-    for (size_t idx = 0; idx < input.length(); ++idx) {
-        if (input[idx] == ch) {
-            if (index == unset)
-                index = idx;
-            else
-                index = unset;
-        } else if (index != unset) {
-            return true;
-        }
-    }
-
-    return index != unset;
-}
-inline bool find_next(size_t& index, StringView input, char ch)
-{
-    for (index = 0; index < input.length(); ++index) {
-        if (input[index] == ch)
-            return index;
-    }
-
-    return false;
-}
-inline void write_escaped_literal(StringBuilder& builder, StringView literal)
-{
-    for (size_t idx = 0; idx < literal.length(); ++idx) {
-        builder.append(literal[idx]);
-        if (literal[idx] == '{' || literal[idx] == '}')
-            ++idx;
-    }
-}
-inline size_t parse_number(StringView input)
-{
-    // FIXME: We really don't want to do a heap allocation here. There should be
-    //        some shared integer parsing code that is used in strtoll and similar
-    //        methods.
-    String null_terminated { input };
-    char* endptr;
-    return strtoull(null_terminated.characters(), &endptr, 10);
-}
-inline bool parse_format_specifier(StringView input, FormatSpecifier& specifier)
-{
-    specifier.index = NumericLimits<size_t>::max();
-
-    GenericLexer lexer { input };
-
-    auto index = lexer.consume_while([](char ch) { return StringView { "0123456789" }.contains(ch); });
-
-    if (index.length() > 0)
-        specifier.index = parse_number(index);
-
-    if (!lexer.consume_specific(':'))
-        return lexer.is_eof();
-
-    specifier.flags = lexer.consume_all();
-    return true;
-}
-
-[[gnu::hot, gnu::noinline]] inline void format(StringBuilder& builder, StringView fmtstr, AK::Span<TypeErasedArgument> arguments, AK::Span<TypeErasedFormatter> formatters, size_t argument_index = 0)
-{
-    if (arguments.size() != formatters.size())
-        ASSERT_NOT_REACHED();
-
-    size_t opening;
-    if (!find_next_unescaped(opening, fmtstr, '{')) {
-        size_t dummy;
-        if (find_next_unescaped(dummy, fmtstr, '}'))
-            ASSERT_NOT_REACHED();
-
-        write_escaped_literal(builder, fmtstr);
-        return;
-    }
-
-    write_escaped_literal(builder, fmtstr.substring_view(0, opening));
-
-    size_t closing;
-    if (!find_next(closing, fmtstr.substring_view(opening), '}'))
-        ASSERT_NOT_REACHED();
-    closing += opening;
-
-    FormatSpecifier specifier;
-    if (!parse_format_specifier(fmtstr.substring_view(opening + 1, closing - (opening + 1)), specifier))
-        ASSERT_NOT_REACHED();
-
-    if (specifier.index == NumericLimits<size_t>::max())
-        specifier.index = argument_index++;
-
-    if (specifier.index >= arguments.size())
-        ASSERT_NOT_REACHED();
-
-    if (!formatters[specifier.index](builder, arguments[specifier.index], specifier.flags))
-        ASSERT_NOT_REACHED();
-
-    format(builder, fmtstr.substring_view(closing + 1), arguments, formatters, argument_index);
-}
+void format(StringBuilder&, StringView fmtstr, AK::Span<TypeErasedArgument>, AK::Span<TypeErasedFormatter>, size_t argument_index = 0);
 
 } // namespace AK::Detail::Format
 
@@ -185,24 +80,8 @@ struct Formatter<char[Size]> {
 
 template<>
 struct Formatter<u32> {
-    bool parse(StringView input)
-    {
-        GenericLexer lexer { input };
-
-        if (lexer.consume_specific('0'))
-            zero_pad = true;
-
-        auto field_width = lexer.consume_while([](char ch) { return StringView { "0123456789" }.contains(ch); });
-        if (field_width.length() > 0)
-            this->field_width = Detail::Format::parse_number(field_width);
-
-        return lexer.is_eof();
-    }
-    void format(StringBuilder& builder, u32 value)
-    {
-        char* bufptr = nullptr;
-        PrintfImplementation::print_number([&](auto, char ch) { builder.append(ch); }, bufptr, value, false, zero_pad, field_width);
-    }
+    bool parse(StringView);
+    void format(StringBuilder&, u32);
 
     bool zero_pad { false };
     size_t field_width { 0 };
