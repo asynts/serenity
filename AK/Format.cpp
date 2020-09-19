@@ -73,9 +73,6 @@ static void write_escaped_literal(StringBuilder& builder, StringView literal)
 }
 static size_t parse_number(StringView input)
 {
-    // FIXME: We really don't want to do a heap allocation here. There should be
-    //        some shared integer parsing code that is used in strtoll and similar
-    //        methods.
     String null_terminated { input };
     char* endptr;
     return strtoull(null_terminated.characters(), &endptr, 10);
@@ -141,7 +138,12 @@ void format(StringBuilder& builder, StringView fmtstr, AK::Span<TypeErasedFormat
     format(builder, fmtstr.substring_view(closing + 1), formatters, argument_index);
 }
 
-bool BaseIntegralFormatter::parse(StringView flags)
+} // namespace AK::Detail::Format
+
+namespace AK {
+
+template<typename T>
+bool Formatter<T, typename EnableIf<IsIntegral<T>::value>::Type>::parse(StringView flags)
 {
     GenericLexer lexer { flags };
 
@@ -152,41 +154,34 @@ bool BaseIntegralFormatter::parse(StringView flags)
     if (field_width.length() > 0)
         this->field_width = Detail::Format::parse_number(field_width);
 
+    if (lexer.consume_specific('x'))
+        hexadecimal = true;
+
     return lexer.is_eof();
 }
 
-void BaseIntegralFormatter::write_u32(StringBuilder& builder, u32 value)
+template<typename T>
+void Formatter<T, typename EnableIf<IsIntegral<T>::value>::Type>::format(StringBuilder& builder, T value)
 {
-    char* bufptr = nullptr;
-    PrintfImplementation::print_number([&](auto, char ch) { builder.append(ch); }, bufptr, value, false, zero_pad, field_width);
-}
-void BaseIntegralFormatter::write_u64(StringBuilder& builder, u64 value)
-{
-    char* bufptr = nullptr;
-    PrintfImplementation::print_u64([&](auto, char ch) { builder.append(ch); }, bufptr, value, false, zero_pad, field_width);
-}
-void BaseIntegralFormatter::write_i32(StringBuilder& builder, i32 value)
-{
-    char* bufptr = nullptr;
-    PrintfImplementation::print_signed_number([&](auto, char ch) { builder.append(ch); }, bufptr, value, false, zero_pad, field_width, false);
-}
-void BaseIntegralFormatter::write_i64(StringBuilder& builder, i64 value)
-{
-    char* bufptr = nullptr;
-    PrintfImplementation::print_i64([&](auto, char ch) { builder.append(ch); }, bufptr, value, false, zero_pad, field_width);
+    char* bufptr;
+
+    if (hexadecimal)
+        PrintfImplementation::print_hex([&](auto, char ch) { builder.append(ch); }, bufptr, value, false, false, false, zero_pad, field_width);
+    else if (IsSame<typename MakeUnsigned<T>::Type, T>::value)
+        PrintfImplementation::print_u64([&](auto, char ch) { builder.append(ch); }, bufptr, value, false, zero_pad, field_width);
+    else
+        PrintfImplementation::print_i64([&](auto, char ch) { builder.append(ch); }, bufptr, value, false, zero_pad, field_width);
 }
 
-} // namespace AK::Detail::Format
-
-namespace AK {
-
-void Formatter<u8, void>::format(StringBuilder& builder, u8 value) { write_u32(builder, value); }
-void Formatter<u16, void>::format(StringBuilder& builder, u16 value) { write_u32(builder, value); }
-void Formatter<u32, void>::format(StringBuilder& builder, u32 value) { write_u32(builder, value); }
-void Formatter<u64, void>::format(StringBuilder& builder, u64 value) { write_u64(builder, value); }
-void Formatter<i8, void>::format(StringBuilder& builder, i8 value) { write_i32(builder, value); }
-void Formatter<i16, void>::format(StringBuilder& builder, i16 value) { write_i32(builder, value); }
-void Formatter<i32, void>::format(StringBuilder& builder, i32 value) { write_i32(builder, value); }
-void Formatter<i64, void>::format(StringBuilder& builder, i64 value) { write_i64(builder, value); }
+template struct Formatter<StringView>;
+template struct Formatter<String>;
+template struct Formatter<u8, void>;
+template struct Formatter<u16, void>;
+template struct Formatter<u32, void>;
+template struct Formatter<u64, void>;
+template struct Formatter<i8, void>;
+template struct Formatter<i16, void>;
+template struct Formatter<i32, void>;
+template struct Formatter<i64, void>;
 
 } // namespace AK
