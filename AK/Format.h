@@ -28,7 +28,6 @@
 
 #include <AK/Array.h>
 #include <AK/String.h>
-#include <AK/StringBuilder.h>
 
 namespace AK {
 
@@ -59,6 +58,7 @@ struct TypeErasedFormatter {
 template<typename T>
 TypeErasedFormatter make_type_erased_formatter(const T& value) { return { format_value<T>, &value }; }
 
+String format(StringView fmtstr, AK::Span<TypeErasedFormatter>, size_t argument_index = 0);
 void format(StringBuilder&, StringView fmtstr, AK::Span<TypeErasedFormatter>, size_t argument_index = 0);
 
 } // namespace AK::Detail::Format
@@ -66,14 +66,10 @@ void format(StringBuilder&, StringView fmtstr, AK::Span<TypeErasedFormatter>, si
 namespace AK {
 
 template<typename... Parameters>
-inline String format(StringView fmtstr, const Parameters&... parameters)
+String format(StringView fmtstr, const Parameters&... parameters)
 {
     Array formatters { Detail::Format::make_type_erased_formatter(parameters)... };
-
-    StringBuilder builder;
-    Detail::Format::format(builder, fmtstr, formatters);
-
-    return builder.to_string();
+    return Detail::Format::format(fmtstr, formatters);
 }
 
 template<size_t Size>

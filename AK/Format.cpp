@@ -27,6 +27,7 @@
 #include <AK/Format.h>
 #include <AK/GenericLexer.h>
 #include <AK/PrintfImplementation.h>
+#include <AK/StringBuilder.h>
 
 namespace AK::Detail::Format {
 
@@ -95,6 +96,13 @@ static bool parse_format_specifier(StringView input, FormatSpecifier& specifier)
 
     specifier.flags = lexer.consume_all();
     return true;
+}
+
+String format(StringView fmtstr, AK::Span<TypeErasedFormatter> formatters, size_t argument_index)
+{
+    StringBuilder builder;
+    format(builder, fmtstr, formatters, argument_index);
+    return builder.to_string();
 }
 
 void format(StringBuilder& builder, StringView fmtstr, AK::Span<TypeErasedFormatter> formatters, size_t argument_index)
