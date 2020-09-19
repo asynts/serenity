@@ -39,9 +39,6 @@ struct Formatter;
 
 namespace AK::Detail::Format {
 
-using TypeErasedFormatter = bool (*)(StringBuilder& builder, const void* value, StringView flags);
-using TypeErasedArgument = const void*;
-
 template<typename T>
 bool format_value(StringBuilder& builder, const void* value, StringView flags)
 {
@@ -54,7 +51,15 @@ bool format_value(StringBuilder& builder, const void* value, StringView flags)
     return true;
 }
 
-void format(StringBuilder&, StringView fmtstr, AK::Span<TypeErasedArgument>, AK::Span<TypeErasedFormatter>, size_t argument_index = 0);
+struct TypeErasedFormatter {
+    bool (*format)(StringBuilder& builder, const void* value, StringView flags);
+    const void* parameter;
+};
+
+template<typename T>
+TypeErasedFormatter make_type_erased_formatter(const T& value) { return { format_value<T>, &value }; }
+
+void format(StringBuilder&, StringView fmtstr, AK::Span<TypeErasedFormatter>, size_t argument_index = 0);
 
 } // namespace AK::Detail::Format
 
@@ -63,11 +68,10 @@ namespace AK {
 template<typename... Parameters>
 inline String format(StringView fmtstr, const Parameters&... parameters)
 {
-    Array<Detail::Format::TypeErasedFormatter, sizeof...(Parameters)> formatters { Detail::Format::format_value<Parameters>... };
-    Array<Detail::Format::TypeErasedArgument, sizeof...(Parameters)> arguments { &parameters... };
+    Array formatters { Detail::Format::make_type_erased_formatter(parameters)... };
 
     StringBuilder builder;
-    Detail::Format::format(builder, fmtstr, arguments, formatters);
+    Detail::Format::format(builder, fmtstr, formatters);
 
     return builder.to_string();
 }

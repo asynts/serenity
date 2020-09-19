@@ -97,11 +97,8 @@ static bool parse_format_specifier(StringView input, FormatSpecifier& specifier)
     return true;
 }
 
-void format(StringBuilder& builder, StringView fmtstr, AK::Span<TypeErasedArgument> arguments, AK::Span<TypeErasedFormatter> formatters, size_t argument_index)
+void format(StringBuilder& builder, StringView fmtstr, AK::Span<TypeErasedFormatter> formatters, size_t argument_index)
 {
-    if (arguments.size() != formatters.size())
-        ASSERT_NOT_REACHED();
-
     size_t opening;
     if (!find_next_unescaped(opening, fmtstr, '{')) {
         size_t dummy;
@@ -126,13 +123,14 @@ void format(StringBuilder& builder, StringView fmtstr, AK::Span<TypeErasedArgume
     if (specifier.index == NumericLimits<size_t>::max())
         specifier.index = argument_index++;
 
-    if (specifier.index >= arguments.size())
+    if (specifier.index >= formatters.size())
         ASSERT_NOT_REACHED();
 
-    if (!formatters[specifier.index](builder, arguments[specifier.index], specifier.flags))
+    auto& formatter = formatters[specifier.index];
+    if (!formatter.format(builder, formatter.parameter, specifier.flags))
         ASSERT_NOT_REACHED();
 
-    format(builder, fmtstr.substring_view(closing + 1), arguments, formatters, argument_index);
+    format(builder, fmtstr.substring_view(closing + 1), formatters, argument_index);
 }
 
 } // namespace AK::Detail::Format
