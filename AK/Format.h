@@ -27,6 +27,7 @@
 #pragma once
 
 #include <AK/Array.h>
+#include <AK/GenericLexer.h>
 #include <AK/String.h>
 #include <AK/StringBuilder.h>
 
@@ -54,14 +55,103 @@ bool format_value(StringBuilder& builder, const T& value, StringView flags)
     return true;
 }
 
-bool format(StringBuilder& builder, StringView fmtstr, Span<TypeErasedArgument> arguments, Span<TypeErasedFormatter> formatters);
+struct FormatSpecifier {
+    StringView flags;
+    size_t index { 0 };
+};
+
+inline bool find_next_unescaped(size_t& index, StringView input, char ch)
+{
+    constexpr size_t unset = NumericLimits<size_t>::max();
+
+    index = unset;
+    for (size_t idx = 0; idx < input.length(); ++idx) {
+        if (input[idx] == ch) {
+            if (index == unset)
+                index = idx;
+            else
+                index = unset;
+        } else if (index != unset) {
+            return true;
+        }
+    }
+
+    return false;
+}
+inline void write_escaped_literal(StringBuilder& builder, StringView literal)
+{
+    for (size_t idx = 0; idx < literal.length(); ++idx) {
+        builder.append(literal[idx]);
+        if (literal[idx] == '{' || literal[idx] == '}')
+            ++idx;
+    }
+}
+inline size_t parse_number(StringView input)
+{
+    // FIXME: We really don't want to do a heap allocation here. There should be
+    //        some shared integer parsing code that is used in strtoll and similar
+    //        methods.
+    String null_terminated { input };
+    return strtoull(null_terminated.characters(), nullptr, 10);
+}
+inline bool parse_format_specifier(StringView input, FormatSpecifier& specifier)
+{
+    specifier.index = NumericLimits<size_t>::max();
+
+    GenericLexer lexer { input };
+
+    auto index = lexer.consume_while([](char ch) { return StringView { "0123456789" }.contains(ch); });
+    specifier.index = parse_number(index);
+
+    if (!lexer.consume_specific(':'))
+        return lexer.is_eof();
+
+    specifier.flags = lexer.consume_all();
+    return true;
+}
+
+[[gnu::hot, gnu::noinline]] inline bool format(StringBuilder& builder, StringView fmtstr, AK::Span<TypeErasedArgument> arguments, AK::Span<TypeErasedFormatter> formatters, size_t argument_index = 0)
+{
+    if (arguments.size() != formatters.size())
+        ASSERT_NOT_REACHED();
+
+    size_t opening;
+    if (!find_next_unescaped(opening, fmtstr, '{')) {
+        size_t dummy;
+        if (find_next_unescaped(dummy, fmtstr, '}'))
+            return false;
+
+        write_escaped_literal(builder, fmtstr);
+        return true;
+    }
+
+    size_t closing;
+    if (!find_next_unescaped(closing, fmtstr.substring_view(opening), '}'))
+        return false;
+    closing += opening;
+
+    FormatSpecifier specifier;
+    if (!parse_format_specifier(fmtstr.substring_view(opening + 1, closing - (opening + 1)), specifier))
+        return false;
+
+    if (specifier.index == NumericLimits<size_t>::max())
+        specifier.index = argument_index++;
+
+    if (specifier.index >= arguments.size())
+        return false;
+
+    if (!formatters[specifier.index](builder, &arguments[specifier.index], specifier.flags))
+        return false;
+
+    return format(builder, fmtstr.substring_view(closing + 1), arguments, formatters, argument_index);
+}
 
 } // namespace AK::Detail::Format
 
 namespace AK {
 
 template<typename... Parameters>
-String format(StringView fmtstr, const Parameters&... parameters)
+inline String format(StringView fmtstr, const Parameters&... parameters)
 {
     Array<Detail::Format::TypeErasedFormatter, sizeof...(Parameters)> formatters { Detail::Format::format_value<Parameters>... };
     Array<Detail::Format::TypeErasedArgument, sizeof...(Parameters)> arguments { &parameters... };
