@@ -31,7 +31,7 @@
 
 namespace AK {
 
-template<typename T>
+template<typename T, typename = void>
 struct Formatter;
 
 } // namespace AK
@@ -61,6 +61,18 @@ TypeErasedFormatter make_type_erased_formatter(const T& value) { return { format
 String format(StringView fmtstr, AK::Span<TypeErasedFormatter>, size_t argument_index = 0);
 void format(StringBuilder&, StringView fmtstr, AK::Span<TypeErasedFormatter>, size_t argument_index = 0);
 
+struct BaseIntegralFormatter {
+    bool parse(StringView);
+
+    void write_u32(StringBuilder& builder, u32 value);
+    void write_u64(StringBuilder& builder, u64 value);
+    void write_i32(StringBuilder& builder, i32 value);
+    void write_i64(StringBuilder& builder, i64 value);
+
+    bool zero_pad { false };
+    size_t field_width { 0 };
+};
+
 } // namespace AK::Detail::Format
 
 namespace AK {
@@ -77,20 +89,19 @@ struct Formatter<char[Size]> {
     bool parse(StringView) { return true; }
     void format(StringBuilder& builder, const char* value) { builder.append(value); }
 };
-
 template<>
 struct Formatter<StringView> {
-    bool parse(StringView) { return true; }
+    bool parse(StringView flags) { return flags.is_empty(); }
     void format(StringBuilder& builder, StringView value) { builder.append(value); }
 };
-
 template<>
-struct Formatter<u32> {
-    bool parse(StringView);
-    void format(StringBuilder&, u32);
-
-    bool zero_pad { false };
-    size_t field_width { 0 };
+struct Formatter<String> {
+    bool parse(StringView flags) { return flags.is_empty(); }
+    void format(StringBuilder& builder, const String& value) { builder.append(value); }
+};
+template<typename T>
+struct Formatter<T, typename EnableIf<IsIntegral<T>::value>::Type> : Detail::Format::BaseIntegralFormatter {
+    void format(StringBuilder&, T);
 };
 
 }

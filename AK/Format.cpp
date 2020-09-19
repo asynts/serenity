@@ -141,13 +141,9 @@ void format(StringBuilder& builder, StringView fmtstr, AK::Span<TypeErasedFormat
     format(builder, fmtstr.substring_view(closing + 1), formatters, argument_index);
 }
 
-} // namespace AK::Detail::Format
-
-namespace AK {
-
-bool Formatter<u32>::parse(StringView input)
+bool BaseIntegralFormatter::parse(StringView flags)
 {
-    GenericLexer lexer { input };
+    GenericLexer lexer { flags };
 
     if (lexer.consume_specific('0'))
         zero_pad = true;
@@ -158,10 +154,39 @@ bool Formatter<u32>::parse(StringView input)
 
     return lexer.is_eof();
 }
-void Formatter<u32>::format(StringBuilder& builder, u32 value)
+
+void BaseIntegralFormatter::write_u32(StringBuilder& builder, u32 value)
 {
     char* bufptr = nullptr;
     PrintfImplementation::print_number([&](auto, char ch) { builder.append(ch); }, bufptr, value, false, zero_pad, field_width);
 }
+void BaseIntegralFormatter::write_u64(StringBuilder& builder, u64 value)
+{
+    char* bufptr = nullptr;
+    PrintfImplementation::print_u64([&](auto, char ch) { builder.append(ch); }, bufptr, value, false, zero_pad, field_width);
+}
+void BaseIntegralFormatter::write_i32(StringBuilder& builder, i32 value)
+{
+    char* bufptr = nullptr;
+    PrintfImplementation::print_signed_number([&](auto, char ch) { builder.append(ch); }, bufptr, value, false, zero_pad, field_width, false);
+}
+void BaseIntegralFormatter::write_i64(StringBuilder& builder, i64 value)
+{
+    char* bufptr = nullptr;
+    PrintfImplementation::print_i64([&](auto, char ch) { builder.append(ch); }, bufptr, value, false, zero_pad, field_width);
+}
+
+} // namespace AK::Detail::Format
+
+namespace AK {
+
+void Formatter<u8, void>::format(StringBuilder& builder, u8 value) { write_u32(builder, value); }
+void Formatter<u16, void>::format(StringBuilder& builder, u16 value) { write_u32(builder, value); }
+void Formatter<u32, void>::format(StringBuilder& builder, u32 value) { write_u32(builder, value); }
+void Formatter<u64, void>::format(StringBuilder& builder, u64 value) { write_u64(builder, value); }
+void Formatter<i8, void>::format(StringBuilder& builder, i8 value) { write_i32(builder, value); }
+void Formatter<i16, void>::format(StringBuilder& builder, i16 value) { write_i32(builder, value); }
+void Formatter<i32, void>::format(StringBuilder& builder, i32 value) { write_i32(builder, value); }
+void Formatter<i64, void>::format(StringBuilder& builder, i64 value) { write_i64(builder, value); }
 
 } // namespace AK
