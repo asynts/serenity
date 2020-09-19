@@ -128,6 +128,8 @@ inline bool parse_format_specifier(StringView input, FormatSpecifier& specifier)
         return true;
     }
 
+    write_escaped_literal(builder, fmtstr.substring_view(0, opening));
+
     size_t closing;
     if (!find_next_unescaped(closing, fmtstr.substring_view(opening), '}'))
         return false;
@@ -143,7 +145,7 @@ inline bool parse_format_specifier(StringView input, FormatSpecifier& specifier)
     if (specifier.index >= arguments.size())
         return false;
 
-    if (!formatters[specifier.index](builder, &arguments[specifier.index], specifier.flags))
+    if (!formatters[specifier.index](builder, arguments[specifier.index], specifier.flags))
         return false;
 
     return format(builder, fmtstr.substring_view(closing + 1), arguments, formatters, argument_index);
