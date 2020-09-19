@@ -78,6 +78,15 @@ inline bool find_next_unescaped(size_t& index, StringView input, char ch)
 
     return index != unset;
 }
+inline bool find_next(size_t& index, StringView input, char ch)
+{
+    for (index = 0; index < input.length(); ++index) {
+        if (input[index] == ch)
+            return index;
+    }
+
+    return false;
+}
 inline void write_escaped_literal(StringBuilder& builder, StringView literal)
 {
     for (size_t idx = 0; idx < literal.length(); ++idx) {
@@ -97,6 +106,8 @@ inline size_t parse_number(StringView input)
 }
 inline bool parse_format_specifier(StringView input, FormatSpecifier& specifier)
 {
+    dbg() << "'" << __PRETTY_FUNCTION__ << "' called with input='" << input << "'";
+
     specifier.index = NumericLimits<size_t>::max();
 
     GenericLexer lexer { input };
@@ -133,7 +144,7 @@ inline bool parse_format_specifier(StringView input, FormatSpecifier& specifier)
     write_escaped_literal(builder, fmtstr.substring_view(0, opening));
 
     size_t closing;
-    if (!find_next_unescaped(closing, fmtstr.substring_view(opening), '}'))
+    if (!find_next(closing, fmtstr.substring_view(opening), '}'))
         ASSERT_NOT_REACHED();
     closing += opening;
 
