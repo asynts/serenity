@@ -28,4 +28,9 @@
 
 #include <AK/Format.h>
 
+TEST_CASE(format_string_literals)
+{
+    EXPECT_EQ(AK::format("prefix-{}-suffix", "abc"), "prefix-abc-suffix");
+}
+
 TEST_MAIN(Format)

@@ -44,14 +44,14 @@ using TypeErasedFormatter = bool (*)(StringBuilder& builder, const void* value, 
 using TypeErasedArgument = const void*;
 
 template<typename T>
-bool format_value(StringBuilder& builder, const T& value, StringView flags)
+bool format_value(StringBuilder& builder, const void* value, StringView flags)
 {
     Formatter<T> formatter;
 
     if (!formatter.parse(flags))
         return false;
 
-    formatter.format(builder, value);
+    formatter.format(builder, *static_cast<const T*>(value));
     return true;
 }
 
@@ -88,11 +88,14 @@ inline void write_escaped_literal(StringBuilder& builder, StringView literal)
 }
 inline size_t parse_number(StringView input)
 {
+    // FIXME: We get a segmentation fault in this function.
+
     // FIXME: We really don't want to do a heap allocation here. There should be
     //        some shared integer parsing code that is used in strtoll and similar
     //        methods.
     String null_terminated { input };
-    return strtoull(null_terminated.characters(), nullptr, 10);
+    char* endptr;
+    return strtoull(null_terminated.characters(), &endptr, 10);
 }
 inline bool parse_format_specifier(StringView input, FormatSpecifier& specifier)
 {
@@ -157,10 +160,16 @@ inline String format(StringView fmtstr, const Parameters&... parameters)
     Array<Detail::Format::TypeErasedArgument, sizeof...(Parameters)> arguments { &parameters... };
 
     StringBuilder builder;
-    if (!format(builder, fmtstr, arguments, formatters))
+    if (!Detail::Format::format(builder, fmtstr, arguments, formatters))
         ASSERT_NOT_REACHED();
 
     return builder.to_string();
 }
+
+template<size_t Size>
+struct Formatter<char[Size]> {
+    bool parse(StringView) { return true; }
+    void format(StringBuilder& builder, const char* value) { builder.append(value); }
+};
 
 }
