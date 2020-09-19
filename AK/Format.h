@@ -88,8 +88,6 @@ inline void write_escaped_literal(StringBuilder& builder, StringView literal)
 }
 inline size_t parse_number(StringView input)
 {
-    // FIXME: We get a segmentation fault in this function.
-
     // FIXME: We really don't want to do a heap allocation here. There should be
     //        some shared integer parsing code that is used in strtoll and similar
     //        methods.
@@ -104,7 +102,9 @@ inline bool parse_format_specifier(StringView input, FormatSpecifier& specifier)
     GenericLexer lexer { input };
 
     auto index = lexer.consume_while([](char ch) { return StringView { "0123456789" }.contains(ch); });
-    specifier.index = parse_number(index);
+
+    if (index.length() > 0)
+        specifier.index = parse_number(index);
 
     if (!lexer.consume_specific(':'))
         return lexer.is_eof();
