@@ -76,7 +76,7 @@ inline bool find_next_unescaped(size_t& index, StringView input, char ch)
         }
     }
 
-    return false;
+    return index != unset;
 }
 inline void write_escaped_literal(StringBuilder& builder, StringView literal)
 {
@@ -113,8 +113,10 @@ inline bool parse_format_specifier(StringView input, FormatSpecifier& specifier)
     return true;
 }
 
-[[gnu::hot, gnu::noinline]] inline bool format(StringBuilder& builder, StringView fmtstr, AK::Span<TypeErasedArgument> arguments, AK::Span<TypeErasedFormatter> formatters, size_t argument_index = 0)
+[[gnu::hot, gnu::noinline]] inline void format(StringBuilder& builder, StringView fmtstr, AK::Span<TypeErasedArgument> arguments, AK::Span<TypeErasedFormatter> formatters, size_t argument_index = 0)
 {
+    dbg() << "'" << __PRETTY_FUNCTION__ << "' called with fmtstr='" << fmtstr << "'";
+
     if (arguments.size() != formatters.size())
         ASSERT_NOT_REACHED();
 
@@ -122,33 +124,33 @@ inline bool parse_format_specifier(StringView input, FormatSpecifier& specifier)
     if (!find_next_unescaped(opening, fmtstr, '{')) {
         size_t dummy;
         if (find_next_unescaped(dummy, fmtstr, '}'))
-            return false;
+            ASSERT_NOT_REACHED();
 
         write_escaped_literal(builder, fmtstr);
-        return true;
+        return;
     }
 
     write_escaped_literal(builder, fmtstr.substring_view(0, opening));
 
     size_t closing;
     if (!find_next_unescaped(closing, fmtstr.substring_view(opening), '}'))
-        return false;
+        ASSERT_NOT_REACHED();
     closing += opening;
 
     FormatSpecifier specifier;
     if (!parse_format_specifier(fmtstr.substring_view(opening + 1, closing - (opening + 1)), specifier))
-        return false;
+        ASSERT_NOT_REACHED();
 
     if (specifier.index == NumericLimits<size_t>::max())
         specifier.index = argument_index++;
 
     if (specifier.index >= arguments.size())
-        return false;
+        ASSERT_NOT_REACHED();
 
     if (!formatters[specifier.index](builder, arguments[specifier.index], specifier.flags))
-        return false;
+        ASSERT_NOT_REACHED();
 
-    return format(builder, fmtstr.substring_view(closing + 1), arguments, formatters, argument_index);
+    format(builder, fmtstr.substring_view(closing + 1), arguments, formatters, argument_index);
 }
 
 } // namespace AK::Detail::Format
@@ -162,8 +164,7 @@ inline String format(StringView fmtstr, const Parameters&... parameters)
     Array<Detail::Format::TypeErasedArgument, sizeof...(Parameters)> arguments { &parameters... };
 
     StringBuilder builder;
-    if (!Detail::Format::format(builder, fmtstr, arguments, formatters))
-        ASSERT_NOT_REACHED();
+    Detail::Format::format(builder, fmtstr, arguments, formatters);
 
     return builder.to_string();
 }

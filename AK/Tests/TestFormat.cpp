@@ -31,6 +31,7 @@
 TEST_CASE(format_string_literals)
 {
     EXPECT_EQ(AK::format("prefix-{}-suffix", "abc"), "prefix-abc-suffix");
+    EXPECT_EQ(AK::format("{}{}{}", "a", "b", "c"), "abc");
 }
 
 TEST_MAIN(Format)
