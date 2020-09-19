@@ -34,6 +34,13 @@ TEST_CASE(format_string_literals)
     EXPECT_EQ(AK::format("{}{}{}", "a", "b", "c"), "abc");
 }
 
+TEST_CASE(format_integers)
+{
+    EXPECT_EQ(AK::format("{}", 42u), "42");
+    EXPECT_EQ(AK::format("{:4}", 42u), "  42");
+    EXPECT_EQ(AK::format("{:08}", 42u), "00000042");
+}
+
 TEST_CASE(reorder_format_arguments)
 {
     EXPECT_EQ(AK::format("{1}{0}", "a", "b"), "ba");
@@ -46,6 +53,11 @@ TEST_CASE(escape_braces)
 {
     EXPECT_EQ(AK::format("{{{}", "foo"), "{foo");
     EXPECT_EQ(AK::format("{}}}", "bar"), "bar}");
+}
+
+TEST_CASE(everything)
+{
+    EXPECT_EQ(AK::format("{{{:04}/{}/{0:8}/{1}", 42u, "foo"), "{0042/foo/      42/foo");
 }
 
 TEST_MAIN(Format)

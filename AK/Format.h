@@ -28,6 +28,7 @@
 
 #include <AK/Array.h>
 #include <AK/GenericLexer.h>
+#include <AK/PrintfImplementation.h>
 #include <AK/String.h>
 #include <AK/StringBuilder.h>
 
@@ -106,8 +107,6 @@ inline size_t parse_number(StringView input)
 }
 inline bool parse_format_specifier(StringView input, FormatSpecifier& specifier)
 {
-    dbg() << "'" << __PRETTY_FUNCTION__ << "' called with input='" << input << "'";
-
     specifier.index = NumericLimits<size_t>::max();
 
     GenericLexer lexer { input };
@@ -126,8 +125,6 @@ inline bool parse_format_specifier(StringView input, FormatSpecifier& specifier)
 
 [[gnu::hot, gnu::noinline]] inline void format(StringBuilder& builder, StringView fmtstr, AK::Span<TypeErasedArgument> arguments, AK::Span<TypeErasedFormatter> formatters, size_t argument_index = 0)
 {
-    dbg() << "'" << __PRETTY_FUNCTION__ << "' called with fmtstr='" << fmtstr << "'";
-
     if (arguments.size() != formatters.size())
         ASSERT_NOT_REACHED();
 
@@ -184,6 +181,31 @@ template<size_t Size>
 struct Formatter<char[Size]> {
     bool parse(StringView) { return true; }
     void format(StringBuilder& builder, const char* value) { builder.append(value); }
+};
+
+template<>
+struct Formatter<u32> {
+    bool parse(StringView input)
+    {
+        GenericLexer lexer { input };
+
+        if (lexer.consume_specific('0'))
+            zero_pad = true;
+
+        auto field_width = lexer.consume_while([](char ch) { return StringView { "0123456789" }.contains(ch); });
+        if (field_width.length() > 0)
+            this->field_width = Detail::Format::parse_number(field_width);
+
+        return lexer.is_eof();
+    }
+    void format(StringBuilder& builder, u32 value)
+    {
+        char* bufptr = nullptr;
+        PrintfImplementation::print_number([&](auto, char ch) { builder.append(ch); }, bufptr, value, false, zero_pad, field_width);
+    }
+
+    bool zero_pad { false };
+    size_t field_width { 0 };
 };
 
 }
