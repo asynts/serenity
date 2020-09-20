@@ -31,6 +31,12 @@
 
 namespace IPC {
 
+template<typename T>
+bool encode(Encoder&, T&)
+{
+    ASSERT_NOT_REACHED();
+}
+
 class Encoder {
 public:
     explicit Encoder(MessageBuffer& buffer)
@@ -80,9 +86,9 @@ public:
     }
 
     template<typename T>
-    void encode(const T&)
+    void encode(const T& value)
     {
-        ASSERT_NOT_REACHED();
+        IPC::encode(*this, value);
     }
 
 private:
