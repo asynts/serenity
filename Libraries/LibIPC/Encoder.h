@@ -80,7 +80,7 @@ public:
     }
 
     template<typename T>
-    void encode(const T& value)
+    void encode(const T&)
     {
         ASSERT_NOT_REACHED();
     }
