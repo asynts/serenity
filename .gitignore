@@ -38,3 +38,4 @@ compile_commands.json
 Ports/packages.db
 .idea/
 cmake-build-debug/
+/Base/home/anon/serenity.tar.gz
