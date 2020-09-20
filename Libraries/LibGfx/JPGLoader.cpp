@@ -503,7 +503,7 @@ static bool read_start_of_scan(InputMemoryStream& stream, JPGLoadingContext& con
     bytes_to_read -= 2;
     if (!bounds_okay(stream.offset(), bytes_to_read, context.data_size))
         return false;
-    u8 component_count;
+    u8 component_count = 0;
     stream >> component_count;
     if (stream.handle_any_error())
         return false;
@@ -515,7 +515,7 @@ static bool read_start_of_scan(InputMemoryStream& stream, JPGLoadingContext& con
 
     for (int i = 0; i < component_count; i++) {
         ComponentSpec* component = nullptr;
-        u8 component_id;
+        u8 component_id = 0;
         stream >> component_id;
         if (stream.handle_any_error())
             return false;
@@ -532,7 +532,7 @@ static bool read_start_of_scan(InputMemoryStream& stream, JPGLoadingContext& con
             return false;
         }
 
-        u8 table_ids;
+        u8 table_ids = 0;
         stream >> table_ids;
         if (stream.handle_any_error())
             return false;
@@ -563,15 +563,15 @@ static bool read_start_of_scan(InputMemoryStream& stream, JPGLoadingContext& con
         }
     }
 
-    u8 spectral_selection_start;
+    u8 spectral_selection_start = 0;
     stream >> spectral_selection_start;
     if (stream.handle_any_error())
         return false;
-    u8 spectral_selection_end;
+    u8 spectral_selection_end = 0;
     stream >> spectral_selection_end;
     if (stream.handle_any_error())
         return false;
-    u8 successive_approximation;
+    u8 successive_approximation = 0;
     stream >> successive_approximation;
     if (stream.handle_any_error())
         return false;
@@ -635,7 +635,7 @@ static bool read_huffman_table(InputMemoryStream& stream, JPGLoadingContext& con
     bytes_to_read -= 2;
     while (bytes_to_read > 0) {
         HuffmanTableSpec table;
-        u8 table_info;
+        u8 table_info = 0;
         stream >> table_info;
         if (stream.handle_any_error())
             return false;
@@ -656,7 +656,7 @@ static bool read_huffman_table(InputMemoryStream& stream, JPGLoadingContext& con
 
         // Read code counts. At each index K, the value represents the number of K+1 bit codes in this header.
         for (int i = 0; i < 16; i++) {
-            u8 count;
+            u8 count = 0;
             stream >> count;
             if (stream.handle_any_error())
                 return false;
@@ -801,7 +801,7 @@ static bool read_quantization_table(InputMemoryStream& stream, JPGLoadingContext
     if (!bounds_okay(stream.offset(), bytes_to_read, context.data_size))
         return false;
     while (bytes_to_read > 0) {
-        u8 info_byte;
+        u8 info_byte = 0;
         stream >> info_byte;
         if (stream.handle_any_error())
             return false;
