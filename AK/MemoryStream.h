@@ -329,6 +329,24 @@ public:
         return true;
     }
 
+    size_t avaliable_contiguous_memory() const { return chunk_size - m_write_offset % chunk_size; }
+
+    Bytes allocate_contigous_memory(size_t amount)
+    {
+        ASSERT(amount <= avaliable_contiguous_memory());
+
+        if (amount == 0)
+            return {};
+
+        if (m_write_offset % chunk_size == 0)
+            m_chunks.append(ByteBuffer::create_uninitialized(chunk_size));
+
+        auto bytes = m_chunks.last().bytes().slice(m_write_offset % chunk_size).trim(amount);
+        m_write_offset += bytes.size();
+
+        return bytes;
+    }
+
     ByteBuffer copy_into_contiguous_buffer() const
     {
         auto buffer = ByteBuffer::create_uninitialized(size());
