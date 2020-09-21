@@ -45,15 +45,17 @@ public:
 
     u16 peek() const
     {
+        // FIXME: Somehow this logic is wrong?
+
         if (m_buffered_bits < 16) {
             if (m_stream.remaining() >= 2) {
-                LittleEndian<u16> value;
+                BigEndian<u16> value;
                 m_stream >> value;
 
                 m_buffered |= value << m_buffered_bits;
                 m_buffered_bits += 16;
             } else if (m_stream.remaining() == 1) {
-                LittleEndian<u8> value;
+                BigEndian<u8> value;
                 m_stream >> value;
 
                 m_buffered |= value << m_buffered_bits;
@@ -73,7 +75,7 @@ public:
     bool eof() const { return m_buffered_bits == 0 && m_stream.eof(); }
 
 private:
-    mutable u32 m_buffered;
+    mutable u32 m_buffered { 0 };
     mutable size_t m_buffered_bits { 0 };
 
     mutable InputMemoryStream m_stream;
@@ -118,9 +120,11 @@ public:
         const auto bits = stream.peek();
 
         for (size_t length_index = 0; length_index <= min<size_t>(m_max_length_index, 14); ++length_index) {
-            if (bits < m_sentinel_bits[length_index]) {
+            const auto masked = bits & ((1 << (length_index + 1)) - 1);
+
+            if (masked < m_sentinel_bits[length_index]) {
                 stream.consume(length_index + 1);
-                return m_first_codeword_offsets[length_index] + bits;
+                return m_first_codeword_offsets[length_index] + masked;
             }
         }
 
