@@ -100,7 +100,7 @@ public:
 
             u16 first_symbol = 0;
             for (; first_symbol < symbol_lengths.size(); ++first_symbol) {
-                if (symbol_lengths[first_symbol] == length_index)
+                if (symbol_lengths[first_symbol] == length_index + 1)
                     break;
             }
 
@@ -130,8 +130,8 @@ public:
     bool unreliabe_eof() const { TODO(); }
 
 private:
-    Array<u16, 15> m_sentinel_bits;
-    Array<i16, 15> m_first_codeword_offsets;
+    Array<u16, 15> m_sentinel_bits { 0 };
+    Array<i16, 15> m_first_codeword_offsets { 0 };
     u8 m_max_length_index { 0 };
 };
 
