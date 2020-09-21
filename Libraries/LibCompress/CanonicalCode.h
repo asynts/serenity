@@ -33,21 +33,58 @@
 
 namespace Compress::New {
 
-// FIXME: Put a large circular buffer into this class.
-class Reader {
-public:
-    // Padded with zeroes if not enough bits are avaliable.
-    u16 peek() const;
+// FIXME: Verify byte/bit order.
 
-    void consume(size_t bits);
+// FIXME: We want to read from an arbitrary stream.
+class InputBitStream {
+public:
+    explicit InputBitStream(ReadonlyBytes bytes)
+        : m_stream(bytes)
+    {
+    }
+
+    u16 peek() const
+    {
+        if (m_buffered_bits < 16) {
+            if (m_stream.remaining() >= 2) {
+                LittleEndian<u16> value;
+                m_stream >> value;
+
+                m_buffered |= value << m_buffered_bits;
+                m_buffered_bits += 16;
+            } else if (m_stream.remaining() == 1) {
+                LittleEndian<u8> value;
+                m_stream >> value;
+
+                m_buffered |= value << m_buffered_bits;
+                m_buffered_bits += 8;
+            }
+        }
+
+        return m_buffered & 0xffff;
+    }
+
+    void consume(size_t nbits)
+    {
+        m_buffered >>= nbits;
+        m_buffered_bits -= nbits;
+    }
+
+    bool eof() const { return m_buffered_bits == 0 && m_stream.eof(); }
+
+private:
+    mutable u32 m_buffered;
+    mutable size_t m_buffered_bits { 0 };
+
+    mutable InputMemoryStream m_stream;
 };
 
 // This is very much inspired by "Efficient Huffman Decoding" in https://www.hanshq.net/zip.html.
 class CanonicalCode {
 public:
-    // FIXME: Analyse the behavior of this constructor for invalid symbol lengths. Ensure that
-    //        whatever the output is, doesn't cause any crashes.
-    explicit CanonicalCode(Span<const u8> symbol_lengths)
+    // FIXME: What happens when the symbol lengths don't encode a valid huffman code?
+    explicit CanonicalCode(InputBitStream& stream, Span<const u8> symbol_lengths)
+        : m_stream(stream)
     {
         Array<u8, 15> lengths { 0 };
 
@@ -77,11 +114,11 @@ public:
 
     u16 read_symbol()
     {
-        const auto bits = m_reader.peek();
+        const auto bits = m_stream.peek();
 
         for (size_t length_index = 0; length_index <= min<size_t>(m_max_length_index, 14); ++length_index) {
             if (bits < m_sentinel_bits[length_index]) {
-                m_reader.consume(length_index + 1);
+                m_stream.consume(length_index + 1);
                 return m_first_codeword_offsets[length_index] + bits;
             }
         }
@@ -89,11 +126,13 @@ public:
         ASSERT_NOT_REACHED();
     }
 
+    bool unreliabe_eof() const { TODO(); }
+
 private:
-    Reader m_reader;
+    InputBitStream m_stream;
     Array<u16, 15> m_sentinel_bits;
     Array<i16, 15> m_first_codeword_offsets;
-    u8 m_max_length_index;
+    u8 m_max_length_index { 0 };
 };
 
 }

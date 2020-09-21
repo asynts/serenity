@@ -115,6 +115,8 @@ public:
     bool unreliable_eof() const override { return eof(); }
     bool eof() const { return m_queue.size() == 0; }
 
+    size_t size() const { return m_queue.size(); }
+
     size_t remaining_contigous_space() const
     {
         return min(Capacity - m_queue.size(), m_queue.capacity() - (m_queue.head_index() + m_queue.size()) % Capacity);
