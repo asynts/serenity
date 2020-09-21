@@ -45,19 +45,16 @@ public:
 
     u16 peek() const
     {
-        // FIXME: Somehow this logic is wrong?
-
         if (m_buffered_bits < 16) {
-            if (m_stream.remaining() >= 2) {
-                BigEndian<u16> value;
-                m_stream >> value;
+            u8 value;
 
+            if (m_stream.remaining() > 0) {
+                m_stream >> value;
                 m_buffered |= value << m_buffered_bits;
-                m_buffered_bits += 16;
-            } else if (m_stream.remaining() == 1) {
-                BigEndian<u8> value;
+                m_buffered_bits += 8;
+            }
+            if (m_stream.remaining() > 0) {
                 m_stream >> value;
-
                 m_buffered |= value << m_buffered_bits;
                 m_buffered_bits += 8;
             }
@@ -84,7 +81,7 @@ private:
 // This is very much inspired by "Efficient Huffman Decoding" in https://www.hanshq.net/zip.html.
 class CanonicalCode {
 public:
-    // FIXME: We do absolutely no error checking here.
+    // FIXME: We do absolutely no error checking here, the Optional is just for show.
     static Optional<CanonicalCode> from_bytes(Span<const u8> symbol_lengths)
     {
         CanonicalCode code;
