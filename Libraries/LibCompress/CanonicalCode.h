@@ -27,24 +27,67 @@
 #pragma once
 
 #include <AK/Array.h>
+#include <AK/MemoryStream.h>
 #include <AK/Optional.h>
 #include <AK/StdLibExtras.h>
+
+// #define DEBUG_CANONICAL_CODE
 
 namespace Compress::New {
 
 class Reader {
 public:
     // Padded with zeroes if not enough bits are avaliable.
-    u16 peek() const;
+    u16 peek() const
+    {
+        try_to_buffer_16bits();
+        return m_buffered & 0xffff;
+    }
 
-    void consume(size_t bits);
+    void consume(size_t bits)
+    {
+        try_to_buffer_16bits();
+#ifdef DEBUG_CANONICAL_CODE
+        ASSERT(bits <= m_buffered_bits);
+#endif
+        m_buffered_bits -= min(bits, m_buffered_bits);
+    }
+
+private:
+    size_t try_read_two_bytes(u16& value);
+
+    void try_to_buffer_16bits() const
+    {
+        // FIXME: Verify byte / bit order.
+
+        if (m_buffered_bits >= 16)
+            return;
+
+        if (m_stream.remaining() >= 2) {
+            u16 value;
+            m_stream >> value;
+
+            m_buffered |= static_cast<u32>(value) << m_buffered_bits;
+            m_buffered_bits += 2;
+        } else if (m_stream.remaining() == 1) {
+            u8 value;
+            m_stream >> value;
+
+            m_buffered |= static_cast<u32>(value) << m_buffered_bits;
+            m_buffered_bits += 1;
+        }
+    }
+
+    // FIXME: This obviously can't stay this way. The logic for this should be added to this stream.
+    mutable InputMemoryStream& m_stream;
+
+    mutable u32 m_buffered;
+    mutable size_t m_buffered_bits { 0 };
 };
 
 // This is very much inspired by "Efficient Huffman Decoding" in https://www.hanshq.net/zip.html.
 class CanonicalCode {
 public:
-    static constexpr u16 no_symbol_found = 0xff;
-
     u16 read_symbol()
     {
         const auto bits = m_reader.peek();
@@ -52,7 +95,7 @@ public:
         for (size_t idx = 0; idx < min<size_t>(m_bits_used, 15); ++idx) {
             if (bits < m_sentinel_bits[idx]) {
                 m_reader.consume(idx + 1);
-                return m_first_codeword_offsets[idx] + bits & (1u << idx - 1);
+                return m_first_codeword_offsets[idx] + bits;
             }
         }
 
