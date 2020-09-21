@@ -82,22 +82,21 @@ private:
 // This is very much inspired by "Efficient Huffman Decoding" in https://www.hanshq.net/zip.html.
 class CanonicalCode {
 public:
-    // FIXME: What happens when the symbol lengths don't encode a valid huffman code?
-    explicit CanonicalCode(InputBitStream& stream, Span<const u8> symbol_lengths)
-        : m_stream(stream)
+    // FIXME: We do absolutely no error checking here.
+    static Optional<CanonicalCode> from_bytes(Span<const u8> symbol_lengths)
     {
-        Array<u8, 15> lengths { 0 };
+        CanonicalCode code;
 
-        for (auto length : symbol_lengths) {
+        Array<u8, 15> lengths { 0 };
+        for (auto length : symbol_lengths)
             ++lengths[length - 1];
-        }
 
         u16 first_unused_code_word = 0;
         for (size_t length_index = 0; length_index < 15; ++length_index) {
             if (lengths[length_index] == 0)
                 continue;
 
-            m_max_length_index = length_index;
+            code.m_max_length_index = length_index;
 
             u16 first_symbol = 0;
             for (; first_symbol < symbol_lengths.size(); ++first_symbol) {
@@ -105,20 +104,22 @@ public:
                     break;
             }
 
-            m_first_codeword_offsets[length_index] = static_cast<i16>(first_symbol) - static_cast<i16>(first_unused_code_word);
-            m_sentinel_bits[length_index] = first_unused_code_word + lengths[length_index];
+            code.m_first_codeword_offsets[length_index] = static_cast<i16>(first_symbol) - static_cast<i16>(first_unused_code_word);
+            code.m_sentinel_bits[length_index] = first_unused_code_word + lengths[length_index];
 
             first_unused_code_word += lengths[length_index];
         }
+
+        return code;
     }
 
-    u16 read_symbol()
+    u16 read_symbol(InputBitStream& stream)
     {
-        const auto bits = m_stream.peek();
+        const auto bits = stream.peek();
 
         for (size_t length_index = 0; length_index <= min<size_t>(m_max_length_index, 14); ++length_index) {
             if (bits < m_sentinel_bits[length_index]) {
-                m_stream.consume(length_index + 1);
+                stream.consume(length_index + 1);
                 return m_first_codeword_offsets[length_index] + bits;
             }
         }
@@ -129,7 +130,6 @@ public:
     bool unreliabe_eof() const { TODO(); }
 
 private:
-    InputBitStream m_stream;
     Array<u16, 15> m_sentinel_bits;
     Array<i16, 15> m_first_codeword_offsets;
     u8 m_max_length_index { 0 };

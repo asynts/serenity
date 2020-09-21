@@ -83,6 +83,7 @@ add_subdirectory(DevTools/IPCCompiler)
 add_subdirectory(DevTools/FormCompiler)
 add_subdirectory(Libraries/LibWeb/CodeGenerators)
 add_subdirectory(AK/Tests)
+add_subdirectory(Libraries/LibCompress/Tests)
 
 set(write_if_different ${CMAKE_SOURCE_DIR}/Meta/write-only-on-difference.sh)
 
