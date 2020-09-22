@@ -71,12 +71,16 @@ static void write_escaped_literal(StringBuilder& builder, StringView literal)
             ++idx;
     }
 }
+
+#ifndef KERNEL
 static size_t parse_number(StringView input)
 {
     String null_terminated { input };
     char* endptr;
     return strtoull(null_terminated.characters(), &endptr, 10);
 }
+#endif
+
 static bool parse_format_specifier(StringView input, FormatSpecifier& specifier)
 {
     specifier.index = NumericLimits<size_t>::max();
@@ -85,8 +89,13 @@ static bool parse_format_specifier(StringView input, FormatSpecifier& specifier)
 
     auto index = lexer.consume_while([](char ch) { return StringView { "0123456789" }.contains(ch); });
 
-    if (index.length() > 0)
+    if (index.length() > 0) {
+#ifdef KERNEL
+        ASSERT_NOT_REACHED();
+#else
         specifier.index = parse_number(index);
+#endif
+    }
 
     if (!lexer.consume_specific(':'))
         return lexer.is_eof();
