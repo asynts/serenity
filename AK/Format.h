@@ -90,6 +90,7 @@ struct Formatter<T, typename EnableIf<IsIntegral<T>::value>::Type> {
 
     bool zero_pad { false };
     bool hexadecimal { false };
+    bool alternative_form { false };
     size_t field_width { 0 };
 };
 

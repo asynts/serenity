@@ -60,6 +60,13 @@ TEST_CASE(escape_braces)
     EXPECT_EQ(AK::format("{}}}", "bar"), "bar}");
 }
 
+TEST_CASE(alternative_form)
+{
+    EXPECT_EQ(AK::format("{:#x}", 32), "0x20");
+    EXPECT_EQ(AK::format("{:#04x}", 64), "0x0040");
+    EXPECT_EQ(AK::format("{:#08}", 12), "00000012");
+}
+
 TEST_CASE(everything)
 {
     EXPECT_EQ(AK::format("{{{:04}/{}/{0:8}/{1}", 42u, "foo"), "{0042/foo/      42/foo");

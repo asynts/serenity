@@ -154,6 +154,9 @@ bool Formatter<T, typename EnableIf<IsIntegral<T>::value>::Type>::parse(StringVi
 {
     GenericLexer lexer { flags };
 
+    if (lexer.consume_specific('#'))
+        alternative_form = true;
+
     if (lexer.consume_specific('0'))
         zero_pad = true;
 
@@ -172,12 +175,16 @@ void Formatter<T, typename EnableIf<IsIntegral<T>::value>::Type>::format(StringB
 {
     char* bufptr;
 
-    if (hexadecimal)
+    if (hexadecimal) {
+        if (alternative_form)
+            builder.append("0x");
+
         PrintfImplementation::print_hex([&](auto, char ch) { builder.append(ch); }, bufptr, value, false, false, false, zero_pad, field_width);
-    else if (IsSame<typename MakeUnsigned<T>::Type, T>::value)
+    } else if (IsSame<typename MakeUnsigned<T>::Type, T>::value) {
         PrintfImplementation::print_u64([&](auto, char ch) { builder.append(ch); }, bufptr, value, false, zero_pad, field_width);
-    else
+    } else {
         PrintfImplementation::print_i64([&](auto, char ch) { builder.append(ch); }, bufptr, value, false, zero_pad, field_width);
+    }
 }
 
 template struct Formatter<StringView>;
