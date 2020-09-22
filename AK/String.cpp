@@ -25,6 +25,7 @@
  */
 
 #include <AK/FlyString.h>
+#include <AK/Format.h>
 #include <AK/Memory.h>
 #include <AK/StdLibExtras.h>
 #include <AK/String.h>
@@ -214,49 +215,17 @@ Optional<unsigned> String::to_uint() const
     return StringUtils::convert_to_uint(view());
 }
 
-String String::number(unsigned long long value)
-{
-    int size;
-    char buffer[32];
-    size = snprintf(buffer, sizeof(buffer), "%llu", value);
-    return String(buffer, size);
-}
+template<typename T>
+String String::number(T value) { return AK::format("{}", value); }
 
-String String::number(unsigned long value)
-{
-    int size;
-    char buffer[32];
-    size = snprintf(buffer, sizeof(buffer), "%lu", value);
-    return String(buffer, size);
-}
-
-String String::number(unsigned value)
-{
-    char buffer[32];
-    int size = snprintf(buffer, sizeof(buffer), "%u", value);
-    return String(buffer, size);
-}
-
-String String::number(long long value)
-{
-    char buffer[32];
-    int size = snprintf(buffer, sizeof(buffer), "%lld", value);
-    return String(buffer, size);
-}
-
-String String::number(long value)
-{
-    char buffer[32];
-    int size = snprintf(buffer, sizeof(buffer), "%ld", value);
-    return String(buffer, size);
-}
-
-String String::number(int value)
-{
-    char buffer[32];
-    int size = snprintf(buffer, sizeof(buffer), "%d", value);
-    return String(buffer, size);
-}
+template String String::number(u8);
+template String String::number(u16);
+template String String::number(u32);
+template String String::number(u64);
+template String String::number(i8);
+template String String::number(i16);
+template String String::number(i32);
+template String String::number(i64);
 
 String String::format(const char* fmt, ...)
 {
