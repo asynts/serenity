@@ -33,10 +33,6 @@
 
 namespace AK {
 
-// Break circular dependency with <AK/Format.h>.
-template<typename... Parameters>
-void format(StringBuilder&, StringView fmtstr, const Parameters&...);
-
 class StringBuilder {
 public:
     using OutputType = String;
@@ -52,8 +48,9 @@ public:
     void appendf(const char*, ...);
     void appendvf(const char*, va_list);
 
+    // Implemented in <AK/Format.h> to break circular dependency.
     template<typename... Parameters>
-    void appendff(StringView fmtstr, const Parameters&... parameters) { AK::format(*this, fmtstr, parameters...); }
+    void appendff(StringView fmtstr, const Parameters&... parameters);
 
     String build() const;
     String to_string() const;
