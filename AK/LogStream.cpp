@@ -25,6 +25,7 @@
  */
 
 #include <AK/FlyString.h>
+#include <AK/Format.h>
 #include <AK/LogStream.h>
 #include <AK/String.h>
 #include <AK/StringView.h>
@@ -57,47 +58,25 @@ const LogStream& operator<<(const LogStream& stream, const StringView& value)
     return stream;
 }
 
-const LogStream& operator<<(const LogStream& stream, int value)
+template<typename T, typename EnableIf<IsIntegral<T>::value, int>::Type = 0>
+const LogStream& operator<<(const LogStream& stream, T value)
 {
-    char buffer[32];
-    snprintf(buffer, sizeof(buffer), "%d", value);
-    return stream << buffer;
+    AK::format(stream, "{}", value);
+    return stream;
 }
+template const LogStream& operator<<(const LogStream&, unsigned char);
+template const LogStream& operator<<(const LogStream&, unsigned int);
+template const LogStream& operator<<(const LogStream&, unsigned short);
+template const LogStream& operator<<(const LogStream&, unsigned long);
+template const LogStream& operator<<(const LogStream&, unsigned long long);
+template const LogStream& operator<<(const LogStream&, char);
+template const LogStream& operator<<(const LogStream&, int);
+template const LogStream& operator<<(const LogStream&, short);
+template const LogStream& operator<<(const LogStream&, long);
+template const LogStream& operator<<(const LogStream&, long long);
 
-const LogStream& operator<<(const LogStream& stream, long value)
-{
-    char buffer[32];
-    snprintf(buffer, sizeof(buffer), "%ld", value);
-    return stream << buffer;
-}
-
-const LogStream& operator<<(const LogStream& stream, long long value)
-{
-    char buffer[32];
-    snprintf(buffer, sizeof(buffer), "%lld", value);
-    return stream << buffer;
-}
-
-const LogStream& operator<<(const LogStream& stream, unsigned value)
-{
-    char buffer[32];
-    snprintf(buffer, sizeof(buffer), "%u", value);
-    return stream << buffer;
-}
-
-const LogStream& operator<<(const LogStream& stream, unsigned long long value)
-{
-    char buffer[32];
-    snprintf(buffer, sizeof(buffer), "%llu", value);
-    return stream << buffer;
-}
-
-const LogStream& operator<<(const LogStream& stream, unsigned long value)
-{
-    char buffer[32];
-    snprintf(buffer, sizeof(buffer), "%lu", value);
-    return stream << buffer;
-}
+// C++ is weird.
+template const LogStream& operator<<(const LogStream&, signed char);
 
 const LogStream& operator<<(const LogStream& stream, const void* value)
 {

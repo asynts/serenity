@@ -59,7 +59,8 @@ struct TypeErasedFormatter {
 template<typename T>
 TypeErasedFormatter make_type_erased_formatter(const T& value) { return { format_value<T>, &value }; }
 
-String format(StringView fmtstr, AK::Span<TypeErasedFormatter>, size_t argument_index = 0);
+String format(StringView fmtstr, AK::Span<TypeErasedFormatter>);
+void format(const LogStream&, StringView fmtstr, AK::Span<TypeErasedFormatter>);
 void format(StringBuilder&, StringView fmtstr, AK::Span<TypeErasedFormatter>, size_t argument_index = 0);
 
 } // namespace AK::Detail::Format
@@ -100,8 +101,23 @@ String format(StringView fmtstr, const Parameters&... parameters)
     Array formatters { Detail::Format::make_type_erased_formatter(parameters)... };
     return Detail::Format::format(fmtstr, formatters);
 }
+template<typename... Parameters>
+void format(StringBuilder& builder, StringView fmtstr, const Parameters&... parameters)
+{
+    Array formatters { Detail::Format::make_type_erased_formatter(parameters)... };
+    Detail::Format::format(builder, fmtstr, formatters);
+}
+template<typename... Parameters>
+void format(const LogStream& stream, StringView fmtstr, const Parameters&... parameters)
+{
+    Array formatters { Detail::Format::make_type_erased_formatter(parameters)... };
+    Detail::Format::format(stream, fmtstr, formatters);
+}
 
 template<typename... Parameters>
-void StringBuilder::appendff(StringView fmtstr, const Parameters&... parameters) { AK::format(*this, fmtstr, parameters...); }
+void StringBuilder::appendff(StringView fmtstr, const Parameters&... parameters)
+{
+    AK::format(*this, fmtstr, parameters...);
+}
 
 } // namespace AK

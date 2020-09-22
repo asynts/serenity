@@ -26,6 +26,7 @@
 
 #include <AK/Format.h>
 #include <AK/GenericLexer.h>
+#include <AK/LogStream.h>
 #include <AK/PrintfImplementation.h>
 #include <AK/StringBuilder.h>
 
@@ -102,10 +103,10 @@ static bool parse_format_specifier(StringView input, FormatSpecifier& specifier)
     return true;
 }
 
-String format(StringView fmtstr, AK::Span<TypeErasedFormatter> formatters, size_t argument_index)
+String format(StringView fmtstr, AK::Span<TypeErasedFormatter> formatters)
 {
     StringBuilder builder;
-    format(builder, fmtstr, formatters, argument_index);
+    format(builder, fmtstr, formatters);
     return builder.to_string();
 }
 
@@ -143,6 +144,11 @@ void format(StringBuilder& builder, StringView fmtstr, AK::Span<TypeErasedFormat
         ASSERT_NOT_REACHED();
 
     format(builder, fmtstr.substring_view(closing + 1), formatters, argument_index);
+}
+
+void format(const LogStream& stream, StringView fmtstr, AK::Span<TypeErasedFormatter> formatters)
+{
+    stream << format(fmtstr, formatters);
 }
 
 } // namespace AK::Detail::Format
