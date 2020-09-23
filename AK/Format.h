@@ -72,6 +72,9 @@ template<size_t Size>
 struct Formatter<char[Size]> : Formatter<StringView> {
 };
 template<>
+struct Formatter<const char*> : Formatter<StringView> {
+};
+template<>
 struct Formatter<String> : Formatter<StringView> {
 };
 
