@@ -27,6 +27,7 @@
 #include <AK/Format.h>
 #include <AK/GenericLexer.h>
 #include <AK/PrintfImplementation.h>
+#include <AK/String.h>
 #include <AK/StringBuilder.h>
 
 namespace {
