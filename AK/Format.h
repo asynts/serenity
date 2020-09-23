@@ -34,6 +34,26 @@ namespace AK {
 template<typename T, typename = void>
 struct Formatter;
 
+} // namespace AK
+
+namespace AK::Detail::Format {
+
+template<typename T>
+bool format_value(StringBuilder& builder, const void* value, StringView flags)
+{
+    Formatter<T> formatter;
+
+    if (!formatter.parse(flags))
+        return false;
+
+    formatter.format(builder, *static_cast<const T*>(value));
+    return true;
+}
+
+} // namespace AK::Detail::Format
+
+namespace AK {
+
 struct TypeErasedParameter {
     const void* value;
     bool (*formatter)(StringBuilder& builder, const void* value, StringView flags);
@@ -64,18 +84,7 @@ struct Formatter<T, typename EnableIf<IsIntegral<T>::value>::Type> {
 template<typename... Parameters>
 Array<TypeErasedParameter, sizeof...(Parameters)> make_type_erased_parameters(const Parameters&... parameters)
 {
-    const auto format_value = []<typename T>(StringBuilder& builder, const void* value, StringView flags) {
-        Formatter<T> formatter;
-
-        if (!formatter.parse(flags))
-            return false;
-
-        formatter.format(builder, *static_cast<const T*>(value));
-        return true;
-    };
-
-    // FIXME: GCC does not like this.
-    return { { &parameters, format_value<decltype(parameters)> }... };
+    return { TypeErasedParameter { &parameters, Detail::Format::format_value<Parameters> }... };
 }
 
 void vformat(StringBuilder& builder, StringView fmtstr, Span<const TypeErasedParameter> parameters, size_t argument_index = 0);
