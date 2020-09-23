@@ -29,6 +29,10 @@
 #include <AK/Array.h>
 #include <AK/StringView.h>
 
+// FIXME: I would really love to merge the format_value and make_type_erased_parameters functions,
+//        but the compiler creates weird error messages when I do that. Here is a small snippet that
+//        reproduces the issue: https://godbolt.org/z/o55crs
+
 namespace AK {
 
 template<typename T, typename = void>
