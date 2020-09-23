@@ -458,4 +458,34 @@ StringView String::view() const
     return { characters(), length() };
 }
 
+InputStream& operator>>(InputStream& stream, String& string)
+{
+    StringBuilder builder;
+
+    for (;;) {
+        char next_char;
+        stream >> next_char;
+
+        if (stream.has_any_error()) {
+            stream.set_fatal_error();
+            string = nullptr;
+            return stream;
+        }
+
+        if (next_char) {
+            builder.append(next_char);
+        } else {
+            string = builder.to_string();
+            return stream;
+        }
+    }
+}
+
+String String::vformatted(StringView fmtstr, Span<const TypeErasedParameter> parameters)
+{
+    StringBuilder builder;
+    vformat(builder, fmtstr, parameters);
+    return builder.to_string();
+}
+
 }

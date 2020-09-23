@@ -27,7 +27,6 @@
 #pragma once
 
 #include <AK/Array.h>
-#include <AK/String.h>
 #include <AK/StringView.h>
 
 namespace AK {
@@ -35,52 +34,21 @@ namespace AK {
 template<typename T, typename = void>
 struct Formatter;
 
-} // namespace AK
-
-namespace AK::Detail::Format {
-
-template<typename T>
-bool format_value(StringBuilder& builder, const void* value, StringView flags)
-{
-    Formatter<T> formatter;
-
-    if (!formatter.parse(flags))
-        return false;
-
-    formatter.format(builder, *static_cast<const T*>(value));
-    return true;
-}
-
-struct TypeErasedFormatter {
-    bool (*format)(StringBuilder& builder, const void* value, StringView flags);
-    const void* parameter;
-};
-
-template<typename T>
-TypeErasedFormatter make_type_erased_formatter(const T& value) { return { format_value<T>, &value }; }
-
-String format(StringView fmtstr, AK::Span<TypeErasedFormatter>, size_t argument_index = 0);
-void format(StringBuilder&, StringView fmtstr, AK::Span<TypeErasedFormatter>, size_t argument_index = 0);
-
-} // namespace AK::Detail::Format
-
-namespace AK {
-
-template<size_t Size>
-struct Formatter<char[Size]> {
-    bool parse(StringView) { return true; }
-    void format(StringBuilder& builder, const char* value) { builder.append(value); }
+struct TypeErasedParameter {
+    bool (*formatter)(StringBuilder& builder, const void* value, StringView flags);
+    const void* value;
 };
 
 template<>
 struct Formatter<StringView> {
-    bool parse(StringView flags) { return flags.is_empty(); }
-    void format(StringBuilder& builder, StringView value) { builder.append(value); }
+    bool parse(StringView flags);
+    void format(StringBuilder& builder, StringView value);
+};
+template<size_t Size>
+struct Formatter<char[Size]> : Formatter<StringView> {
 };
 template<>
-struct Formatter<String> {
-    bool parse(StringView flags) { return flags.is_empty(); }
-    void format(StringBuilder& builder, const String& value) { builder.append(value); }
+struct Formatter<String> : Formatter<StringView> {
 };
 
 template<typename T>
@@ -94,19 +62,21 @@ struct Formatter<T, typename EnableIf<IsIntegral<T>::value>::Type> {
 };
 
 template<typename... Parameters>
-String format(StringView fmtstr, const Parameters&... parameters)
+Array<TypeErasedParameter, sizeof...(Parameters)> make_type_erased_parameters(const Parameters&... parameters)
 {
-    Array<Detail::Format::TypeErasedFormatter, sizeof...(parameters)> formatters { Detail::Format::make_type_erased_formatter(parameters)... };
-    return Detail::Format::format(fmtstr, formatters);
-}
-template<typename... Parameters>
-void format(StringBuilder& builder, StringView fmtstr, const Parameters&... parameters)
-{
-    Array<Detail::Format::TypeErasedFormatter, sizeof...(parameters)> formatters { Detail::Format::make_type_erased_formatter(parameters)... };
-    Detail::Format::format(builder, fmtstr, formatters);
+    const auto format_value = [](StringBuilder& builder, const void* value, StringView flags)<T> {
+        Formatter<T> formatter;
+
+        if (!formatter.parse(flags))
+            return false;
+
+        formatter.format(builder, *static_cast<const T*>(value));
+        return true;
+    };
+
+    return { { &parameters, format_value<decltype(parameters)> }... };
 }
 
-template<typename... Parameters>
-void StringBuilder::appendff(StringView fmtstr, const Parameters&... parameters) { AK::format(*this, fmtstr, parameters...); }
+void vformat(StringBuilder& builder, StringView fmtstr, Span<const TypeErasedParameter> parameters, size_t argument_index = 0);
 
 } // namespace AK
