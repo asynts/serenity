@@ -27,6 +27,7 @@
 #pragma once
 
 #include <AK/ByteBuffer.h>
+#include <AK/Format.h>
 #include <AK/Forward.h>
 #include <AK/StringView.h>
 #include <stdarg.h>
@@ -48,9 +49,11 @@ public:
     void appendf(const char*, ...);
     void appendvf(const char*, va_list);
 
-    // Implemented in <AK/Format.h> to break circular dependency.
     template<typename... Parameters>
-    void appendff(StringView fmtstr, const Parameters&...);
+    void StringBuilder::appendff(StringView fmtstr, const Parameters&... parameters)
+    {
+        AK::format(*this, fmtstr, parameters...);
+    }
 
     String build() const;
     String to_string() const;

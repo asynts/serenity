@@ -27,7 +27,6 @@
 #pragma once
 
 #include <AK/Array.h>
-#include <AK/String.h>
 #include <AK/StringView.h>
 
 namespace AK {
@@ -66,21 +65,16 @@ void format(StringBuilder&, StringView fmtstr, AK::Span<TypeErasedFormatter>, si
 
 namespace AK {
 
-template<size_t Size>
-struct Formatter<char[Size]> {
-    bool parse(StringView) { return true; }
-    void format(StringBuilder& builder, const char* value) { builder.append(value); }
-};
-
 template<>
 struct Formatter<StringView> {
     bool parse(StringView flags) { return flags.is_empty(); }
-    void format(StringBuilder& builder, StringView value) { builder.append(value); }
+    void format(StringBuilder& builder, StringView value);
+};
+template<size_t Size>
+struct Formatter<char[Size]> : Formatter<StringView> {
 };
 template<>
-struct Formatter<String> {
-    bool parse(StringView flags) { return flags.is_empty(); }
-    void format(StringBuilder& builder, const String& value) { builder.append(value); }
+struct Formatter<String> : Formatter<StringView> {
 };
 
 template<typename T>
@@ -105,8 +99,5 @@ void format(StringBuilder& builder, StringView fmtstr, const Parameters&... para
     Array<Detail::Format::TypeErasedFormatter, sizeof...(parameters)> formatters { Detail::Format::make_type_erased_formatter(parameters)... };
     Detail::Format::format(builder, fmtstr, formatters);
 }
-
-template<typename... Parameters>
-void StringBuilder::appendff(StringView fmtstr, const Parameters&... parameters) { AK::format(*this, fmtstr, parameters...); }
 
 } // namespace AK

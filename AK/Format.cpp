@@ -149,6 +149,11 @@ void format(StringBuilder& builder, StringView fmtstr, AK::Span<TypeErasedFormat
 
 namespace AK {
 
+void Formatter<StringView>::format(StringBuilder& builder, StringView value)
+{
+    builder.append(value);
+}
+
 template<typename T>
 bool Formatter<T, typename EnableIf<IsIntegral<T>::value>::Type>::parse(StringView flags)
 {
@@ -180,8 +185,6 @@ void Formatter<T, typename EnableIf<IsIntegral<T>::value>::Type>::format(StringB
         PrintfImplementation::print_i64([&](auto, char ch) { builder.append(ch); }, bufptr, value, false, zero_pad, field_width);
 }
 
-template struct Formatter<StringView>;
-template struct Formatter<String>;
 template struct Formatter<unsigned char, void>;
 template struct Formatter<unsigned short, void>;
 template struct Formatter<unsigned int, void>;
