@@ -216,7 +216,7 @@ Optional<unsigned> String::to_uint() const
 }
 
 template<typename T>
-String String::number(T value) { return AK::format("{}", value); }
+String String::number(T value) { return formatted("{}", value); }
 
 template String String::number(unsigned char);
 template String String::number(unsigned short);
@@ -228,8 +228,6 @@ template String String::number(short);
 template String String::number(int);
 template String String::number(long);
 template String String::number(long long);
-
-// C++ is weird.
 template String String::number(signed char);
 
 String String::format(const char* fmt, ...)

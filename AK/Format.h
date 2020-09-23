@@ -35,8 +35,8 @@ template<typename T, typename = void>
 struct Formatter;
 
 struct TypeErasedParameter {
-    bool (*formatter)(StringBuilder& builder, const void* value, StringView flags);
     const void* value;
+    bool (*formatter)(StringBuilder& builder, const void* value, StringView flags);
 };
 
 template<>
@@ -64,7 +64,7 @@ struct Formatter<T, typename EnableIf<IsIntegral<T>::value>::Type> {
 template<typename... Parameters>
 Array<TypeErasedParameter, sizeof...(Parameters)> make_type_erased_parameters(const Parameters&... parameters)
 {
-    const auto format_value = [](StringBuilder& builder, const void* value, StringView flags)<T> {
+    const auto format_value = []<typename T>(StringBuilder& builder, const void* value, StringView flags) {
         Formatter<T> formatter;
 
         if (!formatter.parse(flags))
@@ -74,6 +74,7 @@ Array<TypeErasedParameter, sizeof...(Parameters)> make_type_erased_parameters(co
         return true;
     };
 
+    // FIXME: GCC does not like this.
     return { { &parameters, format_value<decltype(parameters)> }... };
 }
 
