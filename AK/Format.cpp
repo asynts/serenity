@@ -27,6 +27,7 @@
 #include <AK/Format.h>
 #include <AK/GenericLexer.h>
 #include <AK/PrintfImplementation.h>
+#include <AK/String.h>
 #include <AK/StringBuilder.h>
 
 namespace {
@@ -106,7 +107,7 @@ static bool parse_format_specifier(StringView input, FormatSpecifier& specifier)
 
 namespace AK {
 
-void vformat(StringBuilder& builder, StringView fmtstr, AK::Span<TypeErasedParameter> parameters, size_t argument_index)
+void vformat(StringBuilder& builder, StringView fmtstr, AK::Span<const TypeErasedParameter> parameters, size_t argument_index)
 {
     size_t opening;
     if (!find_next_unescaped(opening, fmtstr, '{')) {
@@ -167,7 +168,7 @@ bool Formatter<T, typename EnableIf<IsIntegral<T>::value>::Type>::parse(StringVi
 
     auto field_width = lexer.consume_while([](char ch) { return StringView { "0123456789" }.contains(ch); });
     if (field_width.length() > 0)
-        this->field_width = Detail::Format::parse_number(field_width);
+        this->field_width = parse_number(field_width);
 
     if (lexer.consume_specific('x'))
         hexadecimal = true;

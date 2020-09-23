@@ -216,7 +216,7 @@ Optional<unsigned> String::to_uint() const
 }
 
 template<typename T>
-String String::number(T value) { return AK::format("{}", value); }
+String String::number(T value) { return formatted("{}", value); }
 
 template String String::number(unsigned char);
 template String String::number(unsigned short);
