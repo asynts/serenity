@@ -29,14 +29,38 @@
 #include <AK/Array.h>
 #include <AK/StringView.h>
 
+// FIXME: I would really love to merge the format_value and make_type_erased_parameters functions,
+//        but the compiler creates weird error messages when I do that. Here is a small snippet that
+//        reproduces the issue: https://godbolt.org/z/o55crs
+
 namespace AK {
 
 template<typename T, typename = void>
 struct Formatter;
 
+} // namespace AK
+
+namespace AK::Detail::Format {
+
+template<typename T>
+bool format_value(StringBuilder& builder, const void* value, StringView flags)
+{
+    Formatter<T> formatter;
+
+    if (!formatter.parse(flags))
+        return false;
+
+    formatter.format(builder, *static_cast<const T*>(value));
+    return true;
+}
+
+} // namespace AK::Detail::Format
+
+namespace AK {
+
 struct TypeErasedParameter {
-    bool (*formatter)(StringBuilder& builder, const void* value, StringView flags);
     const void* value;
+    bool (*formatter)(StringBuilder& builder, const void* value, StringView flags);
 };
 
 template<>
@@ -64,19 +88,10 @@ struct Formatter<T, typename EnableIf<IsIntegral<T>::value>::Type> {
 template<typename... Parameters>
 Array<TypeErasedParameter, sizeof...(Parameters)> make_type_erased_parameters(const Parameters&... parameters)
 {
-    const auto format_value = [](StringBuilder& builder, const void* value, StringView flags)<T> {
-        Formatter<T> formatter;
-
-        if (!formatter.parse(flags))
-            return false;
-
-        formatter.format(builder, *static_cast<const T*>(value));
-        return true;
-    };
-
-    return { { &parameters, format_value<decltype(parameters)> }... };
+    return { TypeErasedParameter { &parameters, Detail::Format::format_value<Parameters> }... };
 }
 
-void vformat(StringBuilder& builder, StringView fmtstr, Span<const TypeErasedParameter> parameters, size_t argument_index = 0);
+void vformat(StringBuilder& builder, StringView fmtstr, Span<const TypeErasedParameter>, size_t argument_index = 0);
+void vformat(const LogStream& stream, StringView fmtstr, Span<const TypeErasedParameter>);
 
 } // namespace AK
