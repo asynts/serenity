@@ -77,6 +77,7 @@ Array<TypeErasedParameter, sizeof...(Parameters)> make_type_erased_parameters(co
     return { { &parameters, format_value<decltype(parameters)> }... };
 }
 
-void vformat(StringBuilder& builder, StringView fmtstr, Span<const TypeErasedParameter> parameters, size_t argument_index = 0);
+void vformat(StringBuilder& builder, StringView fmtstr, Span<const TypeErasedParameter>, size_t argument_index = 0);
+void vformat(const LogStream& stream, StringView fmtstr, Span<const TypeErasedParameter>);
 
 } // namespace AK
