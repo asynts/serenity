@@ -77,9 +77,15 @@ void format_argument(Context& context, const void* value, StringView flags)
 void vformat(Context& context, StringView fmtstr);
 
 template<typename... Parameters>
+Array<TypeErasedParameter, sizeof...(parameters)> make_type_erased_parameters(const Parameters&... parameters)
+{
+    return { TypeErasedParameter { &parameters, format_argument<decltype(parameters)> } };
+}
+
+template<typename... Parameters>
 void format(TypeErasedAppender appender, StringView fmtstr, const Parameters&... parameters)
 {
-    Array<TypeErasedParameter, sizeof...(parameters)> type_erased_parameters { TypeErasedParameter { &parameters, format_argument<Parameters> }... };
+    const auto type_erased_parameters = make_type_erased_parameters(parameters...);
     Context context { appender, type_erased_parameters };
 
     vformat(context, fmtstr);

@@ -26,6 +26,7 @@
 
 #pragma once
 
+#include <AK/FormatImplementation.h>
 #include <AK/Forward.h>
 #include <AK/RefPtr.h>
 #include <AK/Stream.h>
@@ -239,6 +240,15 @@ public:
 
     static String format(const char*, ...);
 
+    static String vformatf(StringView fmtstr, Span<const FormatImplementation::TypeErasedParameter> parameters);
+
+    template<typename... Parameters>
+    static String formatf(StringView fmtstr, const Parameters&... parameters)
+    {
+        const auto type_erased_parameters = FormatImplementation::make_type_erased_parameters(parameters...);
+        reeturn vformatf(fmtstr, type_erased_parameters);
+    }
+
     template<typename T>
     static String number(T);
 
@@ -277,7 +287,7 @@ bool operator<=(const char*, const String&);
 
 String escape_html_entities(const StringView& html);
 
-inline InputStream& operator>>(InputStream& stream, String& string)
+InputStream& operator>>(InputStream& stream, String& string);
 {
     StringBuilder builder;
 
