@@ -151,8 +151,7 @@ void vformat(StringBuilder& builder, StringView fmtstr, AK::Span<const TypeErase
         ASSERT_NOT_REACHED();
 
     auto& parameter = parameters[specifier.index];
-    if (!parameter.formatter(builder, parameter.value, specifier.flags, parameters))
-        ASSERT_NOT_REACHED();
+    parameter.formatter(builder, parameter.value, specifier.flags, parameters);
 
     vformat(builder, fmtstr.substring_view(closing + 1), parameters, argument_index);
 }
@@ -276,7 +275,7 @@ void Formatter<T, typename EnableIf<IsIntegral<T>::value>::Type>::format(StringB
         //        can not be valid function pointers and store basic type information there?
         ASSERT(parameter.formatter == Detail::Format::format_value<size_t>);
 
-        width = *reinterpret_cast<size_t>(parameter.value);
+        width = *reinterpret_cast<const size_t*>(parameter.value);
     }
 
     // FIXME: We really need one canonical print implementation that just takes a base.

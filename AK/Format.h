@@ -43,15 +43,12 @@ struct Formatter;
 namespace AK::Detail::Format {
 
 template<typename T>
-bool format_value(StringBuilder& builder, const void* value, StringView specifier, Span<const TypeErasedParameter> parameters)
+void format_value(StringBuilder& builder, const void* value, StringView specifier, Span<const TypeErasedParameter> parameters)
 {
     Formatter<T> formatter;
 
-    if (!formatter.parse(specifier))
-        return false;
-
+    formatter.parse(specifier);
     formatter.format(builder, *static_cast<const T*>(value), parameters);
-    return true;
 }
 
 } // namespace AK::Detail::Format
@@ -62,7 +59,7 @@ constexpr size_t max_format_arguments = 256;
 
 struct TypeErasedParameter {
     const void* value;
-    bool (*formatter)(StringBuilder& builder, const void* value, StringView specifier, Span<const TypeErasedParameter> parameters);
+    void (*formatter)(StringBuilder& builder, const void* value, StringView specifier, Span<const TypeErasedParameter> parameters);
 };
 
 // We use the same format for most types for consistency. This is taken directly from std::format.
