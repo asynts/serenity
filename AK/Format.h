@@ -43,14 +43,14 @@ struct Formatter;
 namespace AK::Detail::Format {
 
 template<typename T>
-bool format_value(StringBuilder& builder, const void* value, StringView flags)
+bool format_value(StringBuilder& builder, const void* value, StringView specifier, Span<const TypeErasedParameter> parameters)
 {
     Formatter<T> formatter;
 
-    if (!formatter.parse(flags))
+    if (!formatter.parse(specifier))
         return false;
 
-    formatter.format(builder, *static_cast<const T*>(value));
+    formatter.format(builder, *static_cast<const T*>(value), parameters);
     return true;
 }
 
@@ -62,7 +62,7 @@ constexpr size_t max_format_arguments = 256;
 
 struct TypeErasedParameter {
     const void* value;
-    bool (*formatter)(StringBuilder& builder, const void* value, StringView flags);
+    bool (*formatter)(StringBuilder& builder, const void* value, StringView specifier, Span<const TypeErasedParameter> parameters);
 };
 
 // We use the same format for most types for consistency. This is taken directly from std::format.
@@ -109,7 +109,7 @@ struct StandardFormatter {
 
 template<>
 struct Formatter<StringView> : StandardFormatter {
-    void format(StringBuilder& builder, StringView value);
+    void format(StringBuilder& builder, StringView value, Span<const TypeErasedParameter>);
 };
 template<>
 struct Formatter<const char*> : Formatter<StringView> {
@@ -126,7 +126,7 @@ struct Formatter<String> : Formatter<StringView> {
 
 template<typename T>
 struct Formatter<T, typename EnableIf<IsIntegral<T>::value>::Type> : StandardFormatter {
-    void format(StringBuilder&, T value);
+    void format(StringBuilder&, T value, Span<const TypeErasedParameter>);
 };
 
 template<typename... Parameters>

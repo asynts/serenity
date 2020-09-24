@@ -151,7 +151,7 @@ void vformat(StringBuilder& builder, StringView fmtstr, AK::Span<const TypeErase
         ASSERT_NOT_REACHED();
 
     auto& parameter = parameters[specifier.index];
-    if (!parameter.formatter(builder, parameter.value, specifier.flags))
+    if (!parameter.formatter(builder, parameter.value, specifier.flags, parameters))
         ASSERT_NOT_REACHED();
 
     vformat(builder, fmtstr.substring_view(closing + 1), parameters, argument_index);
@@ -222,7 +222,7 @@ void StandardFormatter::parse(StringView specifier)
     ASSERT(lexer.is_eof());
 }
 
-void Formatter<StringView>::format(StringBuilder& builder, StringView value)
+void Formatter<StringView>::format(StringBuilder& builder, StringView value, Span<const TypeErasedParameter>)
 {
     if (m_align != Align::Default)
         TODO();
@@ -243,7 +243,7 @@ void Formatter<StringView>::format(StringBuilder& builder, StringView value)
 }
 
 template<typename T>
-void Formatter<T, typename EnableIf<IsIntegral<T>::value>::Type>::format(StringBuilder& builder, T value)
+void Formatter<T, typename EnableIf<IsIntegral<T>::value>::Type>::format(StringBuilder& builder, T value, Span<const TypeErasedParameter> parameters)
 {
     if (m_align != Align::Default)
         TODO();
@@ -268,16 +268,27 @@ void Formatter<T, typename EnableIf<IsIntegral<T>::value>::Type>::format(StringB
     else
         ASSERT_NOT_REACHED();
 
+    size_t width = m_width;
+    if (m_width >= value_from_arg) {
+        const auto parameter = parameters.at(m_width - value_from_arg);
+
+        // FIXME: We should store the type in the type erased parameters. Maybe we can just select a few addresses that
+        //        can not be valid function pointers and store basic type information there?
+        ASSERT(parameter.formatter == Detail::Format::format_value<size_t>);
+
+        width = *reinterpret_cast<size_t>(parameter.value);
+    }
+
     // FIXME: We really need one canonical print implementation that just takes a base.
     (void)base;
 
     char* bufptr;
     if (m_mode == Mode::Hexadecimal)
-        PrintfImplementation::print_hex([&](auto, char ch) { builder.append(ch); }, bufptr, value, false, false, false, m_zero_pad, field_width);
+        PrintfImplementation::print_hex([&](auto, char ch) { builder.append(ch); }, bufptr, value, false, false, false, m_zero_pad, width);
     else if (IsSame<typename MakeUnsigned<T>::Type, T>::value)
-        PrintfImplementation::print_u64([&](auto, char ch) { builder.append(ch); }, bufptr, value, false, m_zero_pad, field_width);
+        PrintfImplementation::print_u64([&](auto, char ch) { builder.append(ch); }, bufptr, value, false, m_zero_pad, width);
     else
-        PrintfImplementation::print_i64([&](auto, char ch) { builder.append(ch); }, bufptr, value, false, m_zero_pad, field_width);
+        PrintfImplementation::print_i64([&](auto, char ch) { builder.append(ch); }, bufptr, value, false, m_zero_pad, width);
 }
 
 template struct Formatter<unsigned char, void>;
