@@ -58,14 +58,56 @@ bool format_value(StringBuilder& builder, const void* value, StringView flags)
 
 namespace AK {
 
+constexpr size_t max_format_arguments = 256;
+
 struct TypeErasedParameter {
     const void* value;
     bool (*formatter)(StringBuilder& builder, const void* value, StringView flags);
 };
 
+// We use the same format for most types for consistency. This is taken directly from std::format.
+// Not all valid options do anything yet.
+// https://en.cppreference.com/w/cpp/utility/format/formatter#Standard_format_specification
+struct StandardFormatter {
+    enum class Align {
+        Default,
+        Left,
+        Right,
+        Center,
+    };
+    enum class Sign {
+        NegativeOnly,
+        PositiveAndNegative,
+        ReserveSpace,
+    };
+    enum class Mode {
+        Default,
+        Binary,
+        Decimal,
+        Octal,
+        Hexadecimal,
+        Character,
+        String,
+        Pointer,
+    };
+
+    static constexpr size_t value_not_set = 0;
+    static constexpr size_t value_from_arg = NumericLimits<size_t>::max() - max_format_arguments;
+
+    Align m_align = Align::Default;
+    Sign m_sign = Sign::NegativeOnly;
+    Mode m_mode = Mode::Default;
+    bool m_alternative_form = false;
+    char m_fill = ' ';
+    bool m_zero_pad = false;
+    size_t m_width = value_not_set;
+    size_t m_precision = value_not_set;
+
+    void parse(StringView specifier);
+};
+
 template<>
-struct Formatter<StringView> {
-    bool parse(StringView flags);
+struct Formatter<StringView> : StandardFormatter {
     void format(StringBuilder& builder, StringView value);
 };
 template<>
@@ -82,18 +124,14 @@ struct Formatter<String> : Formatter<StringView> {
 };
 
 template<typename T>
-struct Formatter<T, typename EnableIf<IsIntegral<T>::value>::Type> {
-    bool parse(StringView flags);
+struct Formatter<T, typename EnableIf<IsIntegral<T>::value>::Type> : StandardFormatter {
     void format(StringBuilder&, T value);
-
-    bool zero_pad { false };
-    bool hexadecimal { false };
-    size_t field_width { 0 };
 };
 
 template<typename... Parameters>
 Array<TypeErasedParameter, sizeof...(Parameters)> make_type_erased_parameters(const Parameters&... parameters)
 {
+    static_assert(sizeof...(Parameters) <= max_format_arguments);
     return { TypeErasedParameter { &parameters, Detail::Format::format_value<Parameters> }... };
 }
 
