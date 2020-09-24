@@ -79,6 +79,7 @@ struct StandardFormatter {
         NegativeOnly,
         PositiveAndNegative,
         ReserveSpace,
+        Default = NegativeOnly
     };
     enum class Mode {
         Default,

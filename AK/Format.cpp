@@ -224,14 +224,55 @@ void StandardFormatter::parse(StringView specifier)
 
 void Formatter<StringView>::format(StringBuilder& builder, StringView value)
 {
+    if (m_align != Align::Default)
+        TODO();
+    if (m_sign != Sign::Default)
+        ASSERT_NOT_REACHED();
+    if (m_alternative_form)
+        ASSERT_NOT_REACHED();
+    if (m_zero_pad)
+        ASSERT_NOT_REACHED();
+    if (m_width != value_not_set)
+        TODO();
+    if (m_precision != value_not_set)
+        TODO();
+    if (m_mode != Mode::Default && m_mode != Mode::String)
+        ASSERT_NOT_REACHED();
+
     builder.append(value);
 }
+
 template<typename T>
 void Formatter<T, typename EnableIf<IsIntegral<T>::value>::Type>::format(StringBuilder& builder, T value)
 {
-    char* bufptr;
+    if (m_align != Align::Default)
+        TODO();
+    if (m_sign != Sign::Default)
+        TODO();
+    if (m_alternative_form)
+        TODO();
+    if (m_precision != value_not_set)
+        ASSERT_NOT_REACHED();
+    if (m_mode == Mode::Character)
+        TODO();
 
-    if (hexadecimal)
+    int base;
+    if (m_mode == Mode::Binary)
+        TODO();
+    else if (m_mode == Mode::Octal)
+        TODO();
+    else if (m_mode == Mode::Decimal || m_mode == Mode::Default)
+        base = 10;
+    else if (m_mode == Mode::Hexadecimal)
+        base = 16;
+    else
+        ASSERT_NOT_REACHED();
+
+    // FIXME: We really need one canonical print implementation that just takes a base.
+    (void)base;
+
+    char* bufptr;
+    if (m_mode == Mode::Hexadecimal)
         PrintfImplementation::print_hex([&](auto, char ch) { builder.append(ch); }, bufptr, value, false, false, false, m_zero_pad, field_width);
     else if (IsSame<typename MakeUnsigned<T>::Type, T>::value)
         PrintfImplementation::print_u64([&](auto, char ch) { builder.append(ch); }, bufptr, value, false, m_zero_pad, field_width);
