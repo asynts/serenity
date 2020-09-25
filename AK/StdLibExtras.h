@@ -49,11 +49,21 @@ inline constexpr T min(const T& a, const T& b)
 {
     return b < a ? b : a;
 }
+template<typename T, typename... Parameters>
+inline constexpr T min(const T& a, const Parameters&... remaining)
+{
+    return min(a, min(remaining...));
+}
 
 template<typename T>
 inline constexpr T max(const T& a, const T& b)
 {
     return a < b ? b : a;
+}
+template<typename T, typename... Parameters>
+inline constexpr T max(const T& a, const Parameters&... remaining)
+{
+    return max(a, max(remaining...));
 }
 
 template<typename T>
