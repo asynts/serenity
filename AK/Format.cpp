@@ -213,7 +213,7 @@ void StandardFormatter::parse(StringView specifier)
         m_mode = Mode::Decimal;
     else if (lexer.consume_specific('o'))
         m_mode = Mode::Octal;
-    else if (lexer.consume_specific('h'))
+    else if (lexer.consume_specific('x'))
         m_mode = Mode::Hexadecimal;
     else if (lexer.consume_specific('c'))
         m_mode = Mode::Character;
@@ -221,6 +221,9 @@ void StandardFormatter::parse(StringView specifier)
         m_mode = Mode::String;
     else if (lexer.consume_specific('p'))
         m_mode = Mode::Pointer;
+
+    if (!lexer.is_eof())
+        dbg() << __PRETTY_FUNCTION__ << " did not consume '" << lexer.remaining() << "'";
 
     ASSERT(lexer.is_eof());
 }
