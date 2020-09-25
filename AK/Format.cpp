@@ -79,7 +79,7 @@ static bool parse_number(GenericLexer& lexer, size_t& value)
 
     bool consumed_at_least_one = false;
     while (!lexer.is_eof()) {
-        if (!StringView { "0123456789" }.contains(lexer.peek())) {
+        if (StringView { "0123456789" }.contains(lexer.peek())) {
             value *= 10;
             value += lexer.consume() - '0';
             consumed_at_least_one = true;
