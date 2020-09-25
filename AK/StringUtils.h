@@ -27,6 +27,7 @@
 
 #pragma once
 
+#include <AK/Array.h>
 #include <AK/Forward.h>
 
 namespace AK {
@@ -45,6 +46,44 @@ Optional<unsigned> convert_to_uint_from_hex(const StringView&);
 bool equals_ignoring_case(const StringView&, const StringView&);
 bool ends_with(const StringView& a, const StringView& b, CaseSensitivity);
 bool starts_with(const StringView&, const StringView&, CaseSensitivity);
+
+enum class Align {
+    Left,
+    Center,
+    Right,
+};
+
+enum class Sign {
+    Default,
+    Reserved,
+    Positive,
+    Negative,
+};
+
+size_t convert_unsigned_to_string(
+    u64 value,
+    StringBuilder& builder,
+    u8 base = 10,
+    bool upper_case = false,
+    bool zero_pad = false,
+    Align align = Align::Right,
+    size_t field_width = 0,
+    size_t align_width = 0,
+    char fill = ' ',
+    Sign sign = Sign::Default);
+
+size_t convert_signed_to_string(
+    i64 value,
+    StringBuilder& builder,
+    u8 base = 10,
+    bool upper_case = false,
+    bool zero_pad = false,
+    Align align = Align::Right,
+    size_t field_width = 0,
+    size_t align_width = 0,
+    char fill = ' ',
+    Sign sign = Sign::Default);
+
 }
 
 }
