@@ -78,7 +78,7 @@ static bool parse_number(GenericLexer& lexer, size_t& value)
     value = 0;
 
     bool consumed_at_least_one = false;
-    for (char ch = lexer.peek(); StringView { "0123456789" }.contains(ch); lexer.consume()) {
+    for (char ch = lexer.peek(); !lexer.is_eof() && StringView { "0123456789" }.contains(ch); lexer.consume()) {
         value *= 10;
         value += ch - '0';
         consumed_at_least_one = true;
@@ -167,7 +167,7 @@ void StandardFormatter::parse(StringView specifier)
     GenericLexer lexer { specifier };
 
     if (StringView { "<^>" }.contains(lexer.peek(1))) {
-        ASSERT(lexer.peek() != '{');
+        ASSERT(lexer.peek() != '{' && lexer.peek() != '}');
         m_fill = lexer.consume();
     }
 
