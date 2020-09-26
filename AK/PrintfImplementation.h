@@ -75,6 +75,8 @@ inline size_t convert_unsigned_to_string(u64 value, Array<u8, 128>& buffer, u8 b
         value /= base;
     }
 
+    // FIXME: Reverse list.
+
     return offset;
 }
 
@@ -132,7 +134,7 @@ inline size_t convert_unsigned_to_string(
     };
 
     const auto used_by_field = used_by_significant_digits + used_by_prefix;
-    const auto used_by_padding = max<ssize_t>(0, static_cast<ssize_t>(width) - static_cast<ssize_t>(used_by_field));
+    const auto used_by_padding = static_cast<size_t>(max<ssize_t>(0, static_cast<ssize_t>(width) - static_cast<ssize_t>(used_by_field)));
 
     if (align == Align::Left) {
         const auto used_by_right_padding = used_by_padding;
@@ -146,7 +148,7 @@ inline size_t convert_unsigned_to_string(
 
     if (align == Align::Center) {
         const auto used_by_left_padding = used_by_padding / 2;
-        const auto used_by_right_padding = ceil_div(used_by_padding, 2);
+        const auto used_by_right_padding = ceil_div<size_t, size_t>(used_by_padding, 2);
 
         put_padding(used_by_left_padding, fill);
         put_prefix();

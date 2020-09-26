@@ -32,15 +32,16 @@
 TEST_CASE(format_unsigned_with_internal_implementation)
 {
     Array<u8, 128> buffer;
+    size_t used = 0;
 
-    const auto used = PrintfImplementation::convert_unsigned_to_string(12341234, buffer, 10, false);
+    used = PrintfImplementation::convert_unsigned_to_string(12341234, buffer, 10, false);
     EXPECT_EQ(StringView { buffer.span().trim(used) }, "12341234");
 
-    const auto used = PrintfImplementation::convert_unsigned_to_string(12341234, buffer, 16, false);
+    used = PrintfImplementation::convert_unsigned_to_string(12341234, buffer, 16, false);
     EXPECT_EQ(StringView { buffer.span().trim(used) }, "bc4ff2");
 
-    const auto used = PrintfImplementation::convert_unsigned_to_string(12341234, buffer, 16, true);
-    EXPECT_EQ(StringView { buffer.span().trim(used) }, "bc4ff2");
+    used = PrintfImplementation::convert_unsigned_to_string(12341234, buffer, 16, true);
+    EXPECT_EQ(StringView { buffer.span().trim(used) }, "BC4FF2");
 }
 
 TEST_MAIN(Printf)
