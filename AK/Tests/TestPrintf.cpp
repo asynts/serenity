@@ -50,4 +50,25 @@ TEST_CASE(format_unsigned_with_internal_implementation)
     EXPECT_EQ(StringView { buffer.span().trim(used) }, "18446744073709551615");
 }
 
+TEST_CASE(format_unsigned_just_pass_through)
+{
+    StringBuilder builder;
+    size_t used = 0;
+
+    builder.clear();
+    used = PrintfImplementation::convert_unsigned_to_string(12341234, builder);
+    EXPECT_EQ(used, 8u);
+    EXPECT_EQ(builder.to_string(), "12341234");
+
+    builder.clear();
+    used = PrintfImplementation::convert_unsigned_to_string(12341234, builder, 16);
+    EXPECT_EQ(used, 6u);
+    EXPECT_EQ(builder.to_string(), "bc4ff2");
+
+    builder.clear();
+    used = PrintfImplementation::convert_unsigned_to_string(12341234, builder, 16, false, true);
+    EXPECT_EQ(used, 6u);
+    EXPECT_EQ(builder.to_string(), "BC4FF2");
+}
+
 TEST_MAIN(Printf)
