@@ -44,11 +44,10 @@ enum class Align {
     Right,
 };
 
-enum class Sign {
-    Default,
-    Reserved,
-    Positive,
-    Negative,
+enum class SignMode {
+    OnlyIfNeeded,
+    Always,
+    Reserved
 };
 
 // The worst case is that we have the largest 64-bit value formatted as binary number, this would take
@@ -86,22 +85,21 @@ inline size_t convert_unsigned_to_string(
     u64 value,
     StringBuilder& builder,
     u8 base = 10,
-    bool common_prefix = false,
+    bool prefix = false,
     bool upper_case = false,
     bool zero_pad = false,
     Align align = Align::Right,
     size_t width = 0,
     char fill = ' ',
-    Sign sign = Sign::Default)
+    SignMode sign_mode = SignMode::OnlyIfNeeded,
+    bool is_negative = false)
 {
     Array<u8, 128> buffer;
+
     const auto used_by_significant_digits = convert_unsigned_to_string(value, buffer, base, upper_case);
+    size_t used_by_prefix = sign_mode == SignMode::OnlyIfNeeded ? static_cast<size_t>(is_negative) : 1;
 
-    size_t used_by_prefix = 0;
-    if (sign != Sign::Default)
-        used_by_prefix += 1;
-
-    if (common_prefix) {
+    if (prefix) {
         if (base == 8)
             used_by_prefix += 1;
         else if (base == 16)
@@ -111,14 +109,14 @@ inline size_t convert_unsigned_to_string(
     }
 
     const auto put_prefix = [&]() {
-        if (sign == Sign::Positive)
-            builder.append('+');
-        else if (sign == Sign::Negative)
+        if (is_negative)
             builder.append('-');
-        else if (sign == Sign::Reserved)
+        else if (sign_mode == SignMode::Always)
+            builder.append('+');
+        else if (sign_mode == SignMode::Reserved)
             builder.append(' ');
 
-        if (common_prefix) {
+        if (prefix) {
             if (base == 2) {
                 if (upper_case)
                     builder.append("0B");
@@ -196,19 +194,14 @@ inline size_t convert_signed_to_string(
     Align align = Align::Right,
     size_t width = 0,
     char fill = ' ',
-    Sign sign = Sign::Default)
+    SignMode sign_mode = SignMode::OnlyIfNeeded)
 {
-    if (sign == Sign::Default)
-        sign = value < 0 ? Sign::Negative : Sign::Default;
-    else if (sign == Sign::Reserved)
-        sign = value < 0 ? Sign::Negative : Sign::Reserved;
-    else
-        ASSERT_NOT_REACHED();
+    bool is_negative = value < 0;
 
     if (value < 0)
         value = -value;
 
-    return convert_unsigned_to_string(static_cast<size_t>(value), builder, base, common_prefix, upper_case, zero_pad, align, width, fill, sign);
+    return convert_unsigned_to_string(static_cast<size_t>(value), builder, base, common_prefix, upper_case, zero_pad, align, width, fill, sign_mode, is_negative);
 }
 
 #ifdef __serenity__

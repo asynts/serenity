@@ -76,39 +76,39 @@ TEST_CASE(format_unsigned)
     StringBuilder builder;
 
     builder.clear();
-    PrintfImplementation::convert_unsigned_to_string(42, builder, 10, false, false, true, PrintfImplementation::Align::Right, 4, '*', PrintfImplementation::Sign::Default);
+    PrintfImplementation::convert_unsigned_to_string(42, builder, 10, false, false, true, PrintfImplementation::Align::Right, 4, '*', PrintfImplementation::SignMode::OnlyIfNeeded);
     EXPECT_EQ(builder.to_string(), "0042");
 
     builder.clear();
-    PrintfImplementation::convert_unsigned_to_string(42, builder, 10, false, false, true, PrintfImplementation::Align::Left, 4, '*', PrintfImplementation::Sign::Default);
+    PrintfImplementation::convert_unsigned_to_string(42, builder, 10, false, false, true, PrintfImplementation::Align::Left, 4, '*', PrintfImplementation::SignMode::OnlyIfNeeded);
     EXPECT_EQ(builder.to_string(), "42**");
 
     builder.clear();
-    PrintfImplementation::convert_unsigned_to_string(42, builder, 10, false, false, true, PrintfImplementation::Align::Center, 4, '*', PrintfImplementation::Sign::Default);
+    PrintfImplementation::convert_unsigned_to_string(42, builder, 10, false, false, true, PrintfImplementation::Align::Center, 4, '*', PrintfImplementation::SignMode::OnlyIfNeeded);
     EXPECT_EQ(builder.to_string(), "*42*");
 
     builder.clear();
-    PrintfImplementation::convert_unsigned_to_string(42, builder, 10, false, false, true, PrintfImplementation::Align::Center, 9, '*', PrintfImplementation::Sign::Default);
+    PrintfImplementation::convert_unsigned_to_string(42, builder, 10, false, false, true, PrintfImplementation::Align::Center, 9, '*', PrintfImplementation::SignMode::OnlyIfNeeded);
     EXPECT_EQ(builder.to_string(), "***42****");
 
     builder.clear();
-    PrintfImplementation::convert_unsigned_to_string(42, builder, 10, false, false, true, PrintfImplementation::Align::Center, 9, '*', PrintfImplementation::Sign::Reserved);
+    PrintfImplementation::convert_unsigned_to_string(42, builder, 10, false, false, true, PrintfImplementation::Align::Center, 9, '*', PrintfImplementation::SignMode::Reserved);
     EXPECT_EQ(builder.to_string(), "*** 42***");
 
     builder.clear();
-    PrintfImplementation::convert_unsigned_to_string(42, builder, 10, false, false, true, PrintfImplementation::Align::Left, 4, '*', PrintfImplementation::Sign::Negative);
+    PrintfImplementation::convert_unsigned_to_string(42, builder, 10, false, false, true, PrintfImplementation::Align::Left, 4, '*', PrintfImplementation::SignMode::Always, true);
     EXPECT_EQ(builder.to_string(), "-42*");
 
     builder.clear();
-    PrintfImplementation::convert_unsigned_to_string(42, builder, 10, false, false, true, PrintfImplementation::Align::Center, 4, '*', PrintfImplementation::Sign::Negative);
+    PrintfImplementation::convert_unsigned_to_string(42, builder, 10, false, false, true, PrintfImplementation::Align::Center, 4, '*', PrintfImplementation::SignMode::Reserved, true);
     EXPECT_EQ(builder.to_string(), "-42*");
 
     builder.clear();
-    PrintfImplementation::convert_unsigned_to_string(42, builder, 10, false, false, true, PrintfImplementation::Align::Right, 4, '*', PrintfImplementation::Sign::Negative);
+    PrintfImplementation::convert_unsigned_to_string(42, builder, 10, false, false, true, PrintfImplementation::Align::Right, 4, '*', PrintfImplementation::SignMode::OnlyIfNeeded, true);
     EXPECT_EQ(builder.to_string(), "-042");
 
     builder.clear();
-    PrintfImplementation::convert_unsigned_to_string(32, builder, 16, true, false, true, PrintfImplementation::Align::Right, 8, '*', PrintfImplementation::Sign::Negative);
+    PrintfImplementation::convert_unsigned_to_string(32, builder, 16, true, false, true, PrintfImplementation::Align::Right, 8, '*', PrintfImplementation::SignMode::OnlyIfNeeded, true);
     EXPECT_EQ(builder.to_string(), "-0x00020");
 }
 
@@ -117,7 +117,7 @@ TEST_CASE(format_signed)
     StringBuilder builder;
 
     builder.clear();
-    PrintfImplementation::convert_signed_to_string(42, builder, 10, false, false, false, PrintfImplementation::Align::Right, 8, '/', PrintfImplementation::Sign::Default);
+    PrintfImplementation::convert_signed_to_string(42, builder, 10, false, false, false, PrintfImplementation::Align::Right, 8, '/', PrintfImplementation::SignMode::OnlyIfNeeded);
     EXPECT_EQ(builder.to_string(), "//////42");
 }
 
