@@ -37,6 +37,131 @@ namespace PrintfImplementation {
 static constexpr const char* printf_hex_digits_lower = "0123456789abcdef";
 static constexpr const char* printf_hex_digits_upper = "0123456789ABCDEF";
 
+enum class Align {
+    Left,
+    Center,
+    Right,
+};
+
+enum class Sign {
+    Default,
+    Reserved,
+    Positive,
+    Negative,
+};
+
+// The worst case is that we have the largest 64-bit value formatted as binary number, this would take
+// 65 bytes. Choosing a larger power of two won't hurt and is a bit of mitigation against out-of-bounds accesses.
+size_t convert_unsigned_to_string(u64 value, Array<u8, 128>& buffer, u8 base, bool upper_case)
+{
+    ASSERT(base >= 2 && base <= 16);
+
+    static constexpr const char* lowercase_lookup = "0123456789abcdef";
+    static constexpr const char* uppercase_lookup = "0123456789ABCDEF";
+
+    if (value == 0) {
+        buffer[0] = '0';
+        return 1;
+    }
+
+    size_t offset = 0;
+    while (value > 0) {
+        if (upper_case)
+            buffer[offset++] = uppercase_lookup[value % base];
+        else
+            buffer[offset++] = lowercase_lookup[value % base];
+
+        value /= base;
+    }
+
+    return offset;
+}
+
+size_t convert_unsigned_to_string(
+    u64 value,
+    StringBuilder& builder,
+    u8 base = 10,
+    bool upper_case = false,
+    bool zero_pad = false,
+    Align align = Align::Right,
+    size_t width = 0,
+    char fill = ' ',
+    Sign sign = Sign::Default)
+{
+    Array<u8, 128> buffer;
+    const auto used_by_significant_digits = convert_unsigned_to_string(value, buffer, base, upper_case);
+
+    const auto put_sign = [&]() {
+        if (sign == Sign::Positive)
+            builder.append('+');
+        else if (sign == Sign::Negative)
+            builder.append('-');
+        else if (sign == Sign::Reserved)
+            builder.append(' ');
+    };
+    const auto put_padding = [&](size_t amount, char fill) {
+        for (size_t i = 0; i < amount; ++i)
+            builder.append(fill);
+    };
+    const auto put_digits = [&]() {
+        builder.append(StringView { buffer.span().trim(used_by_significant_digits) });
+    };
+
+    if (align == Align::Left) {
+        const auto used_by_field = sign == Sign::Default ? used_by_significant_digits : used_by_significant_digits + 1;
+        const auto used_by_right_padding = max<ssize_t>(0, static_cast<ssize_t>(width) - used_by_field);
+
+        put_sign();
+        put_digits();
+        put_padding(used_by_right_padding, fill);
+
+        return used_by_field + used_by_right_padding;
+    }
+
+    if (align == Align::Center) {
+        const auto used_by_field = sign == Sign::Default ? used_by_significant_digits : used_by_significant_digits + 1;
+        const auto used_by_left_padding = max<ssize_t>(0, static_cast<ssize_t>(width) - used_by_field) / 2;
+        const auto used_by_right_padding = ceil_div(max<ssize_t>(0, static_cast<ssize_t>(width) - used_by_field), 2);
+
+        put_padding(used_by_left_padding, fill);
+        put_sign();
+        put_digits();
+        put_padding(used_by_right_padding, fill);
+
+        return used_by_left_padding + used_by_field + used_by_right_padding;
+    }
+
+    if (align == Align::Right) {
+        const auto used_by_field = sign == Sign::Default ? used_by_significant_digits : used_by_significant_digits + 1;
+        const auto used_by_left_padding = max<ssize_t>(0, static_cast<ssize_t>(width) - used_by_field);
+
+        if (zero_pad) {
+            put_sign();
+            put_padding(used_by_left_padding, '0');
+            put_digits();
+        } else {
+            put_padding(used_by_left_padding, fill);
+            put_sign();
+            put_digits();
+        }
+
+        return used_by_field + used_by_left_padding;
+    }
+
+    ASSERT_NOT_REACHED();
+}
+
+size_t convert_signed_to_string(
+    i64 value,
+    StringBuilder& builder,
+    u8 base = 10,
+    bool upper_case = false,
+    bool zero_pad = false,
+    Align align = Align::Right,
+    size_t width = 0,
+    char fill = ' ',
+    Sign sign = Sign::Default);
+
 #ifdef __serenity__
 extern "C" size_t strlen(const char*);
 #else
