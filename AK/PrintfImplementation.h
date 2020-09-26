@@ -55,7 +55,7 @@ enum class Sign {
 // 65 bytes. Choosing a larger power of two won't hurt and is a bit of mitigation against out-of-bounds accesses.
 inline size_t convert_unsigned_to_string(u64 value, Array<u8, 128>& buffer, u8 base, bool upper_case)
 {
-    ASSERT(base == 2 || base == 10 || base == 16);
+    ASSERT(base >= 2 && base <= 16);
 
     static constexpr const char* lowercase_lookup = "0123456789abcdef";
     static constexpr const char* uppercase_lookup = "0123456789ABCDEF";
@@ -94,24 +94,38 @@ inline size_t convert_unsigned_to_string(
     char fill = ' ',
     Sign sign = Sign::Default)
 {
-    ASSERT(base == 2 || base == 10 || base == 16);
-
     Array<u8, 128> buffer;
     const auto used_by_significant_digits = convert_unsigned_to_string(value, buffer, base, upper_case);
 
     size_t used_by_prefix = 0;
     if (sign != Sign::Default)
         used_by_prefix += 1;
-    if (common_prefix && base != 10)
-        used_by_prefix += 2;
+
+    if (common_prefix) {
+        if (base == 8)
+            used_by_prefix += 1;
+        else if (base == 16)
+            used_by_prefix += 2;
+        else if (base == 2)
+            used_by_prefix += 2;
+    }
 
     const auto put_prefix = [&]() {
+        if (sign == Sign::Positive)
+            builder.append('+');
+        else if (sign == Sign::Negative)
+            builder.append('-');
+        else if (sign == Sign::Reserved)
+            builder.append(' ');
+
         if (common_prefix) {
             if (base == 2) {
                 if (upper_case)
                     builder.append("0B");
                 else
                     builder.append("0b");
+            } else if (base == 8) {
+                builder.append("0");
             } else if (base == 16) {
                 if (upper_case)
                     builder.append("0X");
@@ -119,13 +133,6 @@ inline size_t convert_unsigned_to_string(
                     builder.append("0x");
             }
         }
-
-        if (sign == Sign::Positive)
-            builder.append('+');
-        else if (sign == Sign::Negative)
-            builder.append('-');
-        else if (sign == Sign::Reserved)
-            builder.append(' ');
     };
     const auto put_padding = [&](size_t amount, char fill) {
         for (size_t i = 0; i < amount; ++i)
@@ -191,8 +198,6 @@ inline size_t convert_signed_to_string(
     char fill = ' ',
     Sign sign = Sign::Default)
 {
-    ASSERT(base == 2 || base == 10 || base == 16);
-
     if (sign == Sign::Default)
         sign = value < 0 ? Sign::Negative : Sign::Default;
     else if (sign == Sign::Reserved)

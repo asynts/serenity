@@ -107,11 +107,9 @@ TEST_CASE(format_unsigned)
     PrintfImplementation::convert_unsigned_to_string(42, builder, 10, false, false, true, PrintfImplementation::Align::Right, 4, '*', PrintfImplementation::Sign::Negative);
     EXPECT_EQ(builder.to_string(), "-042");
 
-    /*
     builder.clear();
     PrintfImplementation::convert_unsigned_to_string(32, builder, 16, true, false, true, PrintfImplementation::Align::Right, 8, '*', PrintfImplementation::Sign::Negative);
-    EXPECT_EQ(builder.to_string(), "***-0x20");
-    */
+    EXPECT_EQ(builder.to_string(), "-0x00020");
 }
 
 TEST_CASE(format_signed)
