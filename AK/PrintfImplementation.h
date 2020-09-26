@@ -65,19 +65,21 @@ inline size_t convert_unsigned_to_string(u64 value, Array<u8, 128>& buffer, u8 b
         return 1;
     }
 
-    size_t offset = 0;
+    size_t used = 0;
     while (value > 0) {
         if (upper_case)
-            buffer[offset++] = uppercase_lookup[value % base];
+            buffer[used++] = uppercase_lookup[value % base];
         else
-            buffer[offset++] = lowercase_lookup[value % base];
+            buffer[used++] = lowercase_lookup[value % base];
 
         value /= base;
     }
 
-    // FIXME: Reverse list.
+    // Reverse the list; I came up with this logic in like three seconds so it's probably wrong in some edge case.
+    for (size_t i = 0; i < used / 2; ++i)
+        swap(buffer[i], buffer[used - i - 1]);
 
-    return offset;
+    return used;
 }
 
 inline size_t convert_unsigned_to_string(
