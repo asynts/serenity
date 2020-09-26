@@ -49,20 +49,10 @@ constexpr T min(const T& a, const T& b)
 {
     return b < a ? b : a;
 }
-template<typename T, typename... Types>
-constexpr T min(const T& a, const Types&... b)
-{
-    return min(a, min(b...));
-}
 template<typename T>
 constexpr T max(const T& a, const T& b)
 {
     return a < b ? b : a;
-}
-template<typename T, typename... Types>
-constexpr T max(const T& a, const Types&... b)
-{
-    return max(a, max(b...));
 }
 
 template<typename T>
