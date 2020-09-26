@@ -40,12 +40,29 @@ struct Formatter;
 
 struct TypeErasedParameter {
     const void* value;
-    void (*formatter)(StringBuilder& builder, const void* value, StringView specifier, Span<const TypeErasedParameter> parameters);
+
+    union {
+        FlatPtr formatter_address;
+        void (*formatter)(StringBuilder& builder, const void* value, StringView specifier, Span<const TypeErasedParameter> parameters);
+    };
 };
 
 } // namespace AK
 
 namespace AK::Detail::Format {
+
+// We are erasing the types when we pass parameters to 'vformat' however, we still need
+// to know if we have an unsigned integer type because we use this for replacement fields.
+//
+// Thus, we use special addresses to encode the types in these cases. All other addresses
+// are considered function pointers.
+
+#define ENUMERATE_BUILTIN_FORMATTERS()                \
+    __ENUMERATE_BUILTIN_FORMATTERS(unsigned char, 0)  \
+    __ENUMERATE_BUILTIN_FORMATTERS(unsigned short, 1) \
+    __ENUMERATE_BUILTIN_FORMATTERS(unsigned int, 2)   \
+    __ENUMERATE_BUILTIN_FORMATTERS(unsigned long, 3)  \
+    __ENUMERATE_BUILTIN_FORMATTERS(unsigned long long, 4)
 
 template<typename T>
 void format_value(StringBuilder& builder, const void* value, StringView specifier, AK::Span<const TypeErasedParameter> parameters)
@@ -55,6 +72,24 @@ void format_value(StringBuilder& builder, const void* value, StringView specifie
     formatter.parse(specifier);
     formatter.format(builder, *static_cast<const T*>(value), parameters);
 }
+template<typename T>
+constexpr FlatPtr formatter_address_for_type()
+{
+    // clang-format off
+    if constexpr (false)
+        ;
+#define __ENUMERATE_BUILTIN_FORMATTERS(type, address) \
+    else if constexpr (IsSame<T, type>::value)        \
+        return address;
+    ENUMERATE_BUILTIN_FORMATTERS()
+#undef __ENUMERATE_BUILTIN_FORMATTERS
+    // clang-format on
+
+    return static_cast<FlatPtr>(format_value<T>);
+}
+
+static constexpr size_t value_not_set = 0;
+static constexpr size_t value_from_arg = NumericLimits<size_t>::max() - max_format_arguments;
 
 } // namespace AK::Detail::Format
 
@@ -91,17 +126,14 @@ struct StandardFormatter {
         Pointer,
     };
 
-    static constexpr size_t value_not_set = 0;
-    static constexpr size_t value_from_arg = NumericLimits<size_t>::max() - max_format_arguments;
-
     Align m_align = Align::Default;
     Sign m_sign = Sign::NegativeOnly;
     Mode m_mode = Mode::Default;
     bool m_alternative_form = false;
     char m_fill = ' ';
     bool m_zero_pad = false;
-    size_t m_width = value_not_set;
-    size_t m_precision = value_not_set;
+    size_t m_width = Detail::Format::value_not_set;
+    size_t m_precision = Detail::Format::value_not_set;
 
     void parse(StringView specifier);
 };
@@ -132,7 +164,7 @@ template<typename... Parameters>
 Array<TypeErasedParameter, sizeof...(Parameters)> make_type_erased_parameters(const Parameters&... parameters)
 {
     static_assert(sizeof...(Parameters) <= max_format_arguments);
-    return { TypeErasedParameter { &parameters, Detail::Format::format_value<Parameters> }... };
+    return { TypeErasedParameter { &parameters, Detail::Format::formatter_address_for_type<Parameters>() }... };
 }
 
 void vformat(StringBuilder& builder, StringView fmtstr, Span<const TypeErasedParameter>, size_t argument_index = 0);

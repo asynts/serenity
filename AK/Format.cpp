@@ -30,6 +30,8 @@
 #include <AK/String.h>
 #include <AK/StringBuilder.h>
 
+using namespace AK::Detail::Format;
+
 namespace {
 
 struct FormatSpecifier {
@@ -121,6 +123,27 @@ static bool parse_nested_replacement_field(GenericLexer& lexer, size_t& index)
     return true;
 }
 
+static size_t value_from_value_or_replacement_field(size_t value, AK::Span<const AK::TypeErasedParameter> parameters)
+{
+    if (value >= value_from_arg) {
+        const auto parameter = parameters.at(value - value_from_arg);
+
+        // clang-format off
+        if (false)
+            ;
+#define __ENUMERATE_BUILTIN_FORMATTERS(type, address)                \
+        else if (parameter.formatter_address == address)             \
+            value = *reinterpret_cast<const type*>(parameter.value);
+        ENUMERATE_BUILTIN_FORMATTERS()
+#undef __ENUMERATE_BUILTIN_FORMATTERS
+        else
+            ASSERT_NOT_REACHED();
+        // clang-format on
+    }
+
+    return value;
+}
+
 } // namespace
 
 namespace AK {
@@ -155,7 +178,20 @@ void vformat(StringBuilder& builder, StringView fmtstr, AK::Span<const TypeErase
         ASSERT_NOT_REACHED();
 
     auto& parameter = parameters[specifier.index];
-    parameter.formatter(builder, parameter.value, specifier.flags, parameters);
+
+    auto formatter = parameter.formatter;
+
+    // clang-format off
+    if (false)
+        ;
+#define __ENUMERATE_BUILTIN_FORMATTERS(type, address) \
+    else if (parameter.formatter_address == address)  \
+        formatter = format_value<type>;
+    ENUMERATE_BUILTIN_FORMATTERS()
+#undef __ENUMERATE_BUILTIN_FORMATTERS
+    // clang-format on
+
+    formatter(builder, parameter.value, specifier.flags, parameters);
 
     vformat(builder, fmtstr.substring_view(closing + 1), parameters, argument_index);
 }
@@ -280,14 +316,7 @@ void Formatter<T, typename EnableIf<IsIntegral<T>::value>::Type>::format(StringB
         ASSERT_NOT_REACHED();
     }
 
-    size_t width = m_width;
-    if (m_width >= value_from_arg) {
-        const auto parameter = parameters.at(m_width - value_from_arg);
-
-        // FIXME: Totally unsave cast. We should store the type in TypeErasedParameter. For compactness it could be smart to
-        //        find a few addresses that can not be valid function pointers and encode the type information there?
-        width = *reinterpret_cast<const size_t*>(parameter.value);
-    }
+    const auto width = value_from_value_or_replacement_field(m_width, parameters);
 
     PrintfImplementation::Align align;
     if (m_align == Align::Left)
