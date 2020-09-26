@@ -71,21 +71,6 @@ TEST_CASE(format_unsigned_just_pass_through)
     EXPECT_EQ(builder.to_string(), "BC4FF2");
 }
 
-/*
-inline size_t convert_unsigned_to_string(
-    u64 value,
-    StringBuilder& builder,
-    u8 base = 10,
-    bool common_prefix = false,
-    bool upper_case = false,
-    bool zero_pad = false,
-    Align align = Align::Right,
-    size_t width = 0,
-    char fill = ' ',
-    Sign sign = Sign::Default)
-
-*/
-
 TEST_CASE(format_unsigned)
 {
     StringBuilder builder;
@@ -121,6 +106,21 @@ TEST_CASE(format_unsigned)
     builder.clear();
     PrintfImplementation::convert_unsigned_to_string(42, builder, 10, false, false, true, PrintfImplementation::Align::Right, 4, '*', PrintfImplementation::Sign::Negative);
     EXPECT_EQ(builder.to_string(), "-042");
+
+    /*
+    builder.clear();
+    PrintfImplementation::convert_unsigned_to_string(32, builder, 16, true, false, true, PrintfImplementation::Align::Right, 8, '*', PrintfImplementation::Sign::Negative);
+    EXPECT_EQ(builder.to_string(), "***-0x20");
+    */
+}
+
+TEST_CASE(format_signed)
+{
+    StringBuilder builder;
+
+    builder.clear();
+    PrintfImplementation::convert_signed_to_string(42, builder, 10, false, false, false, PrintfImplementation::Align::Right, 8, '/', PrintfImplementation::Sign::Default);
+    EXPECT_EQ(builder.to_string(), "//////42");
 }
 
 TEST_MAIN(Printf)
