@@ -265,7 +265,7 @@ void Formatter<T, typename EnableIf<IsIntegral<T>::value>::Type>::format(StringB
     if (m_mode == Mode::Binary) {
         base = 2;
     } else if (m_mode == Mode::BinaryUppercase) {
-        base = 8;
+        base = 2;
         upper_case = true;
     } else if (m_mode == Mode::Octal) {
         base = 8;
