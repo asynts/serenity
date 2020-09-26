@@ -42,6 +42,12 @@ TEST_CASE(format_unsigned_with_internal_implementation)
 
     used = PrintfImplementation::convert_unsigned_to_string(12341234, buffer, 16, true);
     EXPECT_EQ(StringView { buffer.span().trim(used) }, "BC4FF2");
+
+    used = PrintfImplementation::convert_unsigned_to_string(0, buffer, 10, true);
+    EXPECT_EQ(StringView { buffer.span().trim(used) }, "0");
+
+    used = PrintfImplementation::convert_unsigned_to_string(NumericLimits<u64>::max(), buffer, 10, true);
+    EXPECT_EQ(StringView { buffer.span().trim(used) }, "18446744073709551615");
 }
 
 TEST_MAIN(Printf)
