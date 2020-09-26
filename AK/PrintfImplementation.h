@@ -54,7 +54,7 @@ enum class Sign {
 // 65 bytes. Choosing a larger power of two won't hurt and is a bit of mitigation against out-of-bounds accesses.
 size_t convert_unsigned_to_string(u64 value, Array<u8, 128>& buffer, u8 base, bool upper_case)
 {
-    ASSERT(base >= 2 && base <= 16);
+    ASSERT(base == 2 || base == 10 || base == 16);
 
     static constexpr const char* lowercase_lookup = "0123456789abcdef";
     static constexpr const char* uppercase_lookup = "0123456789ABCDEF";
@@ -81,6 +81,7 @@ size_t convert_unsigned_to_string(
     u64 value,
     StringBuilder& builder,
     u8 base = 10,
+    bool common_prefix = false,
     bool upper_case = false,
     bool zero_pad = false,
     Align align = Align::Right,
@@ -88,10 +89,32 @@ size_t convert_unsigned_to_string(
     char fill = ' ',
     Sign sign = Sign::Default)
 {
+    ASSERT(base == 2 || base == 10 || base == 16);
+
     Array<u8, 128> buffer;
     const auto used_by_significant_digits = convert_unsigned_to_string(value, buffer, base, upper_case);
 
-    const auto put_sign = [&]() {
+    size_t used_by_prefix = 0;
+    if (sign != Sign::Default)
+        used_by_prefix += 1;
+    if (common_prefix && base != 10)
+        used_by_prefix += 2;
+
+    const auto put_prefix = [&]() {
+        if (common_prefix) {
+            if (base == 2) {
+                if (upper_case)
+                    builder.append("0B");
+                else
+                    builder.append("0b");
+            } else if (base == 16) {
+                if (upper_case)
+                    builder.append("0X");
+                else
+                    builder.append("0x");
+            }
+        }
+
         if (sign == Sign::Positive)
             builder.append('+');
         else if (sign == Sign::Negative)
@@ -107,11 +130,12 @@ size_t convert_unsigned_to_string(
         builder.append(StringView { buffer.span().trim(used_by_significant_digits) });
     };
 
+    const auto used_by_field = used_by_significant_digits + used_by_prefix;
+
     if (align == Align::Left) {
-        const auto used_by_field = sign == Sign::Default ? used_by_significant_digits : used_by_significant_digits + 1;
         const auto used_by_right_padding = max<ssize_t>(0, static_cast<ssize_t>(width) - used_by_field);
 
-        put_sign();
+        put_prefix();
         put_digits();
         put_padding(used_by_right_padding, fill);
 
@@ -119,12 +143,11 @@ size_t convert_unsigned_to_string(
     }
 
     if (align == Align::Center) {
-        const auto used_by_field = sign == Sign::Default ? used_by_significant_digits : used_by_significant_digits + 1;
         const auto used_by_left_padding = max<ssize_t>(0, static_cast<ssize_t>(width) - used_by_field) / 2;
         const auto used_by_right_padding = ceil_div(max<ssize_t>(0, static_cast<ssize_t>(width) - used_by_field), 2);
 
         put_padding(used_by_left_padding, fill);
-        put_sign();
+        put_prefix();
         put_digits();
         put_padding(used_by_right_padding, fill);
 
@@ -132,16 +155,15 @@ size_t convert_unsigned_to_string(
     }
 
     if (align == Align::Right) {
-        const auto used_by_field = sign == Sign::Default ? used_by_significant_digits : used_by_significant_digits + 1;
         const auto used_by_left_padding = max<ssize_t>(0, static_cast<ssize_t>(width) - used_by_field);
 
         if (zero_pad) {
-            put_sign();
+            put_prefix();
             put_padding(used_by_left_padding, '0');
             put_digits();
         } else {
             put_padding(used_by_left_padding, fill);
-            put_sign();
+            put_prefix();
             put_digits();
         }
 
@@ -155,6 +177,7 @@ size_t convert_signed_to_string(
     i64 value,
     StringBuilder& builder,
     u8 base = 10,
+    bool common_prefix = false,
     bool upper_case = false,
     bool zero_pad = false,
     Align align = Align::Right,
@@ -162,6 +185,8 @@ size_t convert_signed_to_string(
     char fill = ' ',
     Sign sign = Sign::Default)
 {
+    ASSERT(base == 2 || base == 10 || base == 16);
+
     if (sign == Sign::Default)
         sign = value < 0 ? Sign::Negative : Sign::Default;
     else if (sign == Sign::Reserved)
@@ -172,7 +197,7 @@ size_t convert_signed_to_string(
     if (value < 0)
         value = -value;
 
-    return convert_unsigned_to_string(static_cast<size_t>(value), builder, base, upper_case, zero_pad, align, width, fill, sign);
+    return convert_unsigned_to_string(static_cast<size_t>(value), builder, base, common_prefix, upper_case, zero_pad, align, width, fill, sign);
 }
 
 #ifdef __serenity__
