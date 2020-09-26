@@ -132,9 +132,10 @@ inline size_t convert_unsigned_to_string(
     };
 
     const auto used_by_field = used_by_significant_digits + used_by_prefix;
+    const auto used_by_padding = max<ssize_t>(0, static_cast<ssize_t>(width) - static_cast<ssize_t>(used_by_field));
 
     if (align == Align::Left) {
-        const auto used_by_right_padding = max<ssize_t>(0, static_cast<ssize_t>(width) - used_by_field);
+        const auto used_by_right_padding = used_by_padding;
 
         put_prefix();
         put_digits();
@@ -144,8 +145,8 @@ inline size_t convert_unsigned_to_string(
     }
 
     if (align == Align::Center) {
-        const auto used_by_left_padding = max<ssize_t>(0, static_cast<ssize_t>(width) - used_by_field) / 2;
-        const auto used_by_right_padding = ceil_div(max<ssize_t>(0, static_cast<ssize_t>(width) - used_by_field), 2);
+        const auto used_by_left_padding = used_by_padding / 2;
+        const auto used_by_right_padding = ceil_div(used_by_padding, 2);
 
         put_padding(used_by_left_padding, fill);
         put_prefix();
@@ -156,7 +157,7 @@ inline size_t convert_unsigned_to_string(
     }
 
     if (align == Align::Right) {
-        const auto used_by_left_padding = max<ssize_t>(0, static_cast<ssize_t>(width) - used_by_field);
+        const auto used_by_left_padding = used_by_padding;
 
         if (zero_pad) {
             put_prefix();
