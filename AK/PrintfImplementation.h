@@ -160,7 +160,20 @@ size_t convert_signed_to_string(
     Align align = Align::Right,
     size_t width = 0,
     char fill = ' ',
-    Sign sign = Sign::Default);
+    Sign sign = Sign::Default)
+{
+    if (sign == Sign::Default)
+        sign = value < 0 ? Sign::Negative : Sign::Default;
+    else if (sign == Sign::Reserved)
+        sign = value < 0 ? Sign::Negative : Sign::Reserved;
+    else
+        ASSERT_NOT_REACHED();
+
+    if (value < 0)
+        value = -value;
+
+    return convert_unsigned_to_string(static_cast<size_t>(value), builder, base, upper_case, zero_pad, align, width, fill, sign);
+}
 
 #ifdef __serenity__
 extern "C" size_t strlen(const char*);
