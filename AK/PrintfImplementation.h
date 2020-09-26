@@ -29,6 +29,7 @@
 #include <AK/Assertions.h>
 #include <AK/LogStream.h>
 #include <AK/StdLibExtras.h>
+#include <AK/StringBuilder.h>
 #include <AK/Types.h>
 #include <stdarg.h>
 
@@ -52,7 +53,7 @@ enum class Sign {
 
 // The worst case is that we have the largest 64-bit value formatted as binary number, this would take
 // 65 bytes. Choosing a larger power of two won't hurt and is a bit of mitigation against out-of-bounds accesses.
-size_t convert_unsigned_to_string(u64 value, Array<u8, 128>& buffer, u8 base, bool upper_case)
+inline size_t convert_unsigned_to_string(u64 value, Array<u8, 128>& buffer, u8 base, bool upper_case)
 {
     ASSERT(base == 2 || base == 10 || base == 16);
 
@@ -77,7 +78,7 @@ size_t convert_unsigned_to_string(u64 value, Array<u8, 128>& buffer, u8 base, bo
     return offset;
 }
 
-size_t convert_unsigned_to_string(
+inline size_t convert_unsigned_to_string(
     u64 value,
     StringBuilder& builder,
     u8 base = 10,
@@ -173,7 +174,7 @@ size_t convert_unsigned_to_string(
     ASSERT_NOT_REACHED();
 }
 
-size_t convert_signed_to_string(
+inline size_t convert_signed_to_string(
     i64 value,
     StringBuilder& builder,
     u8 base = 10,
