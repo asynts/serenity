@@ -119,11 +119,20 @@ public:
 
     bool consume_replacement_field(size_t& index)
     {
-        TODO();
+        if (!consume_specific('{'))
+            return false;
+
+        if (!consume_number(index))
+            return use_next_index;
+
+        if (!consume_specific('}'))
+            ASSERT_NOT_REACHED();
+
+        return true;
     }
 };
 
-static void write_escaped_literal(StringBuilder& builder, StringView literal)
+void write_escaped_literal(StringBuilder& builder, StringView literal)
 {
     for (size_t idx = 0; idx < literal.length(); ++idx) {
         builder.append(literal[idx]);
@@ -200,16 +209,24 @@ void StandardFormatter::parse(StringView flags)
     if (parser.consume_specific('0'))
         m_zero_pad = true;
 
-    if (size_t index = 0; parser.consume_replacement_field(index))
+    if (size_t index = 0; parser.consume_replacement_field(index)) {
+        if (index == use_next_index)
+            TODO();
+
         m_width = value_from_arg + index;
-    else if (size_t width = 0; parser.consume_number(width))
+    } else if (size_t width = 0; parser.consume_number(width)) {
         m_width = width;
+    }
 
     if (parser.consume_specific('.')) {
-        if (size_t index = 0; parser.consume_replacement_field(index))
+        if (size_t index = 0; parser.consume_replacement_field(index)) {
+            if (index == use_next_index)
+                TODO();
+
             m_precision = value_from_arg + index;
-        else if (size_t precision = 0; parser.consume_number(precision))
+        } else if (size_t precision = 0; parser.consume_number(precision)) {
             m_precision = precision;
+        }
     }
 
     if (parser.consume_specific('b'))
