@@ -106,17 +106,19 @@ public:
                     --level;
                     continue;
                 }
+
+                consume();
             }
 
             specifier.flags = m_input.substring_view(begin, tell() - begin - 1);
-            return true;
         } else {
             if (!consume_specific('}'))
                 ASSERT_NOT_REACHED();
 
             specifier.flags = "";
-            return true;
         }
+
+        return true;
     }
 
     bool consume_replacement_field(size_t& index)
