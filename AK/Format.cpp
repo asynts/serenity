@@ -59,6 +59,8 @@ public:
 
             if (next_is(is_any_of("{}")))
                 return m_input.substring_view(begin, tell() - begin);
+
+            consume();
         }
 
         return m_input.substring_view(begin);
