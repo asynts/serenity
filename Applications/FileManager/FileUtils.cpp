@@ -91,30 +91,25 @@ void delete_paths(const Vector<String>& paths, bool should_confirm, GUI::Window*
 
 int delete_directory(String directory, String& file_that_caused_error)
 {
-    Core::DirIterator iterator(directory, Core::DirIterator::SkipDots);
-    if (iterator.has_error()) {
-        file_that_caused_error = directory;
-        return -1;
-    }
-
-    while (iterator.has_next()) {
-        auto file_to_delete = String::format("%s/%s", directory.characters(), iterator.next_path().characters());
+    const auto retval = Core::iterate_directory(directory, Core::DirectoryIterationFlags::SkipDots | Core::DirectoryIterationFlags::FullPath, [&](auto file_to_delete) {
         struct stat st;
-
         if (lstat(file_to_delete.characters(), &st)) {
             file_that_caused_error = file_to_delete;
             return errno;
         }
 
         if (S_ISDIR(st.st_mode)) {
-            if (delete_directory(file_to_delete, file_to_delete)) {
-                file_that_caused_error = file_to_delete;
+            if (delete_directory(file_to_delete, file_that_caused_error))
                 return errno;
-            }
         } else if (unlink(file_to_delete.characters())) {
             file_that_caused_error = file_to_delete;
             return errno;
         }
+    });
+
+    if (retval) {
+        file_that_caused_error = directory;
+        return retval;
     }
 
     if (rmdir(directory.characters())) {

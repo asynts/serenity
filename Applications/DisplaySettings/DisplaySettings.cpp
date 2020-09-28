@@ -70,7 +70,10 @@ void DisplaySettingsWidget::create_resolution_list()
 
 void DisplaySettingsWidget::create_wallpaper_list()
 {
-    Core::iterate_directory("/res/wallpapers/", Core::DirectoryIterationFlags::SkipDots, [&](auto name) { m_wallpapers.append(name); });
+    Core::iterate_directory("/res/wallpapers/", Core::DirectoryIterationFlags::SkipDots, [&](auto name) {
+        m_wallpapers.append(name);
+        return IterationDecision::Continue;
+    });
 
     m_modes.append("simple");
     m_modes.append("tile");

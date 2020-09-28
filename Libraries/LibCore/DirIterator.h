@@ -41,6 +41,10 @@ bool operator&(DirectoryIterationFlags lhs, DirectoryIterationFlags rhs)
 {
     return static_cast<int>(lhs) & static_cast<int>(rhs);
 }
+DirectoryIterationFlags operator|(DirectoryIterationFlags lhs, DirectoryIterationFlags rhs)
+{
+    return static_cast<DirectoryIterationFlags>(static_cast<int>(lhs) | static_cast<int>(rhs));
+}
 
 int iterate_directory(String dirpath, DirectoryIterationFlags = DirectoryIterationFlags::Default, Function<IterationDecision(String)>);
 
