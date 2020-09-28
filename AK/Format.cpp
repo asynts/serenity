@@ -146,7 +146,7 @@ void write_escaped_literal(StringBuilder& builder, StringView literal)
     }
 }
 
-void vformat_impl(StringBuilder& builder, FormatStringParser& parser, Span<const AK::TypeErasedParameter> parameters, size_t argument_index = 0)
+void vformat_impl(StringBuilder& builder, FormatStringParser& parser, AK::FormatterContext& context)
 {
     const auto literal = parser.consume_literal();
     write_escaped_literal(builder, literal);
@@ -158,23 +158,23 @@ void vformat_impl(StringBuilder& builder, FormatStringParser& parser, Span<const
     }
 
     if (specifier.index == use_next_index)
-        specifier.index = argument_index++;
+        specifier.index = context.take_next_index();
 
-    ASSERT(specifier.index < parameters.size());
+    ASSERT(specifier.index < context.parameter_count());
 
-    auto& parameter = parameters[specifier.index];
-    parameter.formatter(builder, parameter.value, specifier.flags, parameters);
+    auto& parameter = context.parameter_at(specifier.index);
+    parameter.formatter(builder, parameter.value, context);
 
-    vformat_impl(builder, parser, parameters, argument_index);
+    vformat_impl(builder, parser, context);
 }
 
-size_t decode_value(size_t value, Span<const AK::TypeErasedParameter> parameters)
+size_t decode_value(size_t value, AK::FormatterContext& context)
 {
     if (value == AK::StandardFormatter::value_from_next_arg)
-        TODO();
+        value = AK::StandardFormatter::value_from_arg + context.take_next_index();
 
     if (value >= AK::StandardFormatter::value_from_arg) {
-        const auto parameter = parameters.at(value - AK::StandardFormatter::value_from_arg);
+        const auto parameter = context.parameter_at(value - AK::StandardFormatter::value_from_arg);
 
         Optional<i64> svalue;
         if (parameter.type == AK::TypeErasedParameter::Type::UInt8)
@@ -212,19 +212,21 @@ namespace AK {
 void vformat(StringBuilder& builder, StringView fmtstr, Span<const TypeErasedParameter> parameters)
 {
     FormatStringParser parser { fmtstr };
-    vformat_impl(builder, parser, parameters);
+    FormatterContext context { parameters };
+    vformat_impl(builder, parser, context);
 }
 void vformat(const LogStream& stream, StringView fmtstr, Span<const TypeErasedParameter> parameters)
 {
     StringBuilder builder;
     FormatStringParser parser { fmtstr };
-    vformat_impl(builder, parser, parameters);
+    FormatterContext context { parameters };
+    vformat_impl(builder, parser, context);
     stream << builder.to_string();
 }
 
-void StandardFormatter::parse(StringView flags)
+void StandardFormatter::parse(FormatterContext& context)
 {
-    FormatStringParser parser { flags };
+    FormatStringParser parser { context.flags() };
 
     if (StringView { "<^>" }.contains(parser.peek(1))) {
         ASSERT(!parser.next_is(is_any_of("{}")));
@@ -253,7 +255,7 @@ void StandardFormatter::parse(StringView flags)
 
     if (size_t index = 0; parser.consume_replacement_field(index)) {
         if (index == use_next_index)
-            TODO();
+            index = context.take_next_index();
 
         m_width = value_from_arg + index;
     } else if (size_t width = 0; parser.consume_number(width)) {
@@ -263,7 +265,7 @@ void StandardFormatter::parse(StringView flags)
     if (parser.consume_specific('.')) {
         if (size_t index = 0; parser.consume_replacement_field(index)) {
             if (index == use_next_index)
-                TODO();
+                index = context.take_next_index();
 
             m_precision = value_from_arg + index;
         } else if (size_t precision = 0; parser.consume_number(precision)) {
@@ -296,7 +298,7 @@ void StandardFormatter::parse(StringView flags)
     ASSERT(parser.is_eof());
 }
 
-void Formatter<StringView>::format(StringBuilder& builder, StringView value, Span<const TypeErasedParameter>)
+void Formatter<StringView>::format(StringBuilder& builder, StringView value, FormatterContext&)
 {
     if (m_align != Align::Default)
         TODO();
@@ -317,7 +319,7 @@ void Formatter<StringView>::format(StringBuilder& builder, StringView value, Spa
 }
 
 template<typename T>
-void Formatter<T, typename EnableIf<IsIntegral<T>::value>::Type>::format(StringBuilder& builder, T value, Span<const TypeErasedParameter> parameters)
+void Formatter<T, typename EnableIf<IsIntegral<T>::value>::Type>::format(StringBuilder& builder, T value, FormatterContext& context)
 {
     if (m_precision != value_not_set)
         ASSERT_NOT_REACHED();
@@ -344,7 +346,7 @@ void Formatter<T, typename EnableIf<IsIntegral<T>::value>::Type>::format(StringB
         ASSERT_NOT_REACHED();
     }
 
-    auto width = decode_value(m_width, parameters);
+    auto width = decode_value(m_width, context);
 
     PrintfImplementation::Align align;
     if (m_align == Align::Left)
