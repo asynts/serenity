@@ -109,7 +109,7 @@ void format_value(StringBuilder& builder, const void* value, FormatterContext& c
 {
     Formatter<T> formatter;
 
-    formatter.parse(context.flags());
+    formatter.parse(context);
     formatter.format(builder, *static_cast<const T*>(value), context);
 }
 
