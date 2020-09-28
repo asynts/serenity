@@ -162,6 +162,8 @@ void vformat_impl(StringBuilder& builder, FormatStringParser& parser, AK::Format
 
     ASSERT(specifier.index < context.parameter_count());
 
+    context.set_flags(specifier.flags);
+
     auto& parameter = context.parameter_at(specifier.index);
     parameter.formatter(builder, parameter.value, context);
 
