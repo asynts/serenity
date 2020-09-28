@@ -128,7 +128,7 @@ public:
             return false;
 
         if (!consume_number(index))
-            return use_next_index;
+            index = use_next_index;
 
         if (!consume_specific('}'))
             ASSERT_NOT_REACHED();
