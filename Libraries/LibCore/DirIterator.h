@@ -26,39 +26,23 @@
 
 #pragma once
 
+#include <AK/IterationDecision.h>
 #include <AK/String.h>
-#include <dirent.h>
-#include <string.h>
 
 namespace Core {
 
-class DirIterator {
-public:
-    enum Flags {
-        NoFlags = 0x0,
-        SkipDots = 0x1,
-        SkipParentAndBaseDir = 0x2,
-    };
-
-    DirIterator(const StringView& path, Flags = Flags::NoFlags);
-    ~DirIterator();
-
-    bool has_error() const { return m_error != 0; }
-    int error() const { return m_error; }
-    const char* error_string() const { return strerror(m_error); }
-    bool has_next();
-    String next_path();
-    String next_full_path();
-
-private:
-    DIR* m_dir = nullptr;
-    int m_error = 0;
-    String m_next;
-    String m_path;
-    int m_flags;
-
-    bool advance_next();
+enum class DirectoryIterationFlags {
+    Default = 0,
+    SkipDots = 1 << 0,
+    SkipParentAndBaseDir = 1 << 1,
+    FullPath = 1 << 2,
 };
+bool operator&(DirectoryIterationFlags lhs, DirectoryIterationFlags rhs)
+{
+    return static_cast<int>(lhs) & static_cast<int>(rhs);
+}
+
+int iterate_directory(String dirpath, DirectoryIterationFlags = DirectoryIterationFlags::Default, Function<IterationDecision(String)>);
 
 String find_executable_in_path(String filename);
 

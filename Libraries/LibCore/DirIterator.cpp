@@ -24,79 +24,41 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <AK/Vector.h>
+#include <AK/Function.h>
 #include <LibCore/DirIterator.h>
+#include <dirent.h>
 #include <errno.h>
 
 namespace Core {
 
-DirIterator::DirIterator(const StringView& path, Flags flags)
-    : m_path(path)
-    , m_flags(flags)
+int iterate_directory(String dirpath, DirectoryIterationFlags flags, Function<IterationDecision(String)> callback)
 {
-    m_dir = opendir(path.to_string().characters());
-    if (!m_dir) {
-        m_error = errno;
-    }
-}
+    auto* dir = opendir(dirpath.characters());
+    if (dir == nullptr)
+        return errno;
 
-DirIterator::~DirIterator()
-{
-    if (m_dir) {
-        closedir(m_dir);
-        m_dir = nullptr;
-    }
-}
-
-bool DirIterator::advance_next()
-{
-    if (!m_dir)
-        return false;
-
-    while (true) {
-        errno = 0;
-        auto* de = readdir(m_dir);
-        if (!de) {
-            m_error = errno;
-            m_next = String();
-            return false;
+    String path;
+    do {
+        const auto* entry = readdir(dir);
+        if (entry == nullptr) {
+            const auto error = errno;
+            closedir(dir);
+            return error;
         }
 
-        m_next = de->d_name;
-        if (m_next.is_null())
-            return false;
+        path = entry->d_name;
 
-        if (m_flags & Flags::SkipDots && m_next.starts_with('.'))
+        if (flags & DirectoryIterationFlags::SkipDots && path.starts_with('.'))
+            continue;
+        if (flags & DirectoryIterationFlags::SkipParentAndBaseDir && (path == "." || path == ".."))
             continue;
 
-        if (m_flags & Flags::SkipParentAndBaseDir && (m_next == "." || m_next == ".."))
-            continue;
+        if (flags & DirectoryIterationFlags::FullPath)
+            path = String::formatted("{}/{}", dirpath, path);
+    } while (callback(path) == IterationDecision::Continue);
 
-        return !m_next.is_empty();
-    }
-}
-
-bool DirIterator::has_next()
-{
-    if (!m_next.is_null())
-        return true;
-
-    return advance_next();
-}
-
-String DirIterator::next_path()
-{
-    if (m_next.is_null())
-        advance_next();
-
-    auto tmp = m_next;
-    m_next = String();
-    return tmp;
-}
-
-String DirIterator::next_full_path()
-{
-    return String::format("%s/%s", m_path.characters(), next_path().characters());
+    closedir(dir);
+    return 0;
 }
 
 String find_executable_in_path(String filename)

@@ -70,13 +70,7 @@ void DisplaySettingsWidget::create_resolution_list()
 
 void DisplaySettingsWidget::create_wallpaper_list()
 {
-    Core::DirIterator iterator("/res/wallpapers/", Core::DirIterator::Flags::SkipDots);
-
-    m_wallpapers.append("Use background color");
-
-    while (iterator.has_next()) {
-        m_wallpapers.append(iterator.next_path());
-    }
+    Core::iterate_directory("/res/wallpapers/", Core::DirectoryIterationFlags::SkipDots, [&](auto name) { m_wallpapers.append(name); });
 
     m_modes.append("simple");
     m_modes.append("tile");
