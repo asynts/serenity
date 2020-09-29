@@ -292,6 +292,21 @@ using AK::TestSuite;
         TestSuite::release();                                       \
     }
 
+template<typename T, typename U>
+void expect_equal(const T& lhs, const U& rhs, const char* filename = __builtin_FILE(), size_t line = __builtin_LINE())
+{
+    // FIXME: Add functionalitly to detect if a formatter is avaliable.
+
+    if (lhs != rhs)
+        warnf("\033[31;1mFAIL\033[0m: {}:{}: expect_equal failed.", filename, line);
+}
+
+void expect(bool condition, const char* filename = __builtin_FILE(), size_t line = __builtin_LINE())
+{
+    if (!condition)
+        warnf("\033[31;1mFAIL\033[0m: {}:{}: expect failed.", filename, line);
+}
+
 #define EXPECT_EQ(a, b)                                                                                                                              \
     do {                                                                                                                                             \
         auto lhs = (a);                                                                                                                              \
