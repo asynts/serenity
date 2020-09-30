@@ -318,6 +318,11 @@ void VirtualConsole::set_window_progress(int, int)
     // Do nothing.
 }
 
+void VirtualConsole::set_active_pid(pid_t)
+{
+    // Do nothing.
+}
+
 void VirtualConsole::terminal_did_resize(u16 columns, u16 rows)
 {
     ASSERT(columns == 80);

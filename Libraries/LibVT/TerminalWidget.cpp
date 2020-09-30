@@ -93,6 +93,7 @@ TerminalWidget::TerminalWidget(int ptm_fd, bool automatic_size_policy, RefPtr<Co
     : m_terminal(*this)
     , m_automatic_size_policy(automatic_size_policy)
     , m_config(move(config))
+    , m_active_pid(getpid())
 {
     set_override_cursor(Gfx::StandardCursor::IBeam);
 
@@ -379,8 +380,22 @@ void TerminalWidget::set_window_title(const StringView& title)
         return;
     }
 
+    m_title = title;
+
+    String full_title;
+    if (m_active_pid.has_value())
+        full_title = String::formatted("{} (PID {})", title, m_active_pid.value());
+    else
+        full_title = title;
+
     if (on_title_change)
-        on_title_change(title);
+        on_title_change(full_title);
+}
+
+void TerminalWidget::set_active_pid(pid_t pid)
+{
+    m_active_pid = pid;
+    set_window_title(m_title);
 }
 
 void TerminalWidget::invalidate_cursor()

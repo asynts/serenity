@@ -661,6 +661,9 @@ RefPtr<Job> Shell::run_command(const AST::Command& command)
 
         m_is_subshell = true;
         m_pid = getpid();
+
+        // FIXME: TerminalClient::set_active_pid
+
         Core::EventLoop::notify_forked(Core::EventLoop::ForkEvent::Child);
         jobs.clear();
 
@@ -1365,7 +1368,9 @@ Shell::Shell()
 {
     uid = getuid();
     tcsetpgrp(0, getpgrp());
+
     m_pid = getpid();
+    // FIXME: TerminalClient::set_active_pid
 
     push_frame().leak_frame();
 

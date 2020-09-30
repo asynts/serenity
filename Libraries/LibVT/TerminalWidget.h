@@ -26,6 +26,7 @@
 
 #pragma once
 
+#include <AK/Optional.h>
 #include <AK/String.h>
 #include <LibCore/ConfigFile.h>
 #include <LibCore/ElapsedTimer.h>
@@ -113,6 +114,7 @@ private:
     virtual void beep() override;
     virtual void set_window_title(const StringView&) override;
     virtual void set_window_progress(int value, int max) override;
+    virtual void set_active_pid(pid_t) override;
     virtual void terminal_did_resize(u16 columns, u16 rows) override;
     virtual void terminal_history_changed() override;
     virtual void emit(const u8*, size_t) override;
@@ -144,6 +146,9 @@ private:
 
     // Snapshot of m_hovered_href when opening a context menu for a hyperlink.
     String m_context_menu_href;
+
+    String m_title { "Terminal" };
+    Optional<pid_t> m_active_pid;
 
     bool m_should_beep { false };
     bool m_belling { false };
