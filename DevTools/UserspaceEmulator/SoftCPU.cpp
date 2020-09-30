@@ -130,7 +130,7 @@ ValueWithShadow<u8> SoftCPU::read_memory8(X86::LogicalAddress address)
     ASSERT(address.selector() == 0x18 || address.selector() == 0x20 || address.selector() == 0x28);
     auto value = m_emulator.mmu().read8(address);
 #ifdef MEMORY_DEBUG
-    printf("\033[36;1mread_memory8: @%08x:%08x -> %02x (%02x)\033[0m\n", address.selector(), address.offset(), value.value(), value.shadow());
+    outf("\033[36;1mread_memory8: @{:04x}:{:08x} -> {:02x} ({:02x})\033[0m", address.selector(), address.offset(), value, value.shadow());
 #endif
     return value;
 }
@@ -140,7 +140,7 @@ ValueWithShadow<u16> SoftCPU::read_memory16(X86::LogicalAddress address)
     ASSERT(address.selector() == 0x18 || address.selector() == 0x20 || address.selector() == 0x28);
     auto value = m_emulator.mmu().read16(address);
 #ifdef MEMORY_DEBUG
-    printf("\033[36;1mread_memory16: @%04x:%08x -> %04x (%04x)\033[0m\n", address.selector(), address.offset(), value.value(), value.shadow());
+    outf("\033[36;1mread_memory16: @{:04x}:{:08x} -> {:04x} ({:04x})\033[0m", address.selector(), address.offset(), value, value.shadow());
 #endif
     return value;
 }
@@ -150,7 +150,7 @@ ValueWithShadow<u32> SoftCPU::read_memory32(X86::LogicalAddress address)
     ASSERT(address.selector() == 0x18 || address.selector() == 0x20 || address.selector() == 0x28);
     auto value = m_emulator.mmu().read32(address);
 #ifdef MEMORY_DEBUG
-    printf("\033[36;1mread_memory32: @%04x:%08x -> %08x (%08x)\033[0m\n", address.selector(), address.offset(), value.value(), value.shadow());
+    outf("\033[36;1mread_memory32: @{:04x}:{:08x} -> {:08x} ({:08x})\033[0m", address.selector(), address.offset(), value, value.shadow());
 #endif
     return value;
 }
@@ -160,7 +160,7 @@ ValueWithShadow<u64> SoftCPU::read_memory64(X86::LogicalAddress address)
     ASSERT(address.selector() == 0x18 || address.selector() == 0x20 || address.selector() == 0x28);
     auto value = m_emulator.mmu().read64(address);
 #ifdef MEMORY_DEBUG
-    printf("\033[36;1mread_memory64: @%04x:%08x -> %016llx (%016llx)\033[0m\n", address.selector(), address.offset(), value.value(), value.shadow());
+    outf("\033[36;1mread_memory64: @{:04x}:{:08x} -> {:016x} ({:016x})\033[0m", address.selector(), address.offset(), value, value.shadow());
 #endif
     return value;
 }
@@ -169,7 +169,7 @@ void SoftCPU::write_memory8(X86::LogicalAddress address, ValueWithShadow<u8> val
 {
     ASSERT(address.selector() == 0x20 || address.selector() == 0x28);
 #ifdef MEMORY_DEBUG
-    printf("\033[35;1mwrite_memory8: @%04x:%08x <- %02x (%02x)\033[0m\n", address.selector(), address.offset(), value.value(), value.shadow());
+    outf("\033[36;1mwrite_memory8: @{:04x}:{:08x} <- {:02x} ({:02x})\033[0m", address.selector(), address.offset(), value, value.shadow());
 #endif
     m_emulator.mmu().write8(address, value);
 }
@@ -178,7 +178,7 @@ void SoftCPU::write_memory16(X86::LogicalAddress address, ValueWithShadow<u16> v
 {
     ASSERT(address.selector() == 0x20 || address.selector() == 0x28);
 #ifdef MEMORY_DEBUG
-    printf("\033[35;1mwrite_memory16: @%04x:%08x <- %04x (%04x)\033[0m\n", address.selector(), address.offset(), value.value(), value.shadow());
+    outf("\033[36;1mwrite_memory16: @{:04x}:{:08x} <- {:04x} ({:04x})\033[0m", address.selector(), address.offset(), value, value.shadow());
 #endif
     m_emulator.mmu().write16(address, value);
 }
@@ -187,7 +187,7 @@ void SoftCPU::write_memory32(X86::LogicalAddress address, ValueWithShadow<u32> v
 {
     ASSERT(address.selector() == 0x20 || address.selector() == 0x28);
 #ifdef MEMORY_DEBUG
-    printf("\033[35;1mwrite_memory32: @%04x:%08x <- %08x (%08x)\033[0m\n", address.selector(), address.offset(), value.value(), value.shadow());
+    outf("\033[36;1mwrite_memory32: @{:04x}:{:08x} <- {:08x} ({:08x})\033[0m", address.selector(), address.offset(), value, value.shadow());
 #endif
     m_emulator.mmu().write32(address, value);
 }
@@ -196,7 +196,7 @@ void SoftCPU::write_memory64(X86::LogicalAddress address, ValueWithShadow<u64> v
 {
     ASSERT(address.selector() == 0x20 || address.selector() == 0x28);
 #ifdef MEMORY_DEBUG
-    printf("\033[35;1mwrite_memory64: @%04x:%08x <- %016llx (%016llx)\033[0m\n", address.selector(), address.offset(), value.value(), value.shadow());
+    outf("\033[36;1mwrite_memory64: @{:04x}:{:08x} <- {:016x} ({:016x})\033[0m", address.selector(), address.offset(), value, value.shadow());
 #endif
     m_emulator.mmu().write64(address, value);
 }
