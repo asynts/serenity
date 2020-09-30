@@ -186,6 +186,11 @@ struct Formatter<T, typename EnableIf<IsIntegral<T>::value>::Type> : StandardFor
     void format(StringBuilder&, T value, FormatterContext&);
 };
 
+template<>
+struct Formatter<bool> : StandardFormatter {
+    void format(StringBuilder&, bool value, FormatterContext&);
+};
+
 template<typename... Parameters>
 Array<TypeErasedParameter, sizeof...(Parameters)> make_type_erased_parameters(const Parameters&... parameters)
 {

@@ -460,6 +460,65 @@ void Formatter<T, typename EnableIf<IsIntegral<T>::value>::Type>::format(StringB
         PrintfImplementation::convert_signed_to_string(value, builder, base, m_alternative_form, upper_case, m_zero_pad, align, width, m_fill, sign_mode);
 }
 
+void Formatter<bool>::format(StringBuilder& builder, bool value, FormatterContext& context)
+{
+    if (m_sign != Sign::Default)
+        ASSERT_NOT_REACHED();
+    if (m_alternative_form)
+        TODO();
+    if (m_zero_pad)
+        TODO();
+    if (m_precision != value_not_set)
+        ASSERT_NOT_REACHED();
+
+    if (m_mode == Mode::Binary || m_mode == Mode::BinaryUppercase || m_mode == Mode::Decimal || m_mode == Mode::Octal || m_mode == Mode::Hexadecimal || m_mode == Mode::HexadecimalUppercase)
+        TODO();
+    else if (m_mode != Mode::Default && m_mode != Mode::String)
+        ASSERT_NOT_REACHED();
+
+    const auto width = decode_value(m_width, context);
+
+    const auto put_padding = [&](size_t amount, char fill) {
+        for (size_t i = 0; i < amount; ++i)
+            builder.append(fill);
+    };
+    const auto put_value = [&]() {
+        if (value)
+            builder.append("true");
+        else
+            builder.append("false");
+    };
+
+    const auto used_by_value = value ? StringView { "true" }.length() : StringView { "false" }.length();
+    const auto used_by_padding = width < used_by_value ? 0 : width - used_by_value;
+
+    if (m_align == Align::Left) {
+        const auto used_by_right_padding = used_by_padding;
+
+        put_value();
+        put_padding(used_by_right_padding, m_fill);
+        return;
+    }
+    if (m_align == Align::Center) {
+        const auto used_by_left_padding = used_by_padding / 2;
+        const auto used_by_right_padding = ceil_div<size_t, size_t>(used_by_padding, 2);
+
+        put_padding(used_by_left_padding, m_fill);
+        put_value();
+        put_padding(used_by_right_padding, m_fill);
+        return;
+    }
+    if (m_align == Align::Right) {
+        const auto used_by_left_padding = used_by_padding;
+
+        put_padding(used_by_left_padding, m_fill);
+        put_value();
+        return;
+    }
+
+    ASSERT_NOT_REACHED();
+}
+
 template struct Formatter<unsigned char, void>;
 template struct Formatter<unsigned short, void>;
 template struct Formatter<unsigned int, void>;
