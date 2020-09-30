@@ -60,7 +60,7 @@ template<typename T>
 void warn_if_uninitialized(T value_with_shadow, const char* message)
 {
     if (value_with_shadow.is_uninitialized()) {
-        dbgprintf("\033[31;1mWarning! Use of uninitialized value: %s\033[0m\n", message);
+        dbgf("\033[31;1mWarning! Use of uninitialized value: {}\033[0m\n", message);
         Emulator::the().dump_backtrace();
     }
 }
@@ -68,8 +68,7 @@ void warn_if_uninitialized(T value_with_shadow, const char* message)
 void SoftCPU::warn_if_flags_tainted(const char* message) const
 {
     if (m_flags_tainted) {
-        report("\n");
-        report("==%d==  \033[31;1mConditional depends on uninitialized data\033[0m (%s)\n", getpid(), message);
+        warnf("\n=={}==  \033[31;1mConditional depends on uninitialized data\033[0m ({})\n", getpid(), message);
         Emulator::the().dump_backtrace();
     }
 }
@@ -97,12 +96,10 @@ SoftCPU::SoftCPU(Emulator& emulator)
 
 void SoftCPU::dump() const
 {
-    printf("eax=%08x ebx=%08x ecx=%08x edx=%08x ", eax().value(), ebx().value(), ecx().value(), edx().value());
-    printf("ebp=%08x esp=%08x esi=%08x edi=%08x ", ebp().value(), esp().value(), esi().value(), edi().value());
-    printf("o=%u s=%u z=%u a=%u p=%u c=%u\n", of(), sf(), zf(), af(), pf(), cf());
-    printf("#ax=%08x #bx=%08x #cx=%08x #dx=%08x ", eax().shadow(), ebx().shadow(), ecx().shadow(), edx().shadow());
-    printf("#bp=%08x #sp=%08x #si=%08x #di=%08x ", ebp().shadow(), esp().shadow(), esi().shadow(), edi().shadow());
-    printf("#f=%u\n", m_flags_tainted);
+    outf(" eax={:08x}  ebx={:08x}  ecx={:08x}  edx={:08x}  ebp={:08x}  esp={:08x}  esi={:08x}  edi={:08x} o={} s={} z={} a={} p={} c={}",
+        eax(), ebx(), ecx(), edx(), ebp(), esp(), esi(), edi(), of(), sf(), zf(), af(), pf(), cf());
+    outf("#eax={:08x} #ebx={:08x} #ecx={:08x} #edx={:08x} #ebp={:08x} #esp={:08x} #esi={:08x} #edi={:08x} #f={}",
+        eax().shadow(), ebx().shadow(), ecx().shadow(), edx().shadow(), m_flags_tainted);
     fflush(stdout);
 }
 
