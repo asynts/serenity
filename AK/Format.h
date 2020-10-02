@@ -76,27 +76,97 @@ struct TypeErasedParameter {
 
     const void* value;
     Type type;
-    void (*formatter)(StringBuilder& builder, const void* value, class FormatterContext&);
+    void (*formatter)(class FormatParams&, class FormatBuilder&, class FormatParser&, const void* value);
 };
 
-class FormatterContext {
+class FormatParser : public GenericLexer {
 public:
-    FormatterContext(Span<const TypeErasedParameter> parameters)
+    struct FormatSpecifier {
+        StringView flags;
+        size_t index;
+    };
+
+    explicit FormatParser(StringView input);
+
+    StringView consume_literal();
+    bool consume_number(size_t& value);
+    bool consume_specifier(FormatSpecifier& specifier);
+    bool consume_replacement_field(size_t& index);
+};
+
+class FormatBuilder {
+public:
+    enum class Align {
+        Default,
+        Left,
+        Center,
+        Right,
+    };
+    enum class SignMode {
+        OnlyIfNeeded,
+        Always,
+        Reserved,
+        Default = OnlyIfNeeded,
+    };
+
+    explicit FormatBuilder(StringBuilder& builder);
+
+    void put_padding(char fill, size_t amount);
+
+    void put_literal(StringView value);
+
+    void put_string(
+        StringView value,
+        Align align = Align::Left,
+        size_t min_width = 0,
+        size_t max_width = NumericLimits<size_t>::max(),
+        char fill = ' ');
+
+    void put_u64(
+        u64 value,
+        u8 base = 10,
+        bool prefix = false,
+        bool upper_case = false,
+        bool zero_pad = false,
+        Align align = Align::Right,
+        size_t min_width = 0,
+        char fill = ' ',
+        SignMode sign_mode = SignMode::OnlyIfNeeded,
+        bool is_negative = false);
+
+    void put_i64(
+        i64 value,
+        u8 base = 10,
+        bool prefix = false,
+        bool upper_case = false,
+        bool zero_pad = false,
+        Align align = Align::Right,
+        size_t min_width = 0,
+        char fill = ' ',
+        SignMode sign_mode = SignMode::OnlyIfNeeded);
+
+    const StringBuilder& builder() const { return m_builder; }
+    StringBuilder& builder() { return m_builder; }
+
+private:
+    StringBuilder& m_builder;
+};
+
+class FormatParams {
+public:
+    explicit FormatParams(Span<const TypeErasedParameter> parameters)
         : m_parameters(parameters)
     {
     }
 
-    const TypeErasedParameter& parameter_at(size_t index) const { return m_parameters.at(index); }
-    size_t parameter_count() const { return m_parameters.size(); }
-
-    StringView flags() const { return m_flags; }
-    void set_flags(StringView value) { m_flags = value; }
+    Span<const TypeErasedParameter> parameters() const { return m_parameters; }
 
     size_t take_next_index() { return m_next_index++; }
 
+    size_t decode(size_t value);
+
 private:
     Span<const TypeErasedParameter> m_parameters;
-    StringView m_flags;
     size_t m_next_index { 0 };
 };
 
@@ -105,12 +175,12 @@ private:
 namespace AK::Detail::Format {
 
 template<typename T>
-void format_value(StringBuilder& builder, const void* value, FormatterContext& context)
+void format_value(FormatParams& params, FormatBuilder& builder, FormatParser& parser, const void* value)
 {
     Formatter<T> formatter;
 
-    formatter.parse(context);
-    formatter.format(builder, *static_cast<const T*>(value), context);
+    formatter.parse(params, parser);
+    formatter.format(params, builder, *static_cast<const T*>(value));
 }
 
 } // namespace AK::Detail::Format
@@ -123,18 +193,6 @@ constexpr size_t max_format_arguments = 256;
 // Not all valid options do anything yet.
 // https://en.cppreference.com/w/cpp/utility/format/formatter#Standard_format_specification
 struct StandardFormatter {
-    enum class Align {
-        Default,
-        Left,
-        Right,
-        Center,
-    };
-    enum class Sign {
-        NegativeOnly,
-        PositiveAndNegative,
-        ReserveSpace,
-        Default = NegativeOnly
-    };
     enum class Mode {
         Default,
         Binary,
@@ -148,20 +206,19 @@ struct StandardFormatter {
         Pointer,
     };
 
-    static constexpr size_t value_not_set = 0;
     static constexpr size_t value_from_next_arg = NumericLimits<size_t>::max();
     static constexpr size_t value_from_arg = NumericLimits<size_t>::max() - max_format_arguments - 1;
 
-    Align m_align = Align::Default;
-    Sign m_sign = Sign::NegativeOnly;
+    FormatBuilder::Align m_align = FormatBuilder::Align::Default;
+    FormatBuilder::SignMode m_sign_mode = FormatBuilder::SignMode::OnlyIfNeeded;
     Mode m_mode = Mode::Default;
     bool m_alternative_form = false;
     char m_fill = ' ';
     bool m_zero_pad = false;
-    size_t m_width = value_not_set;
-    size_t m_precision = value_not_set;
+    size_t m_width = 0;
+    size_t m_precision = NumericLimits<size_t>::max();
 
-    void parse(FormatterContext&);
+    void parse(FormatParams&, FormatParser&);
 };
 
 template<>
@@ -172,7 +229,7 @@ struct Formatter<StringView> : StandardFormatter {
     {
     }
 
-    void format(StringBuilder& builder, StringView value, FormatterContext&);
+    void format(FormatParams&, FormatBuilder&, StringView value);
 };
 template<>
 struct Formatter<const char*> : Formatter<StringView> {
@@ -195,7 +252,7 @@ struct Formatter<T, typename EnableIf<IsIntegral<T>::value>::Type> : StandardFor
     {
     }
 
-    void format(StringBuilder&, T value, FormatterContext&);
+    void format(FormatParams&, FormatBuilder&, T value);
 };
 
 template<typename T>
@@ -209,7 +266,7 @@ struct Formatter<T*> : StandardFormatter {
 
 template<>
 struct Formatter<bool> : StandardFormatter {
-    void format(StringBuilder&, bool value, FormatterContext&);
+    void format(FormatParams&, FormatBuilder&, bool value);
 };
 
 template<typename... Parameters>

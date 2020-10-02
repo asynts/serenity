@@ -26,157 +26,47 @@
 
 #include <AK/Format.h>
 #include <AK/GenericLexer.h>
-#include <AK/PrintfImplementation.h>
 #include <AK/String.h>
 #include <AK/StringBuilder.h>
 #include <ctype.h>
+
+namespace AK {
 
 namespace {
 
 constexpr size_t use_next_index = NumericLimits<size_t>::max();
 
-struct FormatSpecifier {
-    StringView flags;
-    size_t index;
-};
-
-class FormatStringParser : public GenericLexer {
-public:
-    explicit FormatStringParser(StringView input)
-        : GenericLexer(input)
-    {
-    }
-
-    StringView consume_literal()
-    {
-        const auto begin = tell();
-
-        while (!is_eof()) {
-            if (consume_specific("{{"))
-                continue;
-
-            if (consume_specific("}}"))
-                continue;
-
-            if (next_is(is_any_of("{}")))
-                return m_input.substring_view(begin, tell() - begin);
-
-            consume();
-        }
-
-        return m_input.substring_view(begin);
-    }
-
-    bool consume_number(size_t& value)
-    {
-        value = 0;
-
-        bool consumed_at_least_one = false;
-        while (next_is(isdigit)) {
-            value *= 10;
-            value += consume() - '0';
-            consumed_at_least_one = true;
-        }
-
-        return consumed_at_least_one;
-    }
-
-    bool consume_specifier(FormatSpecifier& specifier)
-    {
-        ASSERT(!next_is('}'));
-
-        if (!consume_specific('{'))
-            return false;
-
-        if (!consume_number(specifier.index))
-            specifier.index = use_next_index;
-
-        if (consume_specific(':')) {
-            const auto begin = tell();
-
-            size_t level = 1;
-            while (level > 0) {
-                ASSERT(!is_eof());
-
-                if (consume_specific('{')) {
-                    ++level;
-                    continue;
-                }
-
-                if (consume_specific('}')) {
-                    --level;
-                    continue;
-                }
-
-                consume();
-            }
-
-            specifier.flags = m_input.substring_view(begin, tell() - begin - 1);
-        } else {
-            if (!consume_specific('}'))
-                ASSERT_NOT_REACHED();
-
-            specifier.flags = "";
-        }
-
-        return true;
-    }
-
-    bool consume_replacement_field(size_t& index)
-    {
-        if (!consume_specific('{'))
-            return false;
-
-        if (!consume_number(index))
-            index = use_next_index;
-
-        if (!consume_specific('}'))
-            ASSERT_NOT_REACHED();
-
-        return true;
-    }
-};
-
-void write_escaped_literal(StringBuilder& builder, StringView literal)
-{
-    for (size_t idx = 0; idx < literal.length(); ++idx) {
-        builder.append(literal[idx]);
-        if (literal[idx] == '{' || literal[idx] == '}')
-            ++idx;
-    }
-}
-
-void vformat_impl(StringBuilder& builder, FormatStringParser& parser, AK::FormatterContext& context)
+void vformat_impl(FormatParams& params, FormatBuilder& builder, FormatParser& parser)
 {
     const auto literal = parser.consume_literal();
-    write_escaped_literal(builder, literal);
+    builder.put_literal(literal);
 
-    FormatSpecifier specifier;
+    FormatParser::FormatSpecifier specifier;
     if (!parser.consume_specifier(specifier)) {
         ASSERT(parser.is_eof());
         return;
     }
 
     if (specifier.index == use_next_index)
-        specifier.index = context.take_next_index();
+        specifier.index = params.take_next_index();
 
-    ASSERT(specifier.index < context.parameter_count());
+    auto& parameter = params.parameters().at(specifier.index);
 
-    context.set_flags(specifier.flags);
+    FormatParser argparser { specifier.flags };
+    parameter.formatter(params, builder, argparser, parameter.value);
 
-    auto& parameter = context.parameter_at(specifier.index);
-    parameter.formatter(builder, parameter.value, context);
-
-    vformat_impl(builder, parser, context);
+    vformat_impl(params, builder, parser);
 }
 
-size_t decode_value(size_t value, AK::FormatterContext& context)
+} // namespace AK::{anonymous}
+
+size_t FormatParams::decode(size_t value)
 {
     if (value == AK::StandardFormatter::value_from_next_arg)
-        value = AK::StandardFormatter::value_from_arg + context.take_next_index();
+        value = AK::StandardFormatter::value_from_arg + take_next_index();
 
     if (value >= AK::StandardFormatter::value_from_arg) {
-        const auto parameter = context.parameter_at(value - AK::StandardFormatter::value_from_arg);
+        const auto parameter = parameters().at(value - AK::StandardFormatter::value_from_arg);
 
         Optional<i64> svalue;
         if (parameter.type == AK::TypeErasedParameter::Type::UInt8)
@@ -207,47 +97,131 @@ size_t decode_value(size_t value, AK::FormatterContext& context)
     return value;
 }
 
-} // namespace
+FormatParser::FormatParser(StringView input)
+    : GenericLexer(input)
+{
+}
+StringView FormatParser::consume_literal()
+{
+    const auto begin = tell();
 
-namespace AK {
+    while (!is_eof()) {
+        if (consume_specific("{{"))
+            continue;
+
+        if (consume_specific("}}"))
+            continue;
+
+        if (next_is(is_any_of("{}")))
+            return m_input.substring_view(begin, tell() - begin);
+
+        consume();
+    }
+
+    return m_input.substring_view(begin);
+}
+bool FormatParser::consume_number(size_t& value)
+{
+    value = 0;
+
+    bool consumed_at_least_one = false;
+    while (next_is(isdigit)) {
+        value *= 10;
+        value += consume() - '0';
+        consumed_at_least_one = true;
+    }
+
+    return consumed_at_least_one;
+}
+bool FormatParser::consume_specifier(FormatSpecifier& specifier)
+{
+    ASSERT(!next_is('}'));
+
+    if (!consume_specific('{'))
+        return false;
+
+    if (!consume_number(specifier.index))
+        specifier.index = use_next_index;
+
+    if (consume_specific(':')) {
+        const auto begin = tell();
+
+        size_t level = 1;
+        while (level > 0) {
+            ASSERT(!is_eof());
+
+            if (consume_specific('{')) {
+                ++level;
+                continue;
+            }
+
+            if (consume_specific('}')) {
+                --level;
+                continue;
+            }
+
+            consume();
+        }
+
+        specifier.flags = m_input.substring_view(begin, tell() - begin - 1);
+    } else {
+        if (!consume_specific('}'))
+            ASSERT_NOT_REACHED();
+
+        specifier.flags = "";
+    }
+
+    return true;
+}
+bool FormatParser::consume_replacement_field(size_t& index)
+{
+    if (!consume_specific('{'))
+        return false;
+
+    if (!consume_number(index))
+        index = use_next_index;
+
+    if (!consume_specific('}'))
+        ASSERT_NOT_REACHED();
+
+    return true;
+}
 
 void vformat(StringBuilder& builder, StringView fmtstr, Span<const TypeErasedParameter> parameters)
 {
-    FormatStringParser parser { fmtstr };
-    FormatterContext context { parameters };
-    vformat_impl(builder, parser, context);
+    FormatParams params { parameters };
+    FormatBuilder fmtbuilder { builder };
+    FormatParser parser { fmtstr };
+
+    vformat_impl(params, fmtbuilder, parser);
 }
 void vformat(const LogStream& stream, StringView fmtstr, Span<const TypeErasedParameter> parameters)
 {
     StringBuilder builder;
-    FormatStringParser parser { fmtstr };
-    FormatterContext context { parameters };
-    vformat_impl(builder, parser, context);
+    vformat(builder, fmtstr, parameters);
     stream << builder.to_string();
 }
 
-void StandardFormatter::parse(FormatterContext& context)
+void StandardFormatter::parse(FormatParams& params, FormatParser& parser)
 {
-    FormatStringParser parser { context.flags() };
-
     if (StringView { "<^>" }.contains(parser.peek(1))) {
         ASSERT(!parser.next_is(is_any_of("{}")));
         m_fill = parser.consume();
     }
 
     if (parser.consume_specific('<'))
-        m_align = Align::Left;
+        m_align = FormatBuilder::Align::Left;
     else if (parser.consume_specific('^'))
-        m_align = Align::Center;
+        m_align = FormatBuilder::Align::Center;
     else if (parser.consume_specific('>'))
-        m_align = Align::Right;
+        m_align = FormatBuilder::Align::Right;
 
     if (parser.consume_specific('-'))
-        m_sign = Sign::NegativeOnly;
+        m_sign_mode = FormatBuilder::SignMode::OnlyIfNeeded;
     else if (parser.consume_specific('+'))
-        m_sign = Sign::PositiveAndNegative;
+        m_sign_mode = FormatBuilder::SignMode::Always;
     else if (parser.consume_specific(' '))
-        m_sign = Sign::ReserveSpace;
+        m_sign_mode = FormatBuilder::SignMode::Reserved;
 
     if (parser.consume_specific('#'))
         m_alternative_form = true;
@@ -257,7 +231,7 @@ void StandardFormatter::parse(FormatterContext& context)
 
     if (size_t index = 0; parser.consume_replacement_field(index)) {
         if (index == use_next_index)
-            index = context.take_next_index();
+            index = params.take_next_index();
 
         m_width = value_from_arg + index;
     } else if (size_t width = 0; parser.consume_number(width)) {
@@ -267,7 +241,7 @@ void StandardFormatter::parse(FormatterContext& context)
     if (parser.consume_specific('.')) {
         if (size_t index = 0; parser.consume_replacement_field(index)) {
             if (index == use_next_index)
-                index = context.take_next_index();
+                index = params.take_next_index();
 
             m_precision = value_from_arg + index;
         } else if (size_t precision = 0; parser.consume_number(precision)) {
@@ -300,9 +274,9 @@ void StandardFormatter::parse(FormatterContext& context)
     ASSERT(parser.is_eof());
 }
 
-void Formatter<StringView>::format(StringBuilder& builder, StringView value, FormatterContext& context)
+void Formatter<StringView>::format(FormatParams& params, FormatBuilder& builder, StringView value)
 {
-    if (m_sign != Sign::Default)
+    if (m_sign_mode != FormatBuilder::SignMode::Default)
         ASSERT_NOT_REACHED();
     if (m_alternative_form)
         ASSERT_NOT_REACHED();
@@ -310,71 +284,39 @@ void Formatter<StringView>::format(StringBuilder& builder, StringView value, For
         ASSERT_NOT_REACHED();
     if (m_mode != Mode::Default && m_mode != Mode::String)
         ASSERT_NOT_REACHED();
-    if (m_width != value_not_set && m_precision != value_not_set)
+    if (m_width != 0 || m_precision != NumericLimits<size_t>::max())
         ASSERT_NOT_REACHED();
 
-    if (m_align == Align::Default)
-        m_align = Align::Left;
+    const auto width = params.decode(m_width);
+    const auto precision = params.decode(m_precision);
 
-    const auto width = decode_value(m_width, context);
-    const auto precision = decode_value(m_precision, context);
-
-    const auto put_padding = [&](size_t amount, char fill) {
-        for (size_t i = 0; i < amount; ++i)
-            builder.append(fill);
-    };
-    const auto put_bytes = [&](ReadonlyBytes bytes) {
-        for (size_t i = 0; i < bytes.size(); ++i)
-            builder.append(static_cast<char>(bytes[i]));
-    };
-
-    auto used_by_string = value.length();
-    if (precision != value_not_set)
-        used_by_string = min(used_by_string, precision);
-
-    const auto used_by_padding = width < used_by_string ? 0 : width - used_by_string;
-
-    if (m_align == Align::Left) {
-        const auto used_by_right_padding = used_by_padding;
-
-        put_bytes(value.bytes().trim(used_by_string));
-        put_padding(used_by_right_padding, m_fill);
-        return;
-    }
-    if (m_align == Align::Center) {
-        const auto used_by_left_padding = used_by_padding / 2;
-        const auto used_by_right_padding = ceil_div<size_t, size_t>(used_by_padding, 2);
-
-        put_padding(used_by_left_padding, m_fill);
-        put_bytes(value.bytes().trim(used_by_string));
-        put_padding(used_by_right_padding, m_fill);
-        return;
-    }
-    if (m_align == Align::Right) {
-        const auto used_by_left_padding = used_by_padding;
-
-        put_padding(used_by_left_padding, m_fill);
-        put_bytes(value.bytes().trim(used_by_string));
-        return;
-    }
-
-    ASSERT_NOT_REACHED();
+    builder.put_string(value, m_align, width, precision, m_fill);
 }
 
 template<typename T>
-void Formatter<T, typename EnableIf<IsIntegral<T>::value>::Type>::format(StringBuilder& builder, T value, FormatterContext& context)
+void Formatter<T, typename EnableIf<IsIntegral<T>::value>::Type>::format(FormatParams& params, FormatBuilder& builder, T value)
 {
-    if (m_precision != value_not_set)
+    if (m_mode == Mode::Character) {
+        // FIXME: We just support ASCII for now, in the future maybe unicode?
+        ASSERT(value >= 0 && value <= 127);
+
+        m_mode = Mode::String;
+
+        Formatter<StringView> formatter { *this };
+        return formatter.format(params, builder, StringView { static_cast<const char*>(&value), 1 });
+    }
+
+    if (m_precision != NumericLimits<size_t>::max())
         ASSERT_NOT_REACHED();
 
     if (m_mode == Mode::Pointer) {
-        if (m_sign != Sign::Default)
+        if (m_sign_mode != Sign::Default)
             ASSERT_NOT_REACHED();
         if (m_align != Align::Default)
             ASSERT_NOT_REACHED();
         if (m_alternative_form)
             ASSERT_NOT_REACHED();
-        if (m_width != value_not_set)
+        if (m_width != 0)
             ASSERT_NOT_REACHED();
 
         m_mode = Mode::Hexadecimal;
@@ -399,91 +341,26 @@ void Formatter<T, typename EnableIf<IsIntegral<T>::value>::Type>::format(StringB
     } else if (m_mode == Mode::HexadecimalUppercase) {
         base = 16;
         upper_case = true;
-    } else if (m_mode == Mode::Character) {
-        // special case
     } else {
         ASSERT_NOT_REACHED();
     }
 
-    const auto width = decode_value(m_width, context);
-
-    const auto put_padding = [&](size_t amount, char fill) {
-        for (size_t i = 0; i < amount; ++i)
-            builder.append(fill);
-    };
-
-    if (m_mode == Mode::Character) {
-        // FIXME: We just support ASCII for now, in the future maybe unicode?
-        ASSERT(value >= 0 && value <= 127);
-
-        const size_t used_by_value = 1;
-        const auto used_by_padding = width < used_by_value ? 0 : width - used_by_value;
-
-        if (m_align == Align::Left || m_align == Align::Default) {
-            const auto used_by_right_padding = used_by_padding;
-
-            builder.append(static_cast<char>(value));
-            put_padding(used_by_right_padding, m_fill);
-            return;
-        }
-        if (m_align == Align::Center) {
-            const auto used_by_left_padding = used_by_padding / 2;
-            const auto used_by_right_padding = ceil_div<size_t, size_t>(used_by_padding, 2);
-
-            put_padding(used_by_left_padding, m_fill);
-            builder.append(static_cast<char>(value));
-            put_padding(used_by_right_padding, m_fill);
-            return;
-        }
-        if (m_align == Align::Right) {
-            const auto used_by_left_padding = used_by_padding;
-
-            put_padding(used_by_left_padding, m_fill);
-            builder.append(static_cast<char>(value));
-            return;
-        }
-
-        ASSERT_NOT_REACHED();
-    }
-
-    PrintfImplementation::Align align;
-    if (m_align == Align::Left)
-        align = PrintfImplementation::Align::Left;
-    else if (m_align == Align::Right)
-        align = PrintfImplementation::Align::Right;
-    else if (m_align == Align::Center)
-        align = PrintfImplementation::Align::Center;
-    else if (m_align == Align::Default)
-        align = PrintfImplementation::Align::Right;
-    else
-        ASSERT_NOT_REACHED();
-
-    PrintfImplementation::SignMode sign_mode;
-    if (m_sign == Sign::Default)
-        sign_mode = PrintfImplementation::SignMode::OnlyIfNeeded;
-    else if (m_sign == Sign::NegativeOnly)
-        sign_mode = PrintfImplementation::SignMode::OnlyIfNeeded;
-    else if (m_sign == Sign::PositiveAndNegative)
-        sign_mode = PrintfImplementation::SignMode::Always;
-    else if (m_sign == Sign::ReserveSpace)
-        sign_mode = PrintfImplementation::SignMode::Reserved;
-    else
-        ASSERT_NOT_REACHED();
+    const auto width = params.decode(m_width);
 
     if (IsSame<typename MakeUnsigned<T>::Type, T>::value)
-        PrintfImplementation::convert_unsigned_to_string(value, builder, base, m_alternative_form, upper_case, m_zero_pad, align, width, m_fill, sign_mode);
+        builder.put_u64(value, base, m_alternative_form, upper_case, m_zero_pad, m_align, width, m_fill, m_sign_mode);
     else
-        PrintfImplementation::convert_signed_to_string(value, builder, base, m_alternative_form, upper_case, m_zero_pad, align, width, m_fill, sign_mode);
+        builder.put_i64(value, base, m_alternative_form, upper_case, m_zero_pad, m_align, width, m_fill, m_sign_mode);
 }
 
-void Formatter<bool>::format(StringBuilder& builder, bool value, FormatterContext& context)
+void Formatter<bool>::format(FormatParams& params, FormatBuilder& builder, bool value)
 {
     if (m_mode == Mode::Binary || m_mode == Mode::BinaryUppercase || m_mode == Mode::Decimal || m_mode == Mode::Octal || m_mode == Mode::Hexadecimal || m_mode == Mode::HexadecimalUppercase) {
         Formatter<u8> formatter { *this };
-        return formatter.format(builder, static_cast<u8>(value), context);
+        return formatter.format(params, builder, static_cast<u8>(value));
     } else {
         Formatter<StringView> formatter { *this };
-        formatter.format(builder, value ? "true" : "false", context);
+        return formatter.format(params, builder, value ? "true" : "false");
     }
 }
 
