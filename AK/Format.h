@@ -171,7 +171,7 @@ public:
 
     size_t take_next_index() { return m_next_index++; }
 
-    size_t decode(size_t value);
+    size_t decode(size_t value, size_t default_value = 0);
 
 private:
     Span<const TypeErasedParameter> m_parameters;
@@ -214,8 +214,9 @@ struct StandardFormatter {
         Pointer,
     };
 
-    static constexpr size_t value_from_next_arg = NumericLimits<size_t>::max();
-    static constexpr size_t value_from_arg = NumericLimits<size_t>::max() - max_format_arguments - 1;
+    static constexpr size_t value_not_set = NumericLimits<size_t>::max();
+    static constexpr size_t value_from_next_arg = NumericLimits<size_t>::max() - 1;
+    static constexpr size_t value_from_arg = NumericLimits<size_t>::max() - max_format_arguments - 2;
 
     FormatBuilder::Align m_align = FormatBuilder::Align::Default;
     FormatBuilder::SignMode m_sign_mode = FormatBuilder::SignMode::OnlyIfNeeded;
@@ -223,8 +224,8 @@ struct StandardFormatter {
     bool m_alternative_form = false;
     char m_fill = ' ';
     bool m_zero_pad = false;
-    size_t m_width = 0;
-    size_t m_precision = NumericLimits<size_t>::max();
+    size_t m_width = value_not_set;
+    size_t m_precision = value_not_set;
 
     void parse(FormatParams&, FormatParser&);
 };

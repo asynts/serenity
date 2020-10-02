@@ -90,30 +90,33 @@ void vformat_impl(FormatParams& params, FormatBuilder& builder, FormatParser& pa
 
 } // namespace AK::{anonymous}
 
-size_t FormatParams::decode(size_t value)
+size_t FormatParams::decode(size_t value, size_t default_value)
 {
-    if (value == AK::StandardFormatter::value_from_next_arg)
-        value = AK::StandardFormatter::value_from_arg + take_next_index();
+    if (value == StandardFormatter::value_not_set)
+        return default_value;
 
-    if (value >= AK::StandardFormatter::value_from_arg) {
-        const auto parameter = parameters().at(value - AK::StandardFormatter::value_from_arg);
+    if (value == StandardFormatter::value_from_next_arg)
+        value = StandardFormatter::value_from_arg + take_next_index();
+
+    if (value >= StandardFormatter::value_from_arg) {
+        const auto parameter = parameters().at(value - StandardFormatter::value_from_arg);
 
         Optional<i64> svalue;
-        if (parameter.type == AK::TypeErasedParameter::Type::UInt8)
+        if (parameter.type == TypeErasedParameter::Type::UInt8)
             value = *reinterpret_cast<const u8*>(parameter.value);
-        else if (parameter.type == AK::TypeErasedParameter::Type::UInt16)
+        else if (parameter.type == TypeErasedParameter::Type::UInt16)
             value = *reinterpret_cast<const u16*>(parameter.value);
-        else if (parameter.type == AK::TypeErasedParameter::Type::UInt32)
+        else if (parameter.type == TypeErasedParameter::Type::UInt32)
             value = *reinterpret_cast<const u32*>(parameter.value);
-        else if (parameter.type == AK::TypeErasedParameter::Type::UInt64)
+        else if (parameter.type == TypeErasedParameter::Type::UInt64)
             value = *reinterpret_cast<const u64*>(parameter.value);
-        else if (parameter.type == AK::TypeErasedParameter::Type::Int8)
+        else if (parameter.type == TypeErasedParameter::Type::Int8)
             svalue = *reinterpret_cast<const i8*>(parameter.value);
-        else if (parameter.type == AK::TypeErasedParameter::Type::Int16)
+        else if (parameter.type == TypeErasedParameter::Type::Int16)
             svalue = *reinterpret_cast<const i16*>(parameter.value);
-        else if (parameter.type == AK::TypeErasedParameter::Type::Int32)
+        else if (parameter.type == TypeErasedParameter::Type::Int32)
             svalue = *reinterpret_cast<const i32*>(parameter.value);
-        else if (parameter.type == AK::TypeErasedParameter::Type::Int64)
+        else if (parameter.type == TypeErasedParameter::Type::Int64)
             svalue = *reinterpret_cast<const i64*>(parameter.value);
         else
             ASSERT_NOT_REACHED();
@@ -458,11 +461,11 @@ void Formatter<StringView>::format(FormatParams& params, FormatBuilder& builder,
         ASSERT_NOT_REACHED();
     if (m_mode != Mode::Default && m_mode != Mode::String)
         ASSERT_NOT_REACHED();
-    if (m_width != 0 || m_precision != NumericLimits<size_t>::max())
+    if (m_width != value_not_set && m_precision != value_not_set)
         ASSERT_NOT_REACHED();
 
     const auto width = params.decode(m_width);
-    const auto precision = params.decode(m_precision);
+    const auto precision = params.decode(m_precision, NumericLimits<size_t>::max());
 
     builder.put_string(value, m_align, width, precision, m_fill);
 }
@@ -490,7 +493,7 @@ void Formatter<T, typename EnableIf<IsIntegral<T>::value>::Type>::format(FormatP
             ASSERT_NOT_REACHED();
         if (m_alternative_form)
             ASSERT_NOT_REACHED();
-        if (m_width != 0)
+        if (m_width != value_not_set)
             ASSERT_NOT_REACHED();
 
         m_mode = Mode::Hexadecimal;
