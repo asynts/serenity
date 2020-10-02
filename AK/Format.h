@@ -100,6 +100,59 @@ private:
     size_t m_next_index { 0 };
 };
 
+class FormatBuilder {
+public:
+    enum class Align {
+        Left,
+        Center,
+        Right,
+    };
+
+    enum class SignMode {
+        OnlyIfNeeded,
+        Always,
+        Reserved,
+    };
+
+    explicit FormatBuilder(StringBuilder& builder);
+
+    void put_padding(char fill, size_t amount);
+    void put_literal(StringView value);
+
+    void put_string(
+        StringView value,
+        Align align = Align::Left,
+        size_t min_width = 0,
+        size_t max_width = NumericLimits<size_t>::max(),
+        char fill = ' ');
+
+    void put_u64(
+        u64 value,
+        u8 base = 10,
+        bool prefix = false,
+        bool upper_case = false,
+        bool zero_pad = false,
+        Align align = Align::Right,
+        size_t min_width = 0,
+        char fill = ' ',
+        SignMode sign_mode = SignMode::OnlyIfNeeded,
+        bool is_negative = false);
+
+    void put_i64(
+        i64 value,
+        u8 base = 10,
+        bool prefix = false,
+        bool upper_case = false,
+        bool zero_pad = false,
+        Align align = Align::Right,
+        size_t min_width = 0,
+        char fill = ' ',
+        SignMode sign_mode = SignMode::OnlyIfNeeded);
+
+private:
+    StringBuilder& m_builder;
+};
+
 } // namespace AK
 
 namespace AK::Detail::Format {
