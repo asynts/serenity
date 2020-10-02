@@ -40,9 +40,9 @@ struct FormatSpecifier {
     size_t index;
 };
 
-class FormatStringParser : public GenericLexer {
+class FormatParser : public GenericLexer {
 public:
-    explicit FormatStringParser(StringView input)
+    explicit FormatParser(StringView input)
         : GenericLexer(input)
     {
     }
@@ -137,6 +137,171 @@ public:
     }
 };
 
+class FormatBuilder {
+public:
+    enum class Align {
+        Left,
+        Center,
+        Right,
+    };
+
+    enum class SignMode {
+        OnlyIfNeeded,
+        Always,
+        Reserved,
+    };
+
+    explicit FormatBuilder(StringBuilder& builder)
+        : m_builder(builder)
+    {
+    }
+
+    void put_padding(char fill, size_t amount)
+    {
+        for (size_t i = 0; i < amount; ++i)
+            m_builder.append(fill);
+    }
+
+    void put_literal(StringView value)
+    {
+        for (size_t i = 0; i < value.length(); ++i) {
+            m_builder.append(value[i]);
+            if (value[i] == '{' || value[i] == '}')
+                ++i;
+        }
+    }
+
+    void put_string(
+        StringView value,
+        Align align = Align::Left,
+        size_t min_width = 0,
+        size_t max_width = NumericLimits<size_t>::max(),
+        char fill = ' ')
+    {
+        const auto used_by_string = min(max_width, value.length());
+        const auto used_by_padding = max(min_width, used_by_string) - used_by_string;
+
+        if (used_by_string < value.length())
+            value = value.substring_view(0, used_by_string);
+
+        if (align == Align::Left) {
+            m_builder.append(value);
+            put_padding(fill, used_by_padding);
+        } else if (align == Align::Center) {
+            const auto used_by_left_padding = used_by_padding / 2;
+            const auto used_by_right_padding = ceil_div(used_by_padding, 2);
+
+            put_padding(fill, used_by_left_padding);
+            m_builder.append(value);
+            put_padding(fill, used_by_right_padding);
+        } else if (align == Align::Right) {
+            put_padding(fill, used_by_padding);
+            m_builder.append(value);
+        }
+    }
+
+    void put_u64(
+        u64 value,
+        u8 base = 10,
+        bool prefix = false,
+        bool upper_case = false,
+        bool zero_pad = false,
+        Align align = Align::Right,
+        size_t min_width = 0,
+        char fill = ' ',
+        SignMode sign_mode = SignMode::OnlyIfNeeded,
+        bool is_negative = false)
+    {
+        Array<u8, 128> buffer;
+
+        const auto used_by_digits = PrintfImplementation::convert_unsigned_to_string(value, buffer, base, upper_case);
+
+        auto used_by_prefix = sign_mode == SignMode::OnlyIfNeeded ? static_cast<size_t>(is_negative) : 1;
+        if (prefix) {
+            if (base == 8)
+                used_by_prefix += 1;
+            else if (base == 16)
+                used_by_prefix += 2;
+            else if (base == 2)
+                used_by_prefix += 2;
+        }
+
+        const auto used_by_field = used_by_prefix + used_by_digits;
+        const auto used_by_padding = max(used_by_field, min_width) - used_by_field;
+
+        const auto put_prefix = [&]() {
+            if (is_negative)
+                m_builder.append('-');
+            else if (sign_mode == SignMode::Always)
+                m_builder.append('+');
+            else if (sign_mode == SignMode::Reserved)
+                m_builder.append(' ');
+
+            if (prefix) {
+                if (base == 2) {
+                    if (upper_case)
+                        m_builder.append("0B");
+                    else
+                        m_builder.append("0b");
+                } else if (base == 8) {
+                    m_builder.append("0");
+                } else if (base == 16) {
+                    if (upper_case)
+                        m_builder.append("0X");
+                    else
+                        m_builder.append("0x");
+                }
+            }
+        };
+        const auto put_digits = [&]() {
+            for (size_t i = 0; i < used_by_digits; ++i)
+                m_builder.append(buffer[i]);
+        };
+
+        if (align == Align::Left) {
+            const auto used_by_right_padding = used_by_padding;
+
+            put_prefix();
+            put_digits();
+            put_padding(fill, used_by_right_padding);
+        } else if (align == Align::Center) {
+            const auto used_by_left_padding = used_by_padding / 2;
+            const auto used_by_right_padding = ceil_div(used_by_padding, 2);
+
+            put_padding(fill, used_by_left_padding);
+            put_prefix();
+            put_digits();
+            put_padding(fill, used_by_right_padding);
+        } else if (align == Align::Right) {
+            const auto used_by_left_padding = used_by_padding;
+
+            if (zero_pad) {
+                put_prefix();
+                put_padding('0', used_by_left_padding);
+                put_digits();
+            } else {
+                put_padding(fill, used_by_left_padding);
+                put_prefix();
+                put_digits();
+            }
+        }
+    }
+
+    void put_i64(
+        i64 value,
+        u8 base = 10,
+        bool prefix = false,
+        bool upper_case = false,
+        bool zero_pad = false,
+        Align align = Align::Right,
+        size_t min_digits = 0,
+        char fill = ' ',
+        SignMode sign_mode = SignMode::OnlyIfNeeded);
+
+private:
+    StringBuilder& m_builder;
+};
+
 void write_escaped_literal(StringBuilder& builder, StringView literal)
 {
     for (size_t idx = 0; idx < literal.length(); ++idx) {
@@ -146,7 +311,7 @@ void write_escaped_literal(StringBuilder& builder, StringView literal)
     }
 }
 
-void vformat_impl(StringBuilder& builder, FormatStringParser& parser, AK::FormatterContext& context)
+void vformat_impl(StringBuilder& builder, FormatParser& parser, AK::FormatterContext& context)
 {
     const auto literal = parser.consume_literal();
     write_escaped_literal(builder, literal);
@@ -213,14 +378,14 @@ namespace AK {
 
 void vformat(StringBuilder& builder, StringView fmtstr, Span<const TypeErasedParameter> parameters)
 {
-    FormatStringParser parser { fmtstr };
+    FormatParser parser { fmtstr };
     FormatterContext context { parameters };
     vformat_impl(builder, parser, context);
 }
 void vformat(const LogStream& stream, StringView fmtstr, Span<const TypeErasedParameter> parameters)
 {
     StringBuilder builder;
-    FormatStringParser parser { fmtstr };
+    FormatParser parser { fmtstr };
     FormatterContext context { parameters };
     vformat_impl(builder, parser, context);
     stream << builder.to_string();
@@ -228,7 +393,7 @@ void vformat(const LogStream& stream, StringView fmtstr, Span<const TypeErasedPa
 
 void StandardFormatter::parse(FormatterContext& context)
 {
-    FormatStringParser parser { context.flags() };
+    FormatParser parser { context.flags() };
 
     if (StringView { "<^>" }.contains(parser.peek(1))) {
         ASSERT(!parser.next_is(is_any_of("{}")));
