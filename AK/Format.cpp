@@ -248,7 +248,7 @@ void FormatBuilder::put_string(
         put_padding(fill, used_by_padding);
     } else if (align == Align::Center) {
         const auto used_by_left_padding = used_by_padding / 2;
-        const auto used_by_right_padding = ceil_div(used_by_padding, 2);
+        const auto used_by_right_padding = ceil_div<size_t, size_t>(used_by_padding, 2);
 
         put_padding(fill, used_by_left_padding);
         m_builder.append(value);
@@ -324,7 +324,7 @@ void FormatBuilder::put_u64(
         put_padding(fill, used_by_right_padding);
     } else if (align == Align::Center) {
         const auto used_by_left_padding = used_by_padding / 2;
-        const auto used_by_right_padding = ceil_div(used_by_padding, 2);
+        const auto used_by_right_padding = ceil_div<size_t, size_t>(used_by_padding, 2);
 
         put_padding(fill, used_by_left_padding);
         put_prefix();
@@ -477,16 +477,16 @@ void Formatter<T, typename EnableIf<IsIntegral<T>::value>::Type>::format(FormatP
         m_mode = Mode::String;
 
         Formatter<StringView> formatter { *this };
-        return formatter.format(params, builder, StringView { static_cast<const char*>(&value), 1 });
+        return formatter.format(params, builder, StringView { reinterpret_cast<const char*>(&value), 1 });
     }
 
     if (m_precision != NumericLimits<size_t>::max())
         ASSERT_NOT_REACHED();
 
     if (m_mode == Mode::Pointer) {
-        if (m_sign_mode != Sign::Default)
+        if (m_sign_mode != FormatBuilder::SignMode::Default)
             ASSERT_NOT_REACHED();
-        if (m_align != Align::Default)
+        if (m_align != FormatBuilder::Align::Default)
             ASSERT_NOT_REACHED();
         if (m_alternative_form)
             ASSERT_NOT_REACHED();
