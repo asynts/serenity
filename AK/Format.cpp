@@ -66,7 +66,7 @@ inline size_t convert_unsigned_to_string(u64 value, Array<u8, 128>& buffer, u8 b
     return used;
 }
 
-void vformat_impl(FormatParams& params, FormatBuilder& builder, FormatParser& parser)
+void vformat_impl(TypeErasedFormatParams& params, FormatBuilder& builder, FormatParser& parser)
 {
     const auto literal = parser.consume_literal();
     builder.put_literal(literal);
@@ -90,7 +90,7 @@ void vformat_impl(FormatParams& params, FormatBuilder& builder, FormatParser& pa
 
 } // namespace AK::{anonymous}
 
-size_t FormatParams::decode(size_t value, size_t default_value)
+size_t TypeErasedFormatParams::decode(size_t value, size_t default_value)
 {
     if (value == StandardFormatter::value_not_set)
         return default_value;
@@ -364,22 +364,21 @@ void FormatBuilder::put_i64(
     put_u64(static_cast<size_t>(value), base, prefix, upper_case, zero_pad, align, min_width, fill, sign_mode, is_negative);
 }
 
-void vformat(StringBuilder& builder, StringView fmtstr, Span<const TypeErasedParameter> parameters)
+void vformat(StringBuilder& builder, StringView fmtstr, TypeErasedFormatParams params)
 {
-    FormatParams params { parameters };
     FormatBuilder fmtbuilder { builder };
     FormatParser parser { fmtstr };
 
     vformat_impl(params, fmtbuilder, parser);
 }
-void vformat(const LogStream& stream, StringView fmtstr, Span<const TypeErasedParameter> parameters)
+void vformat(const LogStream& stream, StringView fmtstr, TypeErasedFormatParams params)
 {
     StringBuilder builder;
-    vformat(builder, fmtstr, parameters);
+    vformat(builder, fmtstr, params);
     stream << builder.to_string();
 }
 
-void StandardFormatter::parse(FormatParams& params, FormatParser& parser)
+void StandardFormatter::parse(TypeErasedFormatParams& params, FormatParser& parser)
 {
     if (StringView { "<^>" }.contains(parser.peek(1))) {
         ASSERT(!parser.next_is(is_any_of("{}")));
@@ -451,7 +450,7 @@ void StandardFormatter::parse(FormatParams& params, FormatParser& parser)
     ASSERT(parser.is_eof());
 }
 
-void Formatter<StringView>::format(FormatParams& params, FormatBuilder& builder, StringView value)
+void Formatter<StringView>::format(TypeErasedFormatParams& params, FormatBuilder& builder, StringView value)
 {
     if (m_sign_mode != FormatBuilder::SignMode::Default)
         ASSERT_NOT_REACHED();
@@ -471,7 +470,7 @@ void Formatter<StringView>::format(FormatParams& params, FormatBuilder& builder,
 }
 
 template<typename T>
-void Formatter<T, typename EnableIf<IsIntegral<T>::value>::Type>::format(FormatParams& params, FormatBuilder& builder, T value)
+void Formatter<T, typename EnableIf<IsIntegral<T>::value>::Type>::format(TypeErasedFormatParams& params, FormatBuilder& builder, T value)
 {
     if (m_mode == Mode::Character) {
         // FIXME: We just support ASCII for now, in the future maybe unicode?
@@ -530,7 +529,7 @@ void Formatter<T, typename EnableIf<IsIntegral<T>::value>::Type>::format(FormatP
         builder.put_i64(value, base, m_alternative_form, upper_case, m_zero_pad, m_align, width, m_fill, m_sign_mode);
 }
 
-void Formatter<bool>::format(FormatParams& params, FormatBuilder& builder, bool value)
+void Formatter<bool>::format(TypeErasedFormatParams& params, FormatBuilder& builder, bool value)
 {
     if (m_mode == Mode::Binary || m_mode == Mode::BinaryUppercase || m_mode == Mode::Decimal || m_mode == Mode::Octal || m_mode == Mode::Hexadecimal || m_mode == Mode::HexadecimalUppercase) {
         Formatter<u8> formatter { *this };

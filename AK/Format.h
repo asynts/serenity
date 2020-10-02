@@ -36,12 +36,14 @@
 
 namespace AK {
 
-class FormatParams;
+class TypeErasedFormatParams;
 class FormatParser;
 class FormatBuilder;
 
 template<typename T, typename = void>
 struct Formatter;
+
+constexpr size_t max_format_arguments = 256;
 
 struct TypeErasedParameter {
     enum class Type {
@@ -81,7 +83,7 @@ struct TypeErasedParameter {
 
     const void* value;
     Type type;
-    void (*formatter)(FormatParams&, FormatBuilder&, FormatParser&, const void* value);
+    void (*formatter)(TypeErasedFormatParams&, FormatBuilder&, FormatParser&, const void* value);
 };
 
 class FormatParser : public GenericLexer {
@@ -160,9 +162,9 @@ private:
     StringBuilder& m_builder;
 };
 
-class FormatParams {
+class TypeErasedFormatParams {
 public:
-    explicit FormatParams(Span<const TypeErasedParameter> parameters)
+    explicit TypeErasedFormatParams(Span<const TypeErasedParameter> parameters)
         : m_parameters(parameters)
     {
     }
@@ -178,12 +180,8 @@ private:
     size_t m_next_index { 0 };
 };
 
-} // namespace AK
-
-namespace AK::Detail::Format {
-
 template<typename T>
-void format_value(FormatParams& params, FormatBuilder& builder, FormatParser& parser, const void* value)
+void __format_value(TypeErasedFormatParams& params, FormatBuilder& builder, FormatParser& parser, const void* value)
 {
     Formatter<T> formatter;
 
@@ -191,11 +189,20 @@ void format_value(FormatParams& params, FormatBuilder& builder, FormatParser& pa
     formatter.format(params, builder, *static_cast<const T*>(value));
 }
 
-} // namespace AK::Detail::Format
+template<typename... Parameters>
+class VariadicFormatParams : public TypeErasedFormatParams {
+public:
+    static_assert(sizeof...(Parameters) <= max_format_arguments);
 
-namespace AK {
+    explicit VariadicFormatParams(const Parameters&... parameters)
+        : TypeErasedFormatParams(m_data)
+        , m_data({ TypeErasedParameter { &parameters, TypeErasedParameter::get_type<Parameters>(), __format_value<Parameters> }... })
+    {
+    }
 
-constexpr size_t max_format_arguments = 256;
+private:
+    Array<TypeErasedParameter, sizeof...(Parameters)> m_data;
+};
 
 // We use the same format for most types for consistency. This is taken directly from std::format.
 // Not all valid options do anything yet.
@@ -227,7 +234,7 @@ struct StandardFormatter {
     size_t m_width = value_not_set;
     size_t m_precision = value_not_set;
 
-    void parse(FormatParams&, FormatParser&);
+    void parse(TypeErasedFormatParams&, FormatParser&);
 };
 
 template<>
@@ -238,7 +245,7 @@ struct Formatter<StringView> : StandardFormatter {
     {
     }
 
-    void format(FormatParams&, FormatBuilder&, StringView value);
+    void format(TypeErasedFormatParams&, FormatBuilder&, StringView value);
 };
 template<>
 struct Formatter<const char*> : Formatter<StringView> {
@@ -261,12 +268,12 @@ struct Formatter<T, typename EnableIf<IsIntegral<T>::value>::Type> : StandardFor
     {
     }
 
-    void format(FormatParams&, FormatBuilder&, T value);
+    void format(TypeErasedFormatParams&, FormatBuilder&, T value);
 };
 
 template<typename T>
 struct Formatter<T*> : StandardFormatter {
-    void format(FormatParams& params, FormatBuilder& builder, T* value)
+    void format(TypeErasedFormatParams& params, FormatBuilder& builder, T* value)
     {
         Formatter<FlatPtr> formatter { *this };
         formatter.format(params, builder, reinterpret_cast<FlatPtr>(value));
@@ -275,18 +282,10 @@ struct Formatter<T*> : StandardFormatter {
 
 template<>
 struct Formatter<bool> : StandardFormatter {
-    void format(FormatParams&, FormatBuilder&, bool value);
+    void format(TypeErasedFormatParams&, FormatBuilder&, bool value);
 };
 
-template<typename... Parameters>
-Array<TypeErasedParameter, sizeof...(Parameters)> make_type_erased_parameters(const Parameters&... parameters)
-{
-    static_assert(sizeof...(Parameters) <= max_format_arguments);
-
-    return { TypeErasedParameter { &parameters, TypeErasedParameter::get_type<Parameters>(), Detail::Format::format_value<Parameters> }... };
-}
-
-void vformat(StringBuilder& builder, StringView fmtstr, Span<const TypeErasedParameter>);
-void vformat(const LogStream& stream, StringView fmtstr, Span<const TypeErasedParameter>);
+void vformat(StringBuilder& builder, StringView fmtstr, TypeErasedFormatParams);
+void vformat(const LogStream& stream, StringView fmtstr, TypeErasedFormatParams);
 
 } // namespace AK
