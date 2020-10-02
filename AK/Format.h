@@ -100,6 +100,21 @@ private:
     size_t m_next_index { 0 };
 };
 
+struct FormatSpecifier {
+    StringView flags;
+    size_t index;
+};
+
+class FormatParser : public GenericLexer {
+public:
+    explicit FormatParser(StringView input);
+
+    StringView consume_literal();
+    bool consume_number(size_t& value);
+    bool consume_specifier(FormatSpecifier& specifier);
+    bool consume_replacement_field(size_t& index);
+};
+
 class FormatBuilder {
 public:
     enum class Align {

@@ -65,108 +65,6 @@ size_t convert_unsigned_to_string(u64 value, Array<u8, 128>& buffer, u8 base, bo
 
 constexpr size_t use_next_index = NumericLimits<size_t>::max();
 
-struct FormatSpecifier {
-    StringView flags;
-    size_t index;
-};
-
-class FormatParser : public GenericLexer {
-public:
-    explicit FormatParser(StringView input)
-        : GenericLexer(input)
-    {
-    }
-
-    StringView consume_literal()
-    {
-        const auto begin = tell();
-
-        while (!is_eof()) {
-            if (consume_specific("{{"))
-                continue;
-
-            if (consume_specific("}}"))
-                continue;
-
-            if (next_is(is_any_of("{}")))
-                return m_input.substring_view(begin, tell() - begin);
-
-            consume();
-        }
-
-        return m_input.substring_view(begin);
-    }
-
-    bool consume_number(size_t& value)
-    {
-        value = 0;
-
-        bool consumed_at_least_one = false;
-        while (next_is(isdigit)) {
-            value *= 10;
-            value += consume() - '0';
-            consumed_at_least_one = true;
-        }
-
-        return consumed_at_least_one;
-    }
-
-    bool consume_specifier(FormatSpecifier& specifier)
-    {
-        ASSERT(!next_is('}'));
-
-        if (!consume_specific('{'))
-            return false;
-
-        if (!consume_number(specifier.index))
-            specifier.index = use_next_index;
-
-        if (consume_specific(':')) {
-            const auto begin = tell();
-
-            size_t level = 1;
-            while (level > 0) {
-                ASSERT(!is_eof());
-
-                if (consume_specific('{')) {
-                    ++level;
-                    continue;
-                }
-
-                if (consume_specific('}')) {
-                    --level;
-                    continue;
-                }
-
-                consume();
-            }
-
-            specifier.flags = m_input.substring_view(begin, tell() - begin - 1);
-        } else {
-            if (!consume_specific('}'))
-                ASSERT_NOT_REACHED();
-
-            specifier.flags = "";
-        }
-
-        return true;
-    }
-
-    bool consume_replacement_field(size_t& index)
-    {
-        if (!consume_specific('{'))
-            return false;
-
-        if (!consume_number(index))
-            index = use_next_index;
-
-        if (!consume_specific('}'))
-            ASSERT_NOT_REACHED();
-
-        return true;
-    }
-};
-
 void write_escaped_literal(StringBuilder& builder, StringView literal)
 {
     for (size_t idx = 0; idx < literal.length(); ++idx) {
@@ -176,12 +74,12 @@ void write_escaped_literal(StringBuilder& builder, StringView literal)
     }
 }
 
-void vformat_impl(StringBuilder& builder, FormatParser& parser, AK::FormatterContext& context)
+void vformat_impl(StringBuilder& builder, AK::FormatParser& parser, AK::FormatterContext& context)
 {
     const auto literal = parser.consume_literal();
     write_escaped_literal(builder, literal);
 
-    FormatSpecifier specifier;
+    AK::FormatSpecifier specifier;
     if (!parser.consume_specifier(specifier)) {
         ASSERT(parser.is_eof());
         return;
@@ -241,17 +139,109 @@ size_t decode_value(size_t value, AK::FormatterContext& context)
 
 namespace AK {
 
+FormatParser::FormatParser(StringView input)
+    : GenericLexer(input)
+{
+}
+
+StringView FormatParser::consume_literal()
+{
+    const auto begin = tell();
+
+    while (!is_eof()) {
+        if (consume_specific("{{"))
+            continue;
+
+        if (consume_specific("}}"))
+            continue;
+
+        if (next_is(is_any_of("{}")))
+            return m_input.substring_view(begin, tell() - begin);
+
+        consume();
+    }
+
+    return m_input.substring_view(begin);
+}
+
+bool FormatParser::consume_number(size_t& value)
+{
+    value = 0;
+
+    bool consumed_at_least_one = false;
+    while (next_is(isdigit)) {
+        value *= 10;
+        value += consume() - '0';
+        consumed_at_least_one = true;
+    }
+
+    return consumed_at_least_one;
+}
+
+bool FormatParser::consume_specifier(FormatSpecifier& specifier)
+{
+    ASSERT(!next_is('}'));
+
+    if (!consume_specific('{'))
+        return false;
+
+    if (!consume_number(specifier.index))
+        specifier.index = use_next_index;
+
+    if (consume_specific(':')) {
+        const auto begin = tell();
+
+        size_t level = 1;
+        while (level > 0) {
+            ASSERT(!is_eof());
+
+            if (consume_specific('{')) {
+                ++level;
+                continue;
+            }
+
+            if (consume_specific('}')) {
+                --level;
+                continue;
+            }
+
+            consume();
+        }
+
+        specifier.flags = m_input.substring_view(begin, tell() - begin - 1);
+    } else {
+        if (!consume_specific('}'))
+            ASSERT_NOT_REACHED();
+
+        specifier.flags = "";
+    }
+
+    return true;
+}
+
+bool FormatParser::consume_replacement_field(size_t& index)
+{
+    if (!consume_specific('{'))
+        return false;
+
+    if (!consume_number(index))
+        index = use_next_index;
+
+    if (!consume_specific('}'))
+        ASSERT_NOT_REACHED();
+
+    return true;
+}
+
 FormatBuilder::FormatBuilder(StringBuilder& builder)
     : m_builder(builder)
 {
 }
-
 void FormatBuilder::put_padding(char fill, size_t amount)
 {
     for (size_t i = 0; i < amount; ++i)
         m_builder.append(fill);
 }
-
 void FormatBuilder::put_literal(StringView value)
 {
     for (size_t i = 0; i < value.length(); ++i) {
@@ -260,7 +250,6 @@ void FormatBuilder::put_literal(StringView value)
             ++i;
     }
 }
-
 void FormatBuilder::put_string(
     StringView value,
     Align align = Align::Left,
@@ -289,7 +278,6 @@ void FormatBuilder::put_string(
         m_builder.append(value);
     }
 }
-
 void FormatBuilder::put_u64(
     u64 value,
     u8 base = 10,
@@ -376,7 +364,6 @@ void FormatBuilder::put_u64(
         }
     }
 }
-
 void FormatBuilder::put_i64(
     i64 value,
     u8 base = 10,
