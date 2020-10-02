@@ -36,6 +36,36 @@ namespace {
 
 constexpr size_t use_next_index = NumericLimits<size_t>::max();
 
+// The worst case is that we have the largest 64-bit value formatted as binary number, this would take
+// 65 bytes. Choosing a larger power of two won't hurt and is a bit of mitigation against out-of-bounds accesses.
+inline size_t convert_unsigned_to_string(u64 value, Array<u8, 128>& buffer, u8 base, bool upper_case)
+{
+    ASSERT(base >= 2 && base <= 16);
+
+    static constexpr const char* lowercase_lookup = "0123456789abcdef";
+    static constexpr const char* uppercase_lookup = "0123456789ABCDEF";
+
+    if (value == 0) {
+        buffer[0] = '0';
+        return 1;
+    }
+
+    size_t used = 0;
+    while (value > 0) {
+        if (upper_case)
+            buffer[used++] = uppercase_lookup[value % base];
+        else
+            buffer[used++] = lowercase_lookup[value % base];
+
+        value /= base;
+    }
+
+    for (size_t i = 0; i < used / 2; ++i)
+        swap(buffer[i], buffer[used - i - 1]);
+
+    return used;
+}
+
 void vformat_impl(FormatParams& params, FormatBuilder& builder, FormatParser& parser)
 {
     const auto literal = parser.consume_literal();
@@ -185,6 +215,150 @@ bool FormatParser::consume_replacement_field(size_t& index)
         ASSERT_NOT_REACHED();
 
     return true;
+}
+
+void FormatBuilder::put_padding(char fill, size_t amount)
+{
+    for (size_t i = 0; i < amount; ++i)
+        m_builder.append(fill);
+}
+void FormatBuilder::put_literal(StringView value)
+{
+    for (size_t i = 0; i < value.length(); ++i) {
+        m_builder.append(value[i]);
+        if (value[i] == '{' || value[i] == '}')
+            ++i;
+    }
+}
+void FormatBuilder::put_string(
+    StringView value,
+    Align align = Align::Left,
+    size_t min_width = 0,
+    size_t max_width = NumericLimits<size_t>::max(),
+    char fill = ' ')
+{
+    const auto used_by_string = min(max_width, value.length());
+    const auto used_by_padding = max(min_width, used_by_string) - used_by_string;
+
+    if (used_by_string < value.length())
+        value = value.substring_view(0, used_by_string);
+
+    if (align == Align::Left || align == Align::Default) {
+        m_builder.append(value);
+        put_padding(fill, used_by_padding);
+    } else if (align == Align::Center) {
+        const auto used_by_left_padding = used_by_padding / 2;
+        const auto used_by_right_padding = ceil_div(used_by_padding, 2);
+
+        put_padding(fill, used_by_left_padding);
+        m_builder.append(value);
+        put_padding(fill, used_by_right_padding);
+    } else if (align == Align::Right) {
+        put_padding(fill, used_by_padding);
+        m_builder.append(value);
+    }
+}
+void FormatBuilder::put_u64(
+    u64 value,
+    u8 base = 10,
+    bool prefix = false,
+    bool upper_case = false,
+    bool zero_pad = false,
+    Align align = Align::Right,
+    size_t min_width = 0,
+    char fill = ' ',
+    SignMode sign_mode = SignMode::OnlyIfNeeded,
+    bool is_negative = false)
+{
+    Array<u8, 128> buffer;
+
+    const auto used_by_digits = convert_unsigned_to_string(value, buffer, base, upper_case);
+
+    auto used_by_prefix = sign_mode == SignMode::OnlyIfNeeded ? static_cast<size_t>(is_negative) : 1;
+    if (prefix) {
+        if (base == 8)
+            used_by_prefix += 1;
+        else if (base == 16)
+            used_by_prefix += 2;
+        else if (base == 2)
+            used_by_prefix += 2;
+    }
+
+    const auto used_by_field = used_by_prefix + used_by_digits;
+    const auto used_by_padding = max(used_by_field, min_width) - used_by_field;
+
+    const auto put_prefix = [&]() {
+        if (is_negative)
+            m_builder.append('-');
+        else if (sign_mode == SignMode::Always)
+            m_builder.append('+');
+        else if (sign_mode == SignMode::Reserved)
+            m_builder.append(' ');
+
+        if (prefix) {
+            if (base == 2) {
+                if (upper_case)
+                    m_builder.append("0B");
+                else
+                    m_builder.append("0b");
+            } else if (base == 8) {
+                m_builder.append("0");
+            } else if (base == 16) {
+                if (upper_case)
+                    m_builder.append("0X");
+                else
+                    m_builder.append("0x");
+            }
+        }
+    };
+    const auto put_digits = [&]() {
+        for (size_t i = 0; i < used_by_digits; ++i)
+            m_builder.append(buffer[i]);
+    };
+
+    if (align == Align::Left) {
+        const auto used_by_right_padding = used_by_padding;
+
+        put_prefix();
+        put_digits();
+        put_padding(fill, used_by_right_padding);
+    } else if (align == Align::Center) {
+        const auto used_by_left_padding = used_by_padding / 2;
+        const auto used_by_right_padding = ceil_div(used_by_padding, 2);
+
+        put_padding(fill, used_by_left_padding);
+        put_prefix();
+        put_digits();
+        put_padding(fill, used_by_right_padding);
+    } else if (align == Align::Right || align == Align::Default) {
+        const auto used_by_left_padding = used_by_padding;
+
+        if (zero_pad) {
+            put_prefix();
+            put_padding('0', used_by_left_padding);
+            put_digits();
+        } else {
+            put_padding(fill, used_by_left_padding);
+            put_prefix();
+            put_digits();
+        }
+    }
+}
+void FormatBuilder::put_i64(
+    i64 value,
+    u8 base = 10,
+    bool prefix = false,
+    bool upper_case = false,
+    bool zero_pad = false,
+    Align align = Align::Right,
+    size_t min_width = 0,
+    char fill = ' ',
+    SignMode sign_mode = SignMode::OnlyIfNeeded)
+{
+    const auto is_negative = value < 0;
+    value = is_negative ? -value : value;
+
+    put_u64(static_cast<size_t>(value), base, prefix, upper_case, zero_pad, align, min_width, fill, sign_mode, is_negative);
 }
 
 void vformat(StringBuilder& builder, StringView fmtstr, Span<const TypeErasedParameter> parameters)

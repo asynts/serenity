@@ -109,7 +109,10 @@ public:
         Default = OnlyIfNeeded,
     };
 
-    explicit FormatBuilder(StringBuilder& builder);
+    explicit FormatBuilder(StringBuilder& builder)
+        : m_builder(builder)
+    {
+    }
 
     void put_padding(char fill, size_t amount);
 
