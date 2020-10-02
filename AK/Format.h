@@ -27,6 +27,7 @@
 #pragma once
 
 #include <AK/Array.h>
+#include <AK/GenericLexer.h>
 #include <AK/StringView.h>
 
 // FIXME: I would really love to merge the format_value and make_type_erased_parameters functions,
@@ -34,6 +35,10 @@
 //        reproduces the issue: https://godbolt.org/z/o55crs
 
 namespace AK {
+
+class FormatParams;
+class FormatParser;
+class FormatBuilder;
 
 template<typename T, typename = void>
 struct Formatter;
@@ -76,7 +81,7 @@ struct TypeErasedParameter {
 
     const void* value;
     Type type;
-    void (*formatter)(class FormatParams&, class FormatBuilder&, class FormatParser&, const void* value);
+    void (*formatter)(FormatParams&, FormatBuilder&, FormatParser&, const void* value);
 };
 
 class FormatParser : public GenericLexer {
@@ -260,10 +265,10 @@ struct Formatter<T, typename EnableIf<IsIntegral<T>::value>::Type> : StandardFor
 
 template<typename T>
 struct Formatter<T*> : StandardFormatter {
-    void format(StringBuilder& builder, T* value, FormatterContext& context)
+    void format(FormatParams& params, FormatBuilder& builder, T* value)
     {
         Formatter<FlatPtr> formatter { *this };
-        formatter.format(builder, reinterpret_cast<FlatPtr>(value), context);
+        formatter.format(params, builder, reinterpret_cast<FlatPtr>(value));
     }
 };
 

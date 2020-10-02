@@ -232,10 +232,10 @@ void FormatBuilder::put_literal(StringView value)
 }
 void FormatBuilder::put_string(
     StringView value,
-    Align align = Align::Left,
-    size_t min_width = 0,
-    size_t max_width = NumericLimits<size_t>::max(),
-    char fill = ' ')
+    Align align,
+    size_t min_width,
+    size_t max_width,
+    char fill)
 {
     const auto used_by_string = min(max_width, value.length());
     const auto used_by_padding = max(min_width, used_by_string) - used_by_string;
@@ -260,15 +260,15 @@ void FormatBuilder::put_string(
 }
 void FormatBuilder::put_u64(
     u64 value,
-    u8 base = 10,
-    bool prefix = false,
-    bool upper_case = false,
-    bool zero_pad = false,
-    Align align = Align::Right,
-    size_t min_width = 0,
-    char fill = ' ',
-    SignMode sign_mode = SignMode::OnlyIfNeeded,
-    bool is_negative = false)
+    u8 base,
+    bool prefix,
+    bool upper_case,
+    bool zero_pad,
+    Align align,
+    size_t min_width,
+    char fill,
+    SignMode sign_mode,
+    bool is_negative)
 {
     Array<u8, 128> buffer;
 
@@ -346,14 +346,14 @@ void FormatBuilder::put_u64(
 }
 void FormatBuilder::put_i64(
     i64 value,
-    u8 base = 10,
-    bool prefix = false,
-    bool upper_case = false,
-    bool zero_pad = false,
-    Align align = Align::Right,
-    size_t min_width = 0,
-    char fill = ' ',
-    SignMode sign_mode = SignMode::OnlyIfNeeded)
+    u8 base,
+    bool prefix,
+    bool upper_case,
+    bool zero_pad,
+    Align align,
+    size_t min_width,
+    char fill,
+    SignMode sign_mode)
 {
     const auto is_negative = value < 0;
     value = is_negative ? -value : value;
