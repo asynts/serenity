@@ -26,10 +26,11 @@
 
 #include <AK/Format.h>
 #include <AK/GenericLexer.h>
-#include <AK/PrintfImplementation.h>
 #include <AK/String.h>
 #include <AK/StringBuilder.h>
 #include <ctype.h>
+
+namespace AK {
 
 namespace {
 
@@ -65,46 +66,34 @@ size_t convert_unsigned_to_string(u64 value, Array<u8, 128>& buffer, u8 base, bo
 
 constexpr size_t use_next_index = NumericLimits<size_t>::max();
 
-void write_escaped_literal(StringBuilder& builder, StringView literal)
+void vformat_impl(AK::FormatterContext& ctx)
 {
-    for (size_t idx = 0; idx < literal.length(); ++idx) {
-        builder.append(literal[idx]);
-        if (literal[idx] == '{' || literal[idx] == '}')
-            ++idx;
-    }
-}
+    const auto literal = ctx.parser().consume_literal();
+    ctx.builder().put_literal(literal);
 
-void vformat_impl(StringBuilder& builder, AK::FormatParser& parser, AK::FormatterContext& context)
-{
-    const auto literal = parser.consume_literal();
-    write_escaped_literal(builder, literal);
-
-    AK::FormatSpecifier specifier;
-    if (!parser.consume_specifier(specifier)) {
-        ASSERT(parser.is_eof());
+    AK::FormatParser::FormatSpecifier specifier;
+    if (!ctx.parser().consume_specifier(specifier)) {
+        ASSERT(ctx.parser().is_eof());
         return;
     }
 
     if (specifier.index == use_next_index)
-        specifier.index = context.take_next_index();
+        specifier.index = ctx.take_next_index();
 
-    ASSERT(specifier.index < context.parameter_count());
+    auto& parameter = ctx.parameters().at(specifier.index);
+    parameter.formatter(ctx, parameter.value);
 
-    context.set_flags(specifier.flags);
-
-    auto& parameter = context.parameter_at(specifier.index);
-    parameter.formatter(builder, parameter.value, context);
-
-    vformat_impl(builder, parser, context);
+    vformat_impl(ctx);
 }
 
-size_t decode_value(size_t value, AK::FormatterContext& context)
+// FIXME: Move this into FormatParser
+size_t decode_value(size_t value, AK::FormatterContext& ctx)
 {
     if (value == AK::StandardFormatter::value_from_next_arg)
-        value = AK::StandardFormatter::value_from_arg + context.take_next_index();
+        value = AK::StandardFormatter::value_from_arg + ctx.take_next_index();
 
     if (value >= AK::StandardFormatter::value_from_arg) {
-        const auto parameter = context.parameter_at(value - AK::StandardFormatter::value_from_arg);
+        const auto parameter = ctx.parameters().at(value - AK::StandardFormatter::value_from_arg);
 
         Optional<i64> svalue;
         if (parameter.type == AK::TypeErasedParameter::Type::UInt8)
@@ -135,15 +124,12 @@ size_t decode_value(size_t value, AK::FormatterContext& context)
     return value;
 }
 
-} // namespace
-
-namespace AK {
+} // namespace AK::{anonymous}
 
 FormatParser::FormatParser(StringView input)
     : GenericLexer(input)
 {
 }
-
 StringView FormatParser::consume_literal()
 {
     const auto begin = tell();
@@ -163,7 +149,6 @@ StringView FormatParser::consume_literal()
 
     return m_input.substring_view(begin);
 }
-
 bool FormatParser::consume_number(size_t& value)
 {
     value = 0;
@@ -177,7 +162,6 @@ bool FormatParser::consume_number(size_t& value)
 
     return consumed_at_least_one;
 }
-
 bool FormatParser::consume_specifier(FormatSpecifier& specifier)
 {
     ASSERT(!next_is('}'));
@@ -218,7 +202,6 @@ bool FormatParser::consume_specifier(FormatSpecifier& specifier)
 
     return true;
 }
-
 bool FormatParser::consume_replacement_field(size_t& index)
 {
     if (!consume_specific('{'))
@@ -383,97 +366,91 @@ void FormatBuilder::put_i64(
 
 void vformat(StringBuilder& builder, StringView fmtstr, Span<const TypeErasedParameter> parameters)
 {
-    FormatParser parser { fmtstr };
-    FormatterContext context { parameters };
-    vformat_impl(builder, parser, context);
+    FormatterContext ctx { fmtstr, builder, parameters };
+    vformat_impl(ctx);
 }
 void vformat(const LogStream& stream, StringView fmtstr, Span<const TypeErasedParameter> parameters)
 {
     StringBuilder builder;
-    FormatParser parser { fmtstr };
-    FormatterContext context { parameters };
-    vformat_impl(builder, parser, context);
+    FormatterContext ctx { fmtstr, builder, parameters };
+    vformat_impl(ctx);
     stream << builder.to_string();
 }
 
-void StandardFormatter::parse(FormatterContext& context)
+void StandardFormatter::parse(FormatterContext& ctx)
 {
-    FormatParser parser { context.flags() };
-
-    if (StringView { "<^>" }.contains(parser.peek(1))) {
-        ASSERT(!parser.next_is(is_any_of("{}")));
-        m_fill = parser.consume();
+    if (StringView { "<^>" }.contains(ctx.parser().peek(1))) {
+        ASSERT(!ctx.parser().next_is(is_any_of("{}")));
+        m_fill = ctx.parser().consume();
     }
 
-    if (parser.consume_specific('<'))
+    if (ctx.parser().consume_specific('<'))
         m_align = FormatBuilder::Align::Left;
-    else if (parser.consume_specific('^'))
+    else if (ctx.parser().consume_specific('^'))
         m_align = FormatBuilder::Align::Center;
-    else if (parser.consume_specific('>'))
+    else if (ctx.parser().consume_specific('>'))
         m_align = FormatBuilder::Align::Right;
 
-    if (parser.consume_specific('-'))
+    if (ctx.parser().consume_specific('-'))
         m_sign_mode = FormatBuilder::SignMode::OnlyIfNeeded;
-    else if (parser.consume_specific('+'))
+    else if (ctx.parser().consume_specific('+'))
         m_sign_mode = FormatBuilder::SignMode::Always;
-    else if (parser.consume_specific(' '))
+    else if (ctx.parser().consume_specific(' '))
         m_sign_mode = FormatBuilder::SignMode::Reserved;
 
-    if (parser.consume_specific('#'))
+    if (ctx.parser().consume_specific('#'))
         m_alternative_form = true;
 
-    if (parser.consume_specific('0'))
+    if (ctx.parser().consume_specific('0'))
         m_zero_pad = true;
 
-    if (size_t index = 0; parser.consume_replacement_field(index)) {
+    if (size_t index = 0; ctx.parser().consume_replacement_field(index)) {
         if (index == use_next_index)
-            index = context.take_next_index();
+            index = ctx.take_next_index();
 
         m_width = value_from_arg + index;
-    } else if (size_t width = 0; parser.consume_number(width)) {
+    } else if (size_t width = 0; ctx.parser().consume_number(width)) {
         m_width = width;
     }
 
-    if (parser.consume_specific('.')) {
-        if (size_t index = 0; parser.consume_replacement_field(index)) {
+    if (ctx.parser().consume_specific('.')) {
+        if (size_t index = 0; ctx.parser().consume_replacement_field(index)) {
             if (index == use_next_index)
-                index = context.take_next_index();
+                index = ctx.take_next_index();
 
             m_precision = value_from_arg + index;
-        } else if (size_t precision = 0; parser.consume_number(precision)) {
+        } else if (size_t precision = 0; ctx.parser().consume_number(precision)) {
             m_precision = precision;
         }
     }
 
-    if (parser.consume_specific('b'))
+    if (ctx.parser().consume_specific('b'))
         m_mode = Mode::Binary;
-    else if (parser.consume_specific('B'))
+    else if (ctx.parser().consume_specific('B'))
         m_mode = Mode::BinaryUppercase;
-    else if (parser.consume_specific('d'))
+    else if (ctx.parser().consume_specific('d'))
         m_mode = Mode::Decimal;
-    else if (parser.consume_specific('o'))
+    else if (ctx.parser().consume_specific('o'))
         m_mode = Mode::Octal;
-    else if (parser.consume_specific('x'))
+    else if (ctx.parser().consume_specific('x'))
         m_mode = Mode::Hexadecimal;
-    else if (parser.consume_specific('X'))
+    else if (ctx.parser().consume_specific('X'))
         m_mode = Mode::HexadecimalUppercase;
-    else if (parser.consume_specific('c'))
+    else if (ctx.parser().consume_specific('c'))
         m_mode = Mode::Character;
-    else if (parser.consume_specific('s'))
+    else if (ctx.parser().consume_specific('s'))
         m_mode = Mode::String;
-    else if (parser.consume_specific('p'))
+    else if (ctx.parser().consume_specific('p'))
         m_mode = Mode::Pointer;
 
-    if (!parser.is_eof())
-        dbg() << __PRETTY_FUNCTION__ << " did not consume '" << parser.remaining() << "'";
+    if (!ctx.parser().is_eof())
+        dbg() << __PRETTY_FUNCTION__ << " did not consume '" << ctx.parser().remaining() << "'";
 
-    ASSERT(parser.is_eof());
+    ASSERT(ctx.parser().is_eof());
 }
 
-void Formatter<StringView>::format(StringBuilder& builder, StringView value, FormatterContext& context)
+void Formatter<StringView>::format(FormatterContext& ctx, StringView value)
 {
-    FormatBuilder fmtbuilder { builder };
-
     if (m_sign_mode != FormatBuilder::SignMode::OnlyIfNeeded)
         ASSERT_NOT_REACHED();
     if (m_alternative_form)
@@ -485,28 +462,26 @@ void Formatter<StringView>::format(StringBuilder& builder, StringView value, For
     if (m_width != value_not_set && m_precision != value_not_set)
         ASSERT_NOT_REACHED();
 
-    const auto width = decode_value(m_width, context);
-    auto precision = decode_value(m_precision, context);
+    const auto width = decode_value(m_width, ctx);
+    auto precision = decode_value(m_precision, ctx);
 
     // FIXME: Is this correct?
     if (precision == 0)
         precision == NumericLimits<size_t>::max();
 
-    fmtbuilder.put_string(value, m_align, width, precision, m_fill);
+    ctx.builder().put_string(value, m_align, width, precision, m_fill);
 }
 
 template<typename T>
-void Formatter<T, typename EnableIf<IsIntegral<T>::value>::Type>::format(StringBuilder& builder, T value, FormatterContext& context)
+void Formatter<T, typename EnableIf<IsIntegral<T>::value>::Type>::format(FormatterContext& ctx, T value)
 {
-    FormatBuilder fmtbuilder { builder };
-
     if (m_mode == Mode::Character) {
         ASSERT(value >= 0 && value <= 127);
 
         m_mode = Mode::String;
 
         Formatter<StringView> formatter { *this };
-        formatter.format(builder, StringView { static_cast<const char*>(&value), 1 }, context);
+        formatter.format(ctx, StringView { static_cast<const char*>(&value), 1 });
         return;
     }
 
@@ -541,14 +516,14 @@ void Formatter<T, typename EnableIf<IsIntegral<T>::value>::Type>::format(StringB
         fmtbuilder.put_i64(value, base, m_alternative_form, upper_case, m_zero_pad, m_align, width, m_fill, m_sign_mode);
 }
 
-void Formatter<bool>::format(StringBuilder& builder, bool value, FormatterContext& context)
+void Formatter<bool>::format(FormatterContext& ctx, bool value)
 {
     if (m_mode == Mode::Binary || m_mode == Mode::BinaryUppercase || m_mode == Mode::Decimal || m_mode == Mode::Octal || m_mode == Mode::Hexadecimal || m_mode == Mode::HexadecimalUppercase) {
         Formatter<u8> formatter { *this };
-        return formatter.format(builder, static_cast<u8>(value), context);
+        return formatter.format(ctx, static_cast<u8>(value));
     } else {
         Formatter<StringView> formatter { *this };
-        formatter.format(builder, value ? "true" : "false", context);
+        formatter.format(ctx, value ? "true" : "false");
     }
 }
 

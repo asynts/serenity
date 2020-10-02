@@ -76,37 +76,16 @@ struct TypeErasedParameter {
 
     const void* value;
     Type type;
-    void (*formatter)(StringBuilder& builder, const void* value, class FormatterContext&);
-};
-
-class FormatterContext {
-public:
-    FormatterContext(Span<const TypeErasedParameter> parameters)
-        : m_parameters(parameters)
-    {
-    }
-
-    const TypeErasedParameter& parameter_at(size_t index) const { return m_parameters.at(index); }
-    size_t parameter_count() const { return m_parameters.size(); }
-
-    StringView flags() const { return m_flags; }
-    void set_flags(StringView value) { m_flags = value; }
-
-    size_t take_next_index() { return m_next_index++; }
-
-private:
-    Span<const TypeErasedParameter> m_parameters;
-    StringView m_flags;
-    size_t m_next_index { 0 };
-};
-
-struct FormatSpecifier {
-    StringView flags;
-    size_t index;
+    void (*formatter)(class FormatterContext&, const void* value);
 };
 
 class FormatParser : public GenericLexer {
 public:
+    struct FormatSpecifier {
+        StringView flags;
+        size_t index;
+    };
+
     explicit FormatParser(StringView input);
 
     StringView consume_literal();
@@ -168,17 +147,36 @@ private:
     StringBuilder& m_builder;
 };
 
+class FormatterContext {
+public:
+    FormatterContext(StringView fmtstr, StringBuilder& builder, Span<const TypeErasedParameter> parameters)
+        : m_parser(fmtstr)
+        , m_builder(builder)
+        , m_parameters(parameters)
+    {
+    }
+
+    FormatBuilder& builder() { return m_builder; }
+    FormatParser& parser() { return m_parser; }
+    Span<const TypeErasedParameter> parameters() { return m_parameters; }
+    size_t take_next_index() { return m_next_index++; }
+
+    FormatBuilder m_builder;
+    FormatParser m_parser;
+    Span<const TypeErasedParameter> m_parameters;
+    size_t m_next_index { 0 };
+};
+
 } // namespace AK
 
 namespace AK::Detail::Format {
 
 template<typename T>
-void format_value(StringBuilder& builder, const void* value, FormatterContext& context)
+void format_value(FormatterContext& ctx, const void* value, StringView flags)
 {
     Formatter<T> formatter;
-
-    formatter.parse(context);
-    formatter.format(builder, *static_cast<const T*>(value), context);
+    formatter.parse(ctx);
+    formatter.format(ctx, *static_cast<const T*>(value));
 }
 
 } // namespace AK::Detail::Format
@@ -228,7 +226,7 @@ struct Formatter<StringView> : StandardFormatter {
     {
     }
 
-    void format(StringBuilder& builder, StringView value, FormatterContext&);
+    void format(FormatterContext&, StringView value);
 };
 template<>
 struct Formatter<const char*> : Formatter<StringView> {
@@ -251,12 +249,12 @@ struct Formatter<T, typename EnableIf<IsIntegral<T>::value>::Type> : StandardFor
     {
     }
 
-    void format(StringBuilder&, T value, FormatterContext&);
+    void format(FormatterContext&, T value);
 };
 
 template<>
 struct Formatter<bool> : StandardFormatter {
-    void format(StringBuilder&, bool value, FormatterContext&);
+    void format(FormatterContext&, bool value);
 };
 
 template<typename... Parameters>
