@@ -118,11 +118,11 @@ public:
 class FormatBuilder {
 public:
     enum class Align {
+        Default,
         Left,
         Center,
         Right,
     };
-
     enum class SignMode {
         OnlyIfNeeded,
         Always,
@@ -191,18 +191,6 @@ constexpr size_t max_format_arguments = 256;
 // Not all valid options do anything yet.
 // https://en.cppreference.com/w/cpp/utility/format/formatter#Standard_format_specification
 struct StandardFormatter {
-    enum class Align {
-        Default,
-        Left,
-        Right,
-        Center,
-    };
-    enum class Sign {
-        NegativeOnly,
-        PositiveAndNegative,
-        ReserveSpace,
-        Default = NegativeOnly
-    };
     enum class Mode {
         Default,
         Binary,
@@ -220,8 +208,8 @@ struct StandardFormatter {
     static constexpr size_t value_from_next_arg = NumericLimits<size_t>::max();
     static constexpr size_t value_from_arg = NumericLimits<size_t>::max() - max_format_arguments - 1;
 
-    Align m_align = Align::Default;
-    Sign m_sign = Sign::NegativeOnly;
+    FormatBuilder::Align m_align = FormatBuilder::Align::Default;
+    FormatBuilder::SignMode m_sign_mode = FormatBuilder::SignMode::OnlyIfNeeded;
     Mode m_mode = Mode::Default;
     bool m_alternative_form = false;
     char m_fill = ' ';

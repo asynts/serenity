@@ -263,7 +263,7 @@ void FormatBuilder::put_string(
     if (used_by_string < value.length())
         value = value.substring_view(0, used_by_string);
 
-    if (align == Align::Left) {
+    if (align == Align::Left || align == Align::Default) {
         m_builder.append(value);
         put_padding(fill, used_by_padding);
     } else if (align == Align::Center) {
@@ -350,7 +350,7 @@ void FormatBuilder::put_u64(
         put_prefix();
         put_digits();
         put_padding(fill, used_by_right_padding);
-    } else if (align == Align::Right) {
+    } else if (align == Align::Right || align == Align::Default) {
         const auto used_by_left_padding = used_by_padding;
 
         if (zero_pad) {
@@ -406,18 +406,18 @@ void StandardFormatter::parse(FormatterContext& context)
     }
 
     if (parser.consume_specific('<'))
-        m_align = Align::Left;
+        m_align = FormatBuilder::Align::Left;
     else if (parser.consume_specific('^'))
-        m_align = Align::Center;
+        m_align = FormatBuilder::Align::Center;
     else if (parser.consume_specific('>'))
-        m_align = Align::Right;
+        m_align = FormatBuilder::Align::Right;
 
     if (parser.consume_specific('-'))
-        m_sign = Sign::NegativeOnly;
+        m_sign_mode = FormatBuilder::SignMode::OnlyIfNeeded;
     else if (parser.consume_specific('+'))
-        m_sign = Sign::PositiveAndNegative;
+        m_sign_mode = FormatBuilder::SignMode::Always;
     else if (parser.consume_specific(' '))
-        m_sign = Sign::ReserveSpace;
+        m_sign_mode = FormatBuilder::SignMode::Reserved;
 
     if (parser.consume_specific('#'))
         m_alternative_form = true;
@@ -472,7 +472,9 @@ void StandardFormatter::parse(FormatterContext& context)
 
 void Formatter<StringView>::format(StringBuilder& builder, StringView value, FormatterContext& context)
 {
-    if (m_sign != Sign::Default)
+    FormatBuilder fmtbuilder { builder };
+
+    if (m_sign_mode != FormatBuilder::SignMode::OnlyIfNeeded)
         ASSERT_NOT_REACHED();
     if (m_alternative_form)
         ASSERT_NOT_REACHED();
@@ -483,57 +485,33 @@ void Formatter<StringView>::format(StringBuilder& builder, StringView value, For
     if (m_width != value_not_set && m_precision != value_not_set)
         ASSERT_NOT_REACHED();
 
-    if (m_align == Align::Default)
-        m_align = Align::Left;
-
     const auto width = decode_value(m_width, context);
-    const auto precision = decode_value(m_precision, context);
+    auto precision = decode_value(m_precision, context);
 
-    const auto put_padding = [&](size_t amount, char fill) {
-        for (size_t i = 0; i < amount; ++i)
-            builder.append(fill);
-    };
-    const auto put_bytes = [&](ReadonlyBytes bytes) {
-        for (size_t i = 0; i < bytes.size(); ++i)
-            builder.append(static_cast<char>(bytes[i]));
-    };
+    // FIXME: Is this correct?
+    if (precision == 0)
+        precision == NumericLimits<size_t>::max();
 
-    auto used_by_string = value.length();
-    if (precision != value_not_set)
-        used_by_string = min(used_by_string, precision);
-
-    const auto used_by_padding = width < used_by_string ? 0 : width - used_by_string;
-
-    if (m_align == Align::Left) {
-        const auto used_by_right_padding = used_by_padding;
-
-        put_bytes(value.bytes().trim(used_by_string));
-        put_padding(used_by_right_padding, m_fill);
-        return;
-    }
-    if (m_align == Align::Center) {
-        const auto used_by_left_padding = used_by_padding / 2;
-        const auto used_by_right_padding = ceil_div<size_t, size_t>(used_by_padding, 2);
-
-        put_padding(used_by_left_padding, m_fill);
-        put_bytes(value.bytes().trim(used_by_string));
-        put_padding(used_by_right_padding, m_fill);
-        return;
-    }
-    if (m_align == Align::Right) {
-        const auto used_by_left_padding = used_by_padding;
-
-        put_padding(used_by_left_padding, m_fill);
-        put_bytes(value.bytes().trim(used_by_string));
-        return;
-    }
-
-    ASSERT_NOT_REACHED();
+    fmtbuilder.put_string(value, m_align, width, precision, m_fill);
 }
 
 template<typename T>
 void Formatter<T, typename EnableIf<IsIntegral<T>::value>::Type>::format(StringBuilder& builder, T value, FormatterContext& context)
 {
+    FormatBuilder fmtbuilder { builder };
+
+    if (m_mode == Mode::Character) {
+        ASSERT(value >= 0 && value <= 127);
+
+        m_mode = Mode::String;
+
+        Formatter<StringView> formatter { *this };
+        formatter.format(builder, StringView { static_cast<const char*>(&value), 1 }, context);
+        return;
+    }
+
+    const auto width = decode_value(m_width, context);
+
     if (m_precision != value_not_set)
         ASSERT_NOT_REACHED();
 
@@ -553,81 +531,14 @@ void Formatter<T, typename EnableIf<IsIntegral<T>::value>::Type>::format(StringB
     } else if (m_mode == Mode::HexadecimalUppercase) {
         base = 16;
         upper_case = true;
-    } else if (m_mode == Mode::Character) {
-        // special case
     } else {
         ASSERT_NOT_REACHED();
     }
 
-    auto width = decode_value(m_width, context);
-
-    const auto put_padding = [&](size_t amount, char fill) {
-        for (size_t i = 0; i < amount; ++i)
-            builder.append(fill);
-    };
-
-    if (m_mode == Mode::Character) {
-        // FIXME: We just support ASCII for now, in the future maybe unicode?
-        ASSERT(value >= 0 && value <= 127);
-
-        const size_t used_by_value = 1;
-        const auto used_by_padding = width < used_by_value ? 0 : width - used_by_value;
-
-        if (m_align == Align::Left || m_align == Align::Default) {
-            const auto used_by_right_padding = used_by_padding;
-
-            builder.append(static_cast<char>(value));
-            put_padding(used_by_right_padding, m_fill);
-            return;
-        }
-        if (m_align == Align::Center) {
-            const auto used_by_left_padding = used_by_padding / 2;
-            const auto used_by_right_padding = ceil_div<size_t, size_t>(used_by_padding, 2);
-
-            put_padding(used_by_left_padding, m_fill);
-            builder.append(static_cast<char>(value));
-            put_padding(used_by_right_padding, m_fill);
-            return;
-        }
-        if (m_align == Align::Right) {
-            const auto used_by_left_padding = used_by_padding;
-
-            put_padding(used_by_left_padding, m_fill);
-            builder.append(static_cast<char>(value));
-            return;
-        }
-
-        ASSERT_NOT_REACHED();
-    }
-
-    PrintfImplementation::Align align;
-    if (m_align == Align::Left)
-        align = PrintfImplementation::Align::Left;
-    else if (m_align == Align::Right)
-        align = PrintfImplementation::Align::Right;
-    else if (m_align == Align::Center)
-        align = PrintfImplementation::Align::Center;
-    else if (m_align == Align::Default)
-        align = PrintfImplementation::Align::Right;
-    else
-        ASSERT_NOT_REACHED();
-
-    PrintfImplementation::SignMode sign_mode;
-    if (m_sign == Sign::Default)
-        sign_mode = PrintfImplementation::SignMode::OnlyIfNeeded;
-    else if (m_sign == Sign::NegativeOnly)
-        sign_mode = PrintfImplementation::SignMode::OnlyIfNeeded;
-    else if (m_sign == Sign::PositiveAndNegative)
-        sign_mode = PrintfImplementation::SignMode::Always;
-    else if (m_sign == Sign::ReserveSpace)
-        sign_mode = PrintfImplementation::SignMode::Reserved;
-    else
-        ASSERT_NOT_REACHED();
-
     if (IsSame<typename MakeUnsigned<T>::Type, T>::value)
-        PrintfImplementation::convert_unsigned_to_string(value, builder, base, m_alternative_form, upper_case, m_zero_pad, align, width, m_fill, sign_mode);
+        fmtbuilder.put_u64(value, base, m_alternative_form, upper_case, m_zero_pad, m_align, width, m_fill, m_sign_mode);
     else
-        PrintfImplementation::convert_signed_to_string(value, builder, base, m_alternative_form, upper_case, m_zero_pad, align, width, m_fill, sign_mode);
+        fmtbuilder.put_i64(value, base, m_alternative_form, upper_case, m_zero_pad, m_align, width, m_fill, m_sign_mode);
 }
 
 void Formatter<bool>::format(StringBuilder& builder, bool value, FormatterContext& context)
