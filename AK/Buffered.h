@@ -47,7 +47,7 @@ public:
     }
 
     Buffered(Buffered&& other)
-        : m_stream(other)
+        : m_stream(move(other.m_stream))
     {
         other.buffer().copy_to(buffer());
         m_buffered = other.m_buffered;
@@ -145,7 +145,7 @@ public:
     }
 
     Buffered(Buffered&& other)
-        : m_stream(other)
+        : m_stream(move(other.m_stream))
     {
         other.buffer().copy_to(buffer());
         m_buffered = other.m_buffered;
