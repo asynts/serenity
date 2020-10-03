@@ -26,15 +26,22 @@
 
 #pragma once
 
+#include <AK/Noncopyable.h>
 #include <AK/Optional.h>
 #include <AK/Stream.h>
 
 namespace AK {
 
 class InputBitStream final : public InputStream {
+    AK_MAKE_NONCOPYABLE(InputBitStream);
+
 public:
     explicit InputBitStream(InputStream& stream)
         : m_stream(stream)
+    {
+    }
+    InputBitStream(InputBitStream&& other)
+        : m_stream(other.m_stream)
     {
     }
 

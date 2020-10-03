@@ -132,7 +132,7 @@ bool DeflateDecompressor::CompressedBlock::try_read_more()
     const auto symbol = m_literal_codes.read_symbol(m_decompressor.m_input_stream);
 
     if (symbol < 256) {
-        m_decompressor.m_output_stream << static_cast<u8>(symbol);
+        *m_decompressor.m_output_stream << static_cast<u8>(symbol);
         return true;
     } else if (symbol == 256) {
         m_eof = true;
@@ -148,8 +148,8 @@ bool DeflateDecompressor::CompressedBlock::try_read_more()
 
         for (size_t idx = 0; idx < length; ++idx) {
             u8 byte = 0;
-            m_decompressor.m_output_stream.read({ &byte, sizeof(byte) }, distance);
-            m_decompressor.m_output_stream << byte;
+            m_decompressor.m_output_stream->read({ &byte, sizeof(byte) }, distance);
+            *m_decompressor.m_output_stream << byte;
         }
 
         return true;
@@ -167,16 +167,22 @@ bool DeflateDecompressor::UncompressedBlock::try_read_more()
     if (m_bytes_remaining == 0)
         return false;
 
-    const auto nread = min(m_bytes_remaining, m_decompressor.m_output_stream.remaining_contigous_space());
+    const auto nread = min(m_bytes_remaining, m_decompressor.m_output_stream->remaining_contigous_space());
     m_bytes_remaining -= nread;
 
-    m_decompressor.m_input_stream >> m_decompressor.m_output_stream.reserve_contigous_space(nread);
+    m_decompressor.m_input_stream >> m_decompressor.m_output_stream->reserve_contigous_space(nread);
 
     return true;
 }
 
 DeflateDecompressor::DeflateDecompressor(InputStream& stream)
     : m_input_stream(stream)
+    , m_output_stream(new CircularDuplexStream<32 * 1024>())
+{
+}
+DeflateDecompressor::DeflateDecompressor(DeflateDecompressor&& other)
+    : m_input_stream(move(other.m_input_stream))
+    , m_output_stream(move(other.m_output_stream))
 {
 }
 
@@ -240,10 +246,10 @@ size_t DeflateDecompressor::read(Bytes bytes)
     }
 
     if (m_state == State::ReadingCompressedBlock) {
-        auto nread = m_output_stream.read(bytes);
+        auto nread = m_output_stream->read(bytes);
 
         while (nread < bytes.size() && m_compressed_block.try_read_more()) {
-            nread += m_output_stream.read(bytes.slice(nread));
+            nread += m_output_stream->read(bytes.slice(nread));
         }
 
         if (nread == bytes.size())
@@ -256,10 +262,10 @@ size_t DeflateDecompressor::read(Bytes bytes)
     }
 
     if (m_state == State::ReadingUncompressedBlock) {
-        auto nread = m_output_stream.read(bytes);
+        auto nread = m_output_stream->read(bytes);
 
         while (nread < bytes.size() && m_uncompressed_block.try_read_more()) {
-            nread += m_output_stream.read(bytes.slice(nread));
+            nread += m_output_stream->read(bytes.slice(nread));
         }
 
         if (nread == bytes.size())

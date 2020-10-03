@@ -30,6 +30,7 @@
 #include <AK/ByteBuffer.h>
 #include <AK/CircularDuplexStream.h>
 #include <AK/Endian.h>
+#include <AK/OwnPtr.h>
 #include <AK/Vector.h>
 
 namespace Compress {
@@ -50,6 +51,8 @@ private:
 };
 
 class DeflateDecompressor final : public InputStream {
+    AK_MAKE_NONCOPYABLE(DeflateDecompressor);
+
 private:
     class CompressedBlock {
     public:
@@ -87,6 +90,7 @@ public:
     friend UncompressedBlock;
 
     DeflateDecompressor(InputStream&);
+    DeflateDecompressor(DeflateDecompressor&& other);
     ~DeflateDecompressor();
 
     size_t read(Bytes) override;
@@ -111,7 +115,7 @@ private:
     };
 
     InputBitStream m_input_stream;
-    CircularDuplexStream<32 * 1024> m_output_stream;
+    OwnPtr<CircularDuplexStream<32 * 1024>> m_output_stream;
 };
 
 }

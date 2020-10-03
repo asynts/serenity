@@ -33,9 +33,16 @@
 namespace Core {
 
 class InputFileStream final : public InputStream {
+    AK_MAKE_NONCOPYABLE(InputFileStream);
+
 public:
     explicit InputFileStream(NonnullRefPtr<File> file)
         : m_file(file)
+    {
+    }
+
+    InputFileStream(InputFileStream&& other)
+        : m_file(move(other.m_file))
     {
     }
 
@@ -99,9 +106,16 @@ private:
 };
 
 class OutputFileStream : public OutputStream {
+    AK_MAKE_NONCOPYABLE(OutputFileStream);
+
 public:
     explicit OutputFileStream(NonnullRefPtr<File> file)
         : m_file(file)
+    {
+    }
+
+    OutputFileStream(OutputFileStream&& other)
+        : m_file(move(other.m_file))
     {
     }
 
@@ -166,7 +180,7 @@ public:
     }
 
 private:
-    NonnullRefPtr<File> m_file;
+    RefPtr<File> m_file;
 };
 
 }
