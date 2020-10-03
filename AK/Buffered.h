@@ -50,6 +50,13 @@ public:
         m_buffer = ByteBuffer::create_uninitialized(Size);
     }
 
+    Buffered(Buffered&& other)
+        : m_stream(move(other.m_stream))
+    {
+        m_buffer = other.m_buffer;
+        other.m_buffer.clear();
+    }
+
     bool has_recoverable_error() const override { return m_stream.has_recoverable_error(); }
     bool has_fatal_error() const override { return m_stream.has_fatal_error(); }
     bool has_any_error() const override { return m_stream.has_any_error(); }
@@ -136,6 +143,13 @@ public:
         : m_stream(forward<Parameters>(parameters)...)
     {
         m_buffer = ByteBuffer::create_uninitialized(Size);
+    }
+
+    Buffered(Buffered&& other)
+        : m_stream(move(other.m_stream))
+    {
+        m_buffer = other.m_buffer;
+        other.m_buffer.clear();
     }
 
     ~Buffered()
