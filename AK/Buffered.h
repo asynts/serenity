@@ -26,11 +26,14 @@
 
 #pragma once
 
+#include <AK/ByteBuffer.h>
 #include <AK/Stream.h>
 
 namespace AK {
 
 // FIXME: Implement Buffered<T> for DuplexStream.
+
+// FIXME: We could use a circular buffers instead of copying all remaining data to the front.
 
 template<typename StreamType, size_t Size = 4096, typename = void>
 class Buffered;
@@ -42,6 +45,7 @@ public:
     explicit Buffered(Parameters&&... parameters)
         : m_stream(forward<Parameters>(parameters)...)
     {
+        m_buffer = ByteBuffer::create_uninitialized(Size);
     }
 
     bool has_recoverable_error() const override { return m_stream.has_recoverable_error(); }
@@ -60,13 +64,13 @@ public:
         if (has_any_error())
             return 0;
 
-        auto nread = buffer().trim(m_buffer_remaining).copy_trimmed_to(bytes);
+        auto nread = m_buffer.trim(m_buffer_remaining).copy_trimmed_to(bytes);
 
         m_buffer_remaining -= nread;
-        buffer().slice(nread, m_buffer_remaining).copy_to(buffer());
+        m_buffer.slice(nread, m_buffer_remaining).copy_to(m_buffer);
 
         if (nread < bytes.size()) {
-            m_buffer_remaining = m_stream.read(buffer());
+            m_buffer_remaining = m_stream.read(m_buffer);
 
             if (m_buffer_remaining == 0)
                 return nread;
@@ -94,7 +98,7 @@ public:
         if (m_buffer_remaining > 0)
             return false;
 
-        m_buffer_remaining = m_stream.read(buffer());
+        m_buffer_remaining = m_stream.read(m_buffer);
 
         return m_buffer_remaining == 0;
     }
@@ -115,10 +119,8 @@ public:
     }
 
 private:
-    Bytes buffer() const { return { m_buffer, Size }; }
-
     mutable StreamType m_stream;
-    mutable u8 m_buffer[Size];
+    mutable ByteBuffer m_buffer;
     mutable size_t m_buffer_remaining { 0 };
 };
 
@@ -129,6 +131,7 @@ public:
     explicit Buffered(Parameters&&... parameters)
         : m_stream(forward<Parameters>(parameters)...)
     {
+        m_buffer = ByteBuffer::create_uninitialized(Size);
     }
 
     ~Buffered()
@@ -152,7 +155,7 @@ public:
         if (has_any_error())
             return 0;
 
-        auto nwritten = bytes.copy_trimmed_to(buffer().slice(m_buffered));
+        auto nwritten = bytes.copy_trimmed_to(m_buffer.bytes().slice(m_buffered));
         m_buffered += nwritten;
 
         if (m_buffered == Size) {
@@ -175,15 +178,13 @@ public:
 
     void flush()
     {
-        m_stream.write_or_error({ m_buffer, m_buffered });
+        m_stream.write_or_error(m_buffer.bytes().trim(m_buffered));
         m_buffered = 0;
     }
 
 private:
-    Bytes buffer() { return { m_buffer, Size }; }
-
     StreamType m_stream;
-    u8 m_buffer[Size];
+    ByteBuffer m_buffer;
     size_t m_buffered { 0 };
 };
 
