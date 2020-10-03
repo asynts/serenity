@@ -40,6 +40,8 @@ class Buffered;
 
 template<typename StreamType, size_t Size>
 class Buffered<StreamType, Size, typename EnableIf<IsBaseOf<InputStream, StreamType>::value>::Type> final : public InputStream {
+    AK_MAKE_NONCOPYABLE(Buffered);
+
 public:
     template<typename... Parameters>
     explicit Buffered(Parameters&&... parameters)
@@ -64,10 +66,10 @@ public:
         if (has_any_error())
             return 0;
 
-        auto nread = m_buffer.trim(m_buffer_remaining).copy_trimmed_to(bytes);
+        auto nread = m_buffer.bytes().trim(m_buffer_remaining).copy_trimmed_to(bytes);
 
         m_buffer_remaining -= nread;
-        m_buffer.slice(nread, m_buffer_remaining).copy_to(m_buffer);
+        m_buffer.bytes().slice(nread, m_buffer_remaining).copy_to(m_buffer);
 
         if (nread < bytes.size()) {
             m_buffer_remaining = m_stream.read(m_buffer);
@@ -126,6 +128,8 @@ private:
 
 template<typename StreamType, size_t Size>
 class Buffered<StreamType, Size, typename EnableIf<IsBaseOf<OutputStream, StreamType>::value>::Type> final : public OutputStream {
+    AK_MAKE_NONCOPYABLE(Buffered);
+
 public:
     template<typename... Parameters>
     explicit Buffered(Parameters&&... parameters)

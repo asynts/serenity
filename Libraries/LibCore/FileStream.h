@@ -60,7 +60,7 @@ public:
         if (file_result.is_error())
             return file_result.error();
 
-        return Buffered<InputFileStream> { file_result.value() };
+        return Result<Buffered<InputFileStream>, String> { Buffered<InputFileStream> { file_result.value() } };
     }
 
     size_t read(Bytes bytes) override
@@ -126,7 +126,7 @@ public:
         if (file_result.is_error())
             return file_result.error();
 
-        return Buffered<OutputFileStream> { file_result.value() };
+        return Result<Buffered<OutputFileStream>, String> { Buffered<OutputFileStream> { file_result.value() } };
     }
 
     static OutputFileStream stdout()
