@@ -315,3 +315,17 @@ template<typename... Parameters>
 void new_dbgln(StringView fmtstr, const Parameters&... parameters) { vnew_dbg(fmtstr, VariadicFormatParams { parameters... }, true); }
 
 } // namespace AK
+
+#ifndef KERNEL
+using AK::new_raw_out;
+using AK::new_out;
+using AK::new_outln;
+
+using AK::new_raw_warn;
+using AK::new_warn;
+using AK::new_warnln;
+#endif
+
+using AK::new_raw_dbg;
+using AK::new_dbg;
+using AK::new_dbgln;
