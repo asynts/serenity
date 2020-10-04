@@ -65,6 +65,9 @@ include_directories (../../)
 include_directories (../../Libraries/)
 add_library(LagomCore ${LAGOM_CORE_SOURCES})
 
+add_executable(BenchmarkBitstream BenchmarkBitstream.cpp)
+target_link_libraries(BenchmarkBitstream LagomCore stdc++)
+
 if (BUILD_LAGOM)
     add_library(Lagom $<TARGET_OBJECTS:LagomCore> ${LAGOM_MORE_SOURCES})
 
