@@ -288,4 +288,30 @@ struct Formatter<bool> : StandardFormatter {
 void vformat(StringBuilder& builder, StringView fmtstr, TypeErasedFormatParams);
 void vformat(const LogStream& stream, StringView fmtstr, TypeErasedFormatParams);
 
+#ifndef KERNEL
+void vnew_out(StringView fmtstr, TypeErasedFormatParams, bool newline = false);
+void new_raw_out(StringView string);
+
+template<typename... Parameters>
+void new_out(StringView fmtstr, const Parameters&... parameters) { vnew_out(fmtstr, VariadicFormatParams { parameters... }); }
+template<typename... Parameters>
+void new_outln(StringView fmtstr, const Parameters&... parameters) { vnew_out(fmtstr, VariadicFormatParams { parameters... }, true); }
+
+void vnew_warn(StringView fmtstr, TypeErasedFormatParams, bool newline = false);
+void new_raw_warn(StringView string);
+
+template<typename... Parameters>
+void new_warn(StringView fmtstr, const Parameters&... parameters) { vnew_warn(fmtstr, VariadicFormatParams { parameters... }); }
+template<typename... Parameters>
+void new_warnln(StringView fmtstr, const Parameters&... parameters) { vnew_warn(fmtstr, VariadicFormatParams { parameters... }, true); }
+#endif
+
+void vnew_dbg(StringView fmtstr, TypeErasedFormatParams, bool newline = false);
+void new_raw_dbg(StringView string);
+
+template<typename... Parameters>
+void new_dbg(StringView fmtstr, const Parameters&... parameters) { vnew_dbg(fmtstr, VariadicFormatParams { parameters... }); }
+template<typename... Parameters>
+void new_dbgln(StringView fmtstr, const Parameters&... parameters) { vnew_dbg(fmtstr, VariadicFormatParams { parameters... }, true); }
+
 } // namespace AK
