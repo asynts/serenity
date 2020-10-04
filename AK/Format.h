@@ -289,43 +289,43 @@ void vformat(StringBuilder& builder, StringView fmtstr, TypeErasedFormatParams);
 void vformat(const LogStream& stream, StringView fmtstr, TypeErasedFormatParams);
 
 #ifndef KERNEL
-void vnew_out(StringView fmtstr, TypeErasedFormatParams, bool newline = false);
-void new_raw_out(StringView string);
+void vout(StringView fmtstr, TypeErasedFormatParams, bool newline = false);
+void raw_out(StringView string);
 
 template<typename... Parameters>
-void new_out(StringView fmtstr, const Parameters&... parameters) { vnew_out(fmtstr, VariadicFormatParams { parameters... }); }
+void new_out(StringView fmtstr, const Parameters&... parameters) { vout(fmtstr, VariadicFormatParams { parameters... }); }
 template<typename... Parameters>
-void new_outln(StringView fmtstr, const Parameters&... parameters) { vnew_out(fmtstr, VariadicFormatParams { parameters... }, true); }
+void outln(StringView fmtstr, const Parameters&... parameters) { vout(fmtstr, VariadicFormatParams { parameters... }, true); }
 
-void vnew_warn(StringView fmtstr, TypeErasedFormatParams, bool newline = false);
-void new_raw_warn(StringView string);
+void vwarn(StringView fmtstr, TypeErasedFormatParams, bool newline = false);
+void raw_warn(StringView string);
 
 template<typename... Parameters>
-void new_warn(StringView fmtstr, const Parameters&... parameters) { vnew_warn(fmtstr, VariadicFormatParams { parameters... }); }
+void new_warn(StringView fmtstr, const Parameters&... parameters) { vwarn(fmtstr, VariadicFormatParams { parameters... }); }
 template<typename... Parameters>
-void new_warnln(StringView fmtstr, const Parameters&... parameters) { vnew_warn(fmtstr, VariadicFormatParams { parameters... }, true); }
+void warnln(StringView fmtstr, const Parameters&... parameters) { vwarn(fmtstr, VariadicFormatParams { parameters... }, true); }
 #endif
 
-void vnew_dbg(StringView fmtstr, TypeErasedFormatParams, bool newline = false);
-void new_raw_dbg(StringView string);
+void vdbg(StringView fmtstr, TypeErasedFormatParams, bool newline = false);
+void raw_dbg(StringView string);
 
 template<typename... Parameters>
-void new_dbg(StringView fmtstr, const Parameters&... parameters) { vnew_dbg(fmtstr, VariadicFormatParams { parameters... }); }
+void new_dbg(StringView fmtstr, const Parameters&... parameters) { vdbg(fmtstr, VariadicFormatParams { parameters... }); }
 template<typename... Parameters>
-void new_dbgln(StringView fmtstr, const Parameters&... parameters) { vnew_dbg(fmtstr, VariadicFormatParams { parameters... }, true); }
+void dbgln(StringView fmtstr, const Parameters&... parameters) { vdbg(fmtstr, VariadicFormatParams { parameters... }, true); }
 
 } // namespace AK
 
 #ifndef KERNEL
-using AK::new_raw_out;
 using AK::new_out;
-using AK::new_outln;
+using AK::outln;
+using AK::raw_out;
 
-using AK::new_raw_warn;
 using AK::new_warn;
-using AK::new_warnln;
+using AK::raw_warn;
+using AK::warnln;
 #endif
 
-using AK::new_raw_dbg;
+using AK::dbgln;
 using AK::new_dbg;
-using AK::new_dbgln;
+using AK::raw_dbg;

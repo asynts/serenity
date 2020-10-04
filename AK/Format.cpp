@@ -549,11 +549,11 @@ void Formatter<bool>::format(TypeErasedFormatParams& params, FormatBuilder& buil
 }
 
 #ifndef KERNEL
-void new_raw_out(StringView string)
+void raw_out(StringView string)
 {
     ::fwrite(string.characters_without_null_termination(), 1, string.length(), stdout);
 }
-void vnew_out(StringView fmtstr, TypeErasedFormatParams params, bool newline)
+void vout(StringView fmtstr, TypeErasedFormatParams params, bool newline)
 {
     StringBuilder builder;
     vformat(builder, fmtstr, params);
@@ -561,14 +561,14 @@ void vnew_out(StringView fmtstr, TypeErasedFormatParams params, bool newline)
     if (newline && !builder.is_empty())
         builder.append('\n');
 
-    new_raw_out(builder.to_string());
+    raw_out(builder.to_string());
 }
 
-void new_raw_warn(StringView string)
+void raw_warn(StringView string)
 {
     ::write(STDERR_FILENO, string.characters_without_null_termination(), string.length());
 }
-void vnew_warn(StringView fmtstr, TypeErasedFormatParams params, bool newline)
+void vwarn(StringView fmtstr, TypeErasedFormatParams params, bool newline)
 {
     StringBuilder builder;
     vformat(builder, fmtstr, params);
@@ -576,15 +576,15 @@ void vnew_warn(StringView fmtstr, TypeErasedFormatParams params, bool newline)
     if (newline && !builder.is_empty())
         builder.append('\n');
 
-    new_raw_warn(builder.to_string());
+    raw_warn(builder.to_string());
 }
 #endif
 
-void new_raw_dbg(StringView string)
+void raw_dbg(StringView string)
 {
     dbgputstr(string.characters_without_null_termination(), string.length());
 }
-void vnew_dbg(StringView fmtstr, TypeErasedFormatParams params, bool newline)
+void vdbg(StringView fmtstr, TypeErasedFormatParams params, bool newline)
 {
     StringBuilder builder;
 
@@ -617,7 +617,7 @@ void vnew_dbg(StringView fmtstr, TypeErasedFormatParams params, bool newline)
     if (newline && !builder.is_empty())
         builder.append('\n');
 
-    new_raw_dbg(builder.to_string());
+    raw_dbg(builder.to_string());
 }
 
 template struct Formatter<unsigned char, void>;
