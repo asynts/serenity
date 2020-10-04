@@ -29,6 +29,7 @@
 #include <AK/String.h>
 #include <AK/StringBuilder.h>
 #include <ctype.h>
+#include <stdio.h>
 
 namespace AK {
 
@@ -371,12 +372,6 @@ void vformat(StringBuilder& builder, StringView fmtstr, TypeErasedFormatParams p
 
     vformat_impl(params, fmtbuilder, parser);
 }
-void vformat(const LogStream& stream, StringView fmtstr, TypeErasedFormatParams params)
-{
-    StringBuilder builder;
-    vformat(builder, fmtstr, params);
-    stream << builder.to_string();
-}
 
 void StandardFormatter::parse(TypeErasedFormatParams& params, FormatParser& parser)
 {
@@ -538,6 +533,31 @@ void Formatter<bool>::format(TypeErasedFormatParams& params, FormatBuilder& buil
         Formatter<StringView> formatter { *this };
         return formatter.format(params, builder, value ? "true" : "false");
     }
+}
+
+void voutf(StringView fmtstr, TypeErasedFormatParams params)
+{
+    StringBuilder builder;
+    vformat(builder, fmtstr, params);
+    const auto buffer = builder.to_byte_buffer();
+
+    ::fwrite(buffer.data(), 1, buffer.size(), stdout);
+}
+void vwarnf(StringView fmtstr, TypeErasedFormatParams params)
+{
+    StringBuilder builder;
+    vformat(builder, fmtstr, params);
+    const auto buffer = builder.to_byte_buffer();
+
+    ::write(STDOUT_FILENO, buffer.data(), buffer.size());
+}
+void vdbgf(StringView fmtstr, TypeErasedFormatParams params)
+{
+    StringBuilder builder;
+    vformat(builder, fmtstr, params);
+    const auto string = builder.to_string();
+
+    dbgputstr(string.characters(), string.length());
 }
 
 template struct Formatter<unsigned char, void>;

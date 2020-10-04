@@ -199,13 +199,13 @@ void TestSuite::run(const NonnullRefPtrVector<TestCase>& tests)
     for (const auto& t : tests) {
         const auto test_type = t.is_benchmark() ? "benchmark" : "test";
 
-        warnf("Running {} '{}'.", test_type, t.name());
+        warnf("Running {} '{}'.\n", test_type, t.name());
 
         TestElapsedTimer timer;
         t.func()();
         const auto time = timer.elapsed_milliseconds();
 
-        dbgf("Completed {} '{}' in {}ms", test_type, t.name(), time);
+        dbgf("Completed {} '{}' in {}ms\n", test_type, t.name(), time);
 
         if (t.is_benchmark()) {
             m_benchtime += time;

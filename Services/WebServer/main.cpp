@@ -74,11 +74,11 @@ int main(int argc, char** argv)
     };
 
     if (!server->listen({}, port)) {
-        warnf("Failed to listen on 0.0.0.0:{}", port);
+        warnf("Failed to listen on 0.0.0.0:{}\n", port);
         return 1;
     }
 
-    outf("Listening on 0.0.0.0:{}", port);
+    outf("Listening on 0.0.0.0:{}\n", port);
 
     if (unveil("/res/icons", "r") < 0) {
         perror("unveil");

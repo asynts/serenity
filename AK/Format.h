@@ -286,6 +286,26 @@ struct Formatter<bool> : StandardFormatter {
 };
 
 void vformat(StringBuilder& builder, StringView fmtstr, TypeErasedFormatParams);
-void vformat(const LogStream& stream, StringView fmtstr, TypeErasedFormatParams);
+
+#ifndef KERNEL
+void voutf(StringView fmtstr, TypeErasedFormatParams);
+template<typename... Parameters>
+void outf(StringView fmtstr, const Parameters&... parameters) { voutf(fmtstr, VariadicFormatParams { parameters... }); }
+
+void vwarnf(StringView fmtstr, TypeErasedFormatParams);
+template<typename... Parameters>
+void warnf(StringView fmtstr, const Parameters&... parameters) { vwarnf(fmtstr, VariadicFormatParams { parameters... }); }
+#endif
+
+void vdbgf(StringView fmtstr, TypeErasedFormatParams);
+template<typename... Parameters>
+void dbgf(StringView fmtstr, const Parameters&... parameters) { vdbgf(fmtstr, VariadicFormatParams { parameters... }); }
 
 } // namespace AK
+
+using AK::dbgf;
+
+#if !defined(KERNEL)
+using AK::outf;
+using AK::warnf;
+#endif

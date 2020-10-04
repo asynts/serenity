@@ -140,14 +140,14 @@ int main(int argc, char** argv)
         }
     } else if (sid != pid) {
         if (getpgid(pid) != pid) {
-            dbgf("We were already in a session with sid={} (we are {}), let's do some gymnastics", sid, pid);
+            dbgf("We were already in a session with sid={} (we are {}), let's do some gymnastics\n", sid, pid);
             if (setpgid(pid, sid) < 0) {
                 auto strerr = strerror(errno);
-                dbgf("couldn't setpgid: {}", strerr);
+                dbgf("couldn't setpgid: {}\n", strerr);
             }
             if (setsid() < 0) {
                 auto strerr = strerror(errno);
-                dbgf("couldn't setsid: {}", strerr);
+                dbgf("couldn't setsid: {}\n", strerr);
             }
         }
     }
