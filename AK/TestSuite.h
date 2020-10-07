@@ -282,7 +282,7 @@ using AK::TestSuite;
         auto lhs = (a);                                                                                                                                                                \
         auto rhs = (b);                                                                                                                                                                \
         if (lhs != rhs)                                                                                                                                                                \
-            warnln("\033[31;1mFAIL\033[0m: {}:{}: EXPECT_EQ(" #a ", " #b ") failed with lhs={} and rhs={}", __FILE__, __LINE__, FormatIfSupported { lhs }, FormatIfSupported { rhs }); \
+            warnln("\033[31;1mFAIL\033[0m: {}:{}: EXPECT_EQ({}, {}) failed with lhs={} and rhs={}", __FILE__, __LINE__, #a, #b, FormatIfSupported { lhs }, FormatIfSupported { rhs }); \
     } while (false)
 
 // If you're stuck and `EXPECT_EQ` seems to refuse to print anything useful,
@@ -292,11 +292,11 @@ using AK::TestSuite;
         auto lhs = (a);                                                                                                                    \
         auto rhs = (b);                                                                                                                    \
         if (lhs != rhs)                                                                                                                    \
-            warnln("\033[31;1mFAIL\033[0m: {}:{}: EXPECT_EQ(" #a ", " #b ") failed with lhs={} and rhs={}", __FILE__, __LINE__, lhs, rhs); \
+            warnln("\033[31;1mFAIL\033[0m: {}:{}: EXPECT_EQ({}, {}) failed with lhs={} and rhs={}", __FILE__, __LINE__, #a, #b, lhs, rhs); \
     } while (false)
 
 #define EXPECT(x)                                                                              \
     do {                                                                                       \
         if (!(x))                                                                              \
-            warnln("\033[31;1mFAIL\033[0m: {}:{}: EXPECT(" #x ") failed", __FILE__, __LINE__); \
+            warnln("\033[31;1mFAIL\033[0m: {}:{}: EXPECT({}) failed", __FILE__, __LINE__, #x); \
     } while (false)
