@@ -41,7 +41,9 @@ class FormatParser;
 class FormatBuilder;
 
 template<typename T, typename = void>
-struct Formatter;
+struct Formatter {
+    using __no_formatter_defined = void;
+};
 
 constexpr size_t max_format_arguments = 256;
 
@@ -346,13 +348,11 @@ template<typename... Parameters>
 void dbgln(const char* fmtstr, const Parameters&... parameters) { dbgln(StringView { fmtstr }, parameters...); }
 inline void dbgln() { raw_dbg("\n"); }
 
-// FIXME: This is a very lazy check, 'T::parse' or 'T::format' might not even be functions. I'd prefer to do that
-//        with concepts though.
 template<typename T, typename = void>
-struct HasFormatter : FalseType {
+struct HasFormatter : TrueType {
 };
 template<typename T>
-struct HasFormatter<T, typename EnableIf<T::parse && T::format>::Type> : TrueType {
+struct HasFormatter<T, typename Formatter<T>::__no_formatter_defined> : FalseType {
 };
 
 template<typename T>
@@ -368,19 +368,22 @@ public:
 private:
     const T& m_value;
 };
-template<typename T>
-struct Formatter<FormatIfSupported<T>> : Formatter<StringView> {
+template<typename T, bool Supported = false>
+struct __FormatIfSupported : Formatter<StringView> {
     void format(TypeErasedFormatParams& params, FormatBuilder& builder, const FormatIfSupported<T>&)
     {
         Formatter<StringView>::format(params, builder, "?");
     }
 };
 template<typename T>
-struct Formatter<FormatIfSupported<T>, typename EnableIf<HasFormatter<T>::value>::Type> : Formatter<T> {
+struct __FormatIfSupported<T, true> : Formatter<T> {
     void format(TypeErasedFormatParams& params, FormatBuilder& builder, const FormatIfSupported<T>& value)
     {
         Formatter<T>::format(params, builder, value.value());
     }
+};
+template<typename T>
+struct Formatter<FormatIfSupported<T>> : __FormatIfSupported<T, HasFormatter<T>::value> {
 };
 
 } // namespace AK
