@@ -379,7 +379,7 @@ template<typename T>
 struct Formatter<FormatIfSupported<T>, typename EnableIf<HasFormatter<T>::value>::Type> : Formatter<T> {
     void format(TypeErasedFormatParams& params, FormatBuilder& builder, const FormatIfSupported<T>& value)
     {
-        Formatter<StringView>::format(params, builder, value.value());
+        Formatter<T>::format(params, builder, value.value());
     }
 };
 
