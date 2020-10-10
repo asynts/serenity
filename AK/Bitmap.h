@@ -154,7 +154,10 @@ public:
     void grow(size_t size, bool default_value)
     {
         ASSERT(m_owned);
-        ASSERT(size > m_size);
+        ASSERT(size >= m_size);
+
+        if (size == m_size)
+            return;
 
         auto previous_size_bytes = size_in_bytes();
         auto previous_size = m_size;
