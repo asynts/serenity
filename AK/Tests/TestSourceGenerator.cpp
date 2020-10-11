@@ -33,25 +33,9 @@ TEST_CASE(generate_c_code)
     SourceGenerator generator;
     generator.set("name", "foo");
 
-    generator.append_pattern("const char* @name@ (void) { return \"@name@\"; }");
+    generator.append("const char* @name@ (void) { return \"@name@\"; }");
 
     EXPECT_EQ(generator.generate(), "const char* foo (void) { return \"foo\"; }");
-}
-
-TEST_CASE(override_mapping)
-{
-    SourceGenerator generator;
-    generator.set("foo", "13");
-    generator.set("bar", "23");
-
-    generator.append_pattern("@foo@ @bar@");
-
-    SourceGenerator::MappingType override_mapping;
-    override_mapping.set("bar", "42");
-
-    generator.append_pattern(" @foo@ @bar@", &override_mapping);
-
-    EXPECT_EQ(generator.generate(), "13 23 13 42");
 }
 
 TEST_CASE(copy_mapping)
@@ -62,13 +46,51 @@ TEST_CASE(copy_mapping)
 
     SourceGenerator generator { mapping };
 
-    generator.append_pattern("@foo@ @bar@");
+    generator.append("@foo@ @bar@");
 
     mapping.set("bar", "42");
 
-    generator.append_pattern(" @foo@ @bar@");
+    generator.append(" @foo@ @bar@");
 
     EXPECT_EQ(generator.generate(), "13 23 13 23");
+}
+
+TEST_CASE(scoped)
+{
+    SourceGenerator global_generator;
+
+    global_generator.set("foo", "foo-0");
+    global_generator.set("bar", "bar-0");
+    global_generator.append("@foo@ @bar@\n");
+
+    {
+        ScopedSourceGenerator scoped_generator_1 { global_generator };
+
+        scoped_generator_1.set("bar", "bar-1");
+        global_generator.append("@foo@ @bar@\n");
+    }
+
+    global_generator.append("@foo@ @bar@\n");
+
+    {
+        ScopedSourceGenerator scoped_generator_2 { global_generator };
+
+        scoped_generator_2.set("foo", "foo-2");
+        scoped_generator_2.append("@foo@ @bar@\n");
+
+        {
+            ScopedSourceGenerator scoped_generator_3 { scoped_generator_2 };
+            scoped_generator_2.set("bar", "bar-3");
+            scoped_generator_2.append("@foo@ @bar@\n");
+        }
+
+        {
+            ScopedSourceGenerator scoped_generator_4 { global_generator };
+            scoped_generator_2.append("@foo@ @bar@\n");
+        }
+    }
+
+    EXPECT_EQ(global_generator.generate(), "foo-0 bar-0\nfoo-0 bar-0\nfoo-0 bar-0\nfoo-2 bar-0\nfoo-2 bar-3\nfoo-2 bar-0");
 }
 
 TEST_MAIN(SourceGenerator)

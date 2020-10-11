@@ -100,11 +100,13 @@ private:
 class ScopedSourceGenerator final : SourceGenerator {
 public:
     explicit ScopedSourceGenerator(SourceGenerator& parent)
-        : m_parent(parent)
+        : SourceGenerator()
+        , m_parent(parent)
     {
     }
     explicit ScopedSourceGenerator(ScopedSourceGenerator& parant)
-        : m_parent(parant)
+        : SourceGenerator()
+        , m_parent(parant)
     {
     }
 

@@ -286,6 +286,7 @@ int main(int argc, char** argv)
 
             message_generator.set("message.name", name);
             message_generator.set("message.response_type", response_type);
+            message_generator.set("message.constructor", constructor_for_message(name, parameters));
 
             message_generator.append(R"~~~(
 class @message.name@ final : public IPC::Message {
