@@ -33,77 +33,68 @@
 
 namespace AK {
 
-class SourceGenerator : private GenericLexer {
+class SourceGenerator : public StringBuilder {
+    AK_MAKE_NONCOPYABLE(SourceGenerator);
+
 public:
     using MappingType = HashMap<StringView, String>;
 
-    // SourceGenerator assumes that 'input' is a string literal that appears in the source code, thus it asserts
-    // if the input is invalid.
-    explicit SourceGenerator(StringView input, const MappingType& mappings, char opening = '@', char closing = '@')
-        : GenericLexer(input)
-        , m_mappings(mappings)
+    explicit SourceGenerator(const MappingType& mapping, char opening = '@', char closing = '@')
+        : m_mapping(mapping)
         , m_opening(opening)
         , m_closing(closing)
     {
     }
-
-    void generate(StringBuilder& builder, const MappingType* override_mappings = nullptr)
+    explicit SourceGenerator(char opening = '@', char closing = '@')
+        : m_opening(opening)
+        , m_closing(closing)
     {
-        reset();
+    }
 
-        while (!is_eof()) {
+    void set(StringView key, String value) { m_mapping.set(key, value); }
+
+    void append_pattern(StringView pattern, const MappingType* override_mapping = nullptr)
+    {
+        GenericLexer lexer { pattern };
+
+        while (!lexer.is_eof()) {
             // FIXME: It is a bit inconvinient, that 'consume_until' also consumes the 'stop' character, this makes
             //        the method less generic because there is no way to check if the 'stop' character ever appeared.
             const auto consume_until_without_consuming_stop_character = [&](char stop) {
-                return consume_while([&](char ch) { return ch != stop; });
+                return lexer.consume_while([&](char ch) { return ch != stop; });
             };
 
-            builder.append(consume_until_without_consuming_stop_character(m_opening));
+            append(consume_until_without_consuming_stop_character(m_opening));
 
-            if (consume_specific(m_opening)) {
+            if (lexer.consume_specific(m_opening)) {
                 const auto placeholder = consume_until_without_consuming_stop_character(m_closing);
 
-                if (!consume_specific(m_closing))
+                if (!lexer.consume_specific(m_closing))
                     ASSERT_NOT_REACHED();
 
                 Optional<String> optval;
 
-                if (override_mappings)
-                    optval = override_mappings->get(placeholder);
+                if (override_mapping)
+                    optval = override_mapping->get(placeholder);
 
                 if (!optval.has_value())
-                    optval = m_mappings.get(placeholder);
+                    optval = m_mapping.get(placeholder);
 
-                builder.append(optval.value());
+                append(optval.value());
             } else {
-                ASSERT(is_eof());
+                ASSERT(lexer.is_eof());
             }
         }
     }
 
-    String generate(const MappingType* override_mappings = nullptr)
-    {
-        StringBuilder builder;
-        generate(builder, override_mappings);
-        return builder.build();
-    }
+    String generate() const { return build(); }
+
+    const MappingType& mapping() const { return m_mapping; }
+    MappingType& mapping() { return m_mapping; }
 
 private:
-    // We are creating a copy to allow something like the following:
-    //
-    //     SourceGenerator::MappingType mappings;
-    //     mappings.set("class", "Foo");
-    //
-    //     mappings.set("method", "foo");
-    //     SourceGenerator method_foo_generator { "const char* @class@::@method@() { return \"foo\"}", mappings };
-    //
-    //     mappings.set("method", "bar");
-    //     SourceGenerator method_foo_generator { "const char* @class@::@method@() { return \"bar\"}", mappings };
-    //
-    const MappingType m_mappings;
-
-    const char m_opening;
-    const char m_closing;
+    MappingType m_mapping;
+    char m_opening, m_closing;
 };
 
 }

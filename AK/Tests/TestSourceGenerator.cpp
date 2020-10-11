@@ -30,39 +30,45 @@
 
 TEST_CASE(generate_c_code)
 {
-    SourceGenerator::MappingType mappings;
-    mappings.set("name", "foo");
+    SourceGenerator generator;
+    generator.set("name", "foo");
 
-    SourceGenerator generator { "const char* @name@ (void) { return \"@name@\"; }", mappings };
+    generator.append_pattern("const char* @name@ (void) { return \"@name@\"; }");
 
     EXPECT_EQ(generator.generate(), "const char* foo (void) { return \"foo\"; }");
 }
 
-TEST_CASE(override_mappings)
+TEST_CASE(override_mapping)
 {
-    SourceGenerator::MappingType mappings;
-    mappings.set("foo", "13");
-    mappings.set("bar", "23");
+    SourceGenerator generator;
+    generator.set("foo", "13");
+    generator.set("bar", "23");
 
-    SourceGenerator::MappingType override_mappings;
-    mappings.set("bar", "42");
+    generator.append_pattern("@foo@ @bar@");
 
-    SourceGenerator generator { "@foo@ @bar@", mappings };
+    SourceGenerator::MappingType override_mapping;
+    override_mapping.set("bar", "42");
 
-    EXPECT_EQ(generator.generate(&override_mappings), "13 42");
+    generator.append_pattern(" @foo@ @bar@", &override_mapping);
+
+    EXPECT_EQ(generator.generate(), "13 23 13 42");
 }
 
-TEST_CASE(copy_mappings)
+TEST_CASE(copy_mapping)
 {
-    SourceGenerator::MappingType mappings;
-    mappings.set("foo", "13");
-    mappings.set("bar", "23");
+    SourceGenerator::MappingType mapping;
+    mapping.set("foo", "13");
+    mapping.set("bar", "23");
 
-    SourceGenerator generator { "@foo@ @bar@", mappings };
+    SourceGenerator generator { mapping };
 
-    mappings.set("bar", "42");
+    generator.append_pattern("@foo@ @bar@");
 
-    EXPECT_EQ(generator.generate(), "13 23");
+    mapping.set("bar", "42");
+
+    generator.append_pattern(" @foo@ @bar@");
+
+    EXPECT_EQ(generator.generate(), "13 23 13 23");
 }
 
 TEST_MAIN(SourceGenerator)
