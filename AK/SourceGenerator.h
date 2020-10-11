@@ -34,25 +34,31 @@
 namespace AK {
 
 class SourceGenerator {
-    AK_MAKE_NONCOPYABLE(SourceGenerator);
-
 public:
     using MappingType = HashMap<StringView, String>;
 
-    explicit SourceGenerator(const MappingType& mapping, char opening = '@', char closing = '@')
-        : m_mapping(mapping)
+    explicit SourceGenerator(SourceGenerator& parent, char opening = '@', char closing = '@')
+        : m_parent(&parent)
         , m_opening(opening)
         , m_closing(closing)
     {
     }
     explicit SourceGenerator(char opening = '@', char closing = '@')
-        : m_opening(opening)
+        : m_parent(nullptr)
+        , m_opening(opening)
         , m_closing(closing)
     {
     }
 
-    virtual void set(StringView key, String value) { m_mapping.set(key, value); }
-    virtual void append(StringView pattern) { append(pattern, nullptr); }
+    void set(StringView key, String value) { m_mapping.set(key, value); }
+
+    void append(StringView pattern)
+    {
+        if (m_parent == nullptr)
+            append(pattern, nullptr);
+        else
+            m_parent->append(pattern, &m_mapping);
+    }
 
     String generate() const { return m_builder.build(); }
 
@@ -92,33 +98,12 @@ protected:
     }
 
 private:
+    SourceGenerator* m_parent;
     MappingType m_mapping;
     StringBuilder m_builder;
     char m_opening, m_closing;
 };
 
-class ScopedSourceGenerator final : SourceGenerator {
-public:
-    explicit ScopedSourceGenerator(SourceGenerator& parent)
-        : SourceGenerator()
-        , m_parent(parent)
-    {
-    }
-    explicit ScopedSourceGenerator(ScopedSourceGenerator& parant)
-        : SourceGenerator()
-        , m_parent(parant)
-    {
-    }
-
-    void set(StringView key, String value) override { m_mapping.set(key, value); }
-    void append(StringView pattern) override { SourceGenerator::append(pattern, &m_mapping); }
-
-private:
-    SourceGenerator& m_parent;
-    MappingType m_mapping;
-};
-
 }
 
-using AK::ScopedSourceGenerator;
 using AK::SourceGenerator;

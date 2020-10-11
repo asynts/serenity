@@ -38,59 +38,48 @@ TEST_CASE(generate_c_code)
     EXPECT_EQ(generator.generate(), "const char* foo (void) { return \"foo\"; }");
 }
 
-TEST_CASE(copy_mapping)
-{
-    SourceGenerator::MappingType mapping;
-    mapping.set("foo", "13");
-    mapping.set("bar", "23");
-
-    SourceGenerator generator { mapping };
-
-    generator.append("@foo@ @bar@");
-
-    mapping.set("bar", "42");
-
-    generator.append(" @foo@ @bar@");
-
-    EXPECT_EQ(generator.generate(), "13 23 13 23");
-}
-
 TEST_CASE(scoped)
 {
     SourceGenerator global_generator;
 
+    global_generator.append("\n");
+
     global_generator.set("foo", "foo-0");
     global_generator.set("bar", "bar-0");
-    global_generator.append("@foo@ @bar@\n");
+    global_generator.append("@foo@ @bar@\n"); // foo-0 bar-0
 
     {
-        ScopedSourceGenerator scoped_generator_1 { global_generator };
+        SourceGenerator scoped_generator_1 { global_generator };
 
         scoped_generator_1.set("bar", "bar-1");
-        global_generator.append("@foo@ @bar@\n");
+        global_generator.append("@foo@ @bar@\n"); // foo-0 bar-0
     }
 
-    global_generator.append("@foo@ @bar@\n");
+    global_generator.append("@foo@ @bar@\n"); // foo-0 bar-0
 
     {
-        ScopedSourceGenerator scoped_generator_2 { global_generator };
+        SourceGenerator scoped_generator_2 { global_generator };
 
         scoped_generator_2.set("foo", "foo-2");
-        scoped_generator_2.append("@foo@ @bar@\n");
+        scoped_generator_2.append("@foo@ @bar@\n"); // foo-2 bar-0
 
         {
-            ScopedSourceGenerator scoped_generator_3 { scoped_generator_2 };
-            scoped_generator_2.set("bar", "bar-3");
-            scoped_generator_2.append("@foo@ @bar@\n");
+            // FIXME: This is never put onto the output?
+
+            SourceGenerator scoped_generator_3 { scoped_generator_2 };
+            scoped_generator_3.set("bar", "bar-3");
+            scoped_generator_3.append("@foo@ @bar@\n"); // foo-2 bar-3
         }
 
         {
-            ScopedSourceGenerator scoped_generator_4 { global_generator };
-            scoped_generator_2.append("@foo@ @bar@\n");
+            SourceGenerator scoped_generator_4 { global_generator };
+            scoped_generator_4.append("@foo@ @bar@\n"); // foo-0 bar-0
         }
+
+        scoped_generator_2.append("@foo@ @bar@\n"); // foo-2 bar-0
     }
 
-    EXPECT_EQ(global_generator.generate(), "foo-0 bar-0\nfoo-0 bar-0\nfoo-0 bar-0\nfoo-2 bar-0\nfoo-2 bar-3\nfoo-2 bar-0");
+    EXPECT_EQ(global_generator.generate(), "\nfoo-0 bar-0\nfoo-0 bar-0\nfoo-0 bar-0\nfoo-2 bar-0\nfoo-2 bar-3\nfoo-0 bar-0\nfoo-2 bar-0\n");
 }
 
 TEST_MAIN(SourceGenerator)
