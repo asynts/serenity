@@ -48,22 +48,39 @@ public:
         , m_opening(opening)
         , m_closing(closing)
     {
+        m_builder = new StringBuilder();
     }
 
     void set(StringView key, String value) { m_mapping.set(key, value); }
 
-    void append(StringView pattern)
+    String lookup(StringView key) const
     {
-        if (m_parent == nullptr)
-            append(pattern, nullptr);
-        else
-            m_parent->append(pattern, &m_mapping);
+        if (auto opt = m_mapping.get(key); opt.has_value())
+            return opt.value();
+
+        ASSERT(m_parent);
+
+        return m_parent->lookup(key);
     }
 
-    String generate() const { return m_builder.build(); }
+    String generate() const { return builder().build(); }
 
-protected:
-    void append(StringView pattern, const MappingType* override_mapping)
+    StringBuilder& builder()
+    {
+        if (m_parent)
+            return m_parent->builder();
+        else
+            return *m_builder;
+    }
+    const StringBuilder& builder() const
+    {
+        if (m_parent)
+            return m_parent->builder();
+        else
+            return *m_builder;
+    }
+
+    void append(StringView pattern)
     {
         GenericLexer lexer { pattern };
 
@@ -74,7 +91,7 @@ protected:
                 return lexer.consume_while([&](char ch) { return ch != stop; });
             };
 
-            m_builder.append(consume_until_without_consuming_stop_character(m_opening));
+            builder().append(consume_until_without_consuming_stop_character(m_opening));
 
             if (lexer.consume_specific(m_opening)) {
                 const auto placeholder = consume_until_without_consuming_stop_character(m_closing);
@@ -82,15 +99,7 @@ protected:
                 if (!lexer.consume_specific(m_closing))
                     ASSERT_NOT_REACHED();
 
-                Optional<String> optval;
-
-                if (override_mapping)
-                    optval = override_mapping->get(placeholder);
-
-                if (!optval.has_value())
-                    optval = m_mapping.get(placeholder);
-
-                m_builder.append(optval.value());
+                builder().append(lookup(placeholder));
             } else {
                 ASSERT(lexer.is_eof());
             }
@@ -100,7 +109,7 @@ protected:
 private:
     SourceGenerator* m_parent;
     MappingType m_mapping;
-    StringBuilder m_builder;
+    OwnPtr<StringBuilder> m_builder;
     char m_opening, m_closing;
 };
 
