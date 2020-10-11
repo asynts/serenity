@@ -234,13 +234,13 @@ int main(int argc, char** argv)
 
             message_ids.set(message.name, message_ids.size() + 1);
             message_generator.set("message.name", message.name);
-            message_generator.set("message.id", String::number(message_ids.size() + 1));
+            message_generator.set("message.id", String::number(message_ids.size()));
 
             message_generator.append("    @message.name@ = @message.id@,\n");
             if (message.is_synchronous) {
                 message_ids.set(message.response_name(), message_ids.size() + 1);
                 message_generator.set("message.name", message.response_name());
-                message_generator.set("message.id", String::number(message_ids.size() + 1));
+                message_generator.set("message.id", String::number(message_ids.size()));
 
                 message_generator.append("    @message.name@ = @message.id@,\n");
             }
