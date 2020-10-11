@@ -219,29 +219,33 @@ int main(int argc, char** argv)
 )~~~");
 
     for (auto& endpoint : endpoints) {
-        generator.set("endpoint.name", endpoint.name);
-        generator.set("endpoint.magic", String::number(endpoint.magic));
+        ScopedSourceGenerator endpoint_generator { generator };
 
-        generator.append("namespace Messages::@endpoint.name@ {\n");
+        endpoint_generator.set("endpoint.name", endpoint.name);
+        endpoint_generator.set("endpoint.magic", String::number(endpoint.magic));
+
+        endpoint_generator.append("namespace Messages::@endpoint.name@ {\n");
 
         HashMap<String, int> message_ids;
 
-        generator.append("enum class MessageID : i32 {");
+        endpoint_generator.append("enum class MessageID : i32 {");
         for (auto& message : endpoint.messages) {
-            message_ids.set(message.name, message_ids.size() + 1);
-            generator.set("message.name", message.name);
-            generator.set("message.id", String::number(message_ids.size() + 1));
+            ScopedSourceGenerator message_generator { endpoint_generator };
 
-            generator.append("    @message.name@ = @message.id@,\n");
+            message_ids.set(message.name, message_ids.size() + 1);
+            message_generator.set("message.name", message.name);
+            message_generator.set("message.id", String::number(message_ids.size() + 1));
+
+            message_generator.append("    @message.name@ = @message.id@,\n");
             if (message.is_synchronous) {
                 message_ids.set(message.response_name(), message_ids.size() + 1);
-                generator.set("message.name", message.response_name());
-                generator.set("message.id", String::number(message_ids.size() + 1));
+                message_generator.set("message.name", message.response_name());
+                message_generator.set("message.id", String::number(message_ids.size() + 1));
 
-                generator.append("    @message.name@ = @message.id@,\n");
+                message_generator.append("    @message.name@ = @message.id@,\n");
             }
         }
-        generator.append("};\n");
+        endpoint_generator.append("};\n");
 
         auto constructor_for_message = [&](const String& name, const Vector<Parameter>& parameters) {
             StringBuilder builder;
@@ -278,20 +282,22 @@ int main(int argc, char** argv)
         };
 
         auto do_message = [&](const String& name, const Vector<Parameter>& parameters, const String& response_type = {}) {
-            generator.set("message.name", name);
-            generator.set("message.response_type", response_type);
+            ScopedSourceGenerator message_generator { endpoint_generator };
 
-            generator.append(R"~~~(
+            message_generator.set("message.name", name);
+            message_generator.set("message.response_type", response_type);
+
+            message_generator.append(R"~~~(
 class @message.name@ final : public IPC::Message {
 public:
 )~~~");
 
             if (!response_type.is_null())
-                generator.append(R"~~~(
+                message_generator.append(R"~~~(
    typedef class @message.response_type@ ResponseType;
 )~~~");
 
-            generator.append(R"~~~(
+            message_generator.append(R"~~~(
     @message.constructor@
     virtual ~@message.name@() override {}
 
@@ -306,21 +312,23 @@ public:
 )~~~");
 
             for (auto& parameter : parameters) {
-                generator.set("parameter.type", parameter.type);
+                ScopedSourceGenerator parameter_generator { message_generator };
+
+                parameter_generator.set("parameter.type", parameter.type);
 
                 if (parameter.type == "bool")
-                    generator.set("parameter.initial_value", "false");
+                    parameter_generator.set("parameter.initial_value", "false");
                 else
-                    generator.set("parameter.initial_value", "{}");
+                    parameter_generator.set("parameter.initial_value", "{}");
 
-                generator.append(R"~~~(
+                parameter_generator.append(R"~~~(
         @parameter.type@ @parameter.name@ = @parameter.initial_value@;
         if (!decoder.decode(@parameter.name@))
             return nullptr;
 )~~~");
 
                 if (parameter.attributes.contains_slow("UTF8")) {
-                    generator.append(R"~~~(
+                    parameter_generator.append(R"~~~(
         if (!Utf8View(@parameter.name@).validate())
             return nullptr;
 )~~~");
@@ -335,15 +343,15 @@ public:
                     builder.append(", ");
             }
 
-            generator.set("message.constructor_call_parameters", builder.build());
+            message_generator.set("message.constructor_call_parameters", builder.build());
 
-            generator.append(R"~~~(
+            message_generator.append(R"~~~(
         size_in_bytes = stream.offset();
         return make<@message.name@>(@message.constructor_call_parameters);
     }
 )~~~");
 
-            generator.append(R"~~~(
+            message_generator.append(R"~~~(
     virtual IPC::MessageBuffer encode() const override
     {
         IPC::MessageBuffer buffer;
@@ -353,38 +361,44 @@ public:
 )~~~");
 
             for (auto& parameter : parameters) {
-                generator.set("parameter.name", parameter.name);
-                generator.append(R"~~~(
+                ScopedSourceGenerator parameter_generator { message_generator };
+
+                parameter_generator.set("parameter.name", parameter.name);
+                parameter_generator.append(R"~~~(
         stream << m_@parameter.name@;
 )~~~");
             }
 
-            generator.append(R"~~~(
+            message_generator.append(R"~~~(
         return buffer;
     }
 )~~~");
 
             for (auto& parameter : parameters) {
-                generator.set("parameter.type", parameter.type);
-                generator.set("parameter.name", parameter.name);
-                generator.append(R"~~~(
+                ScopedSourceGenerator parameter_generator { message_generator };
+
+                parameter_generator.set("parameter.type", parameter.type);
+                parameter_generator.set("parameter.name", parameter.name);
+                parameter_generator.append(R"~~~(
     const @parameter.type@& @parameter.name@() const { return m_@parameter.name@; }
 )~~~");
             }
 
-            generator.append(R"~~~(
+            message_generator.append(R"~~~(
 private:
             )~~~");
 
             for (auto& parameter : parameters) {
-                generator.set("parameter.type", parameter.type);
-                generator.set("parameter.name", parameter.name);
-                generator.append(R"~~~(
+                ScopedSourceGenerator parameter_generator { message_generator };
+
+                parameter_generator.set("parameter.type", parameter.type);
+                parameter_generator.set("parameter.name", parameter.name);
+                parameter_generator.append(R"~~~(
     @parameter.type@ m_@parameter.name@;
 )~~~");
             }
 
-            generator.append(R"~~~(
+            message_generator.append(R"~~~(
 };
             )~~~");
         };
@@ -397,11 +411,11 @@ private:
             do_message(message.name, message.inputs, response_name);
         }
 
-        generator.append(R"~~~(
+        endpoint_generator.append(R"~~~(
 } // namespace Messages::@endpoint.name@
         )~~~");
 
-        generator.append(R"~~~(
+        endpoint_generator.append(R"~~~(
 class @endpoint.name@Endpoint : public IPC::Endpoint {
 public:
     @endpoint.name@Endpoint() { }
@@ -419,22 +433,22 @@ public:
         if (stream.handle_any_error()) {
 )~~~");
 #ifdef GENERATE_DEBUG_CODE
-        generator.append(R"~~~(
+        endpoint_generator.append(R"~~~(
             dbgln("Failed to read message endpoint magic");
 )~~~");
 #endif
-        generator.append(R"~~~(
+        endpoint_generator.append(R"~~~(
             return nullptr;
         }
 
         if (message_endpoint_magic != @endpoint.magic@) {
 )~~~");
 #ifdef GENERATE_DEBUG_CODE
-        generator.append(R"~~~(
+        endpoint_generator.append(R"~~~(
             dbgln("Endpoint magic number message_endpoint_magic != @endpoint.magic@");
 )~~~");
 #endif
-        generator.append(R"~~~(
+        endpoint_generator.append(R"~~~(
             return nullptr;
         }
 
@@ -443,11 +457,11 @@ public:
         if (stream.handle_any_error()) {
 )~~~");
 #ifdef GENERATE_DEBUG_CODE
-        generator.append(R"~~~(
+        endpoint_generator.append(R"~~~(
             dbgln("Failed to read message ID");
 )~~~");
 #endif
-        generator.append(R"~~~(
+        endpoint_generator.append(R"~~~(
             return nullptr;
         }
 
@@ -457,9 +471,11 @@ public:
 
         for (auto& message : endpoint.messages) {
             auto do_decode_message = [&](const String& name) {
-                generator.set("message.name", name);
+                ScopedSourceGenerator message_generator { endpoint_generator };
 
-                generator.append(R"~~~(
+                message_generator.set("message.name", name);
+
+                message_generator.append(R"~~~(
         case (int)Messages::@endpoint.name@::MessageID::@message.name@:
             message = Messages::@endpoint.name@::@message.name@::decode(stream, size_in_bytes);
             break;
@@ -471,26 +487,26 @@ public:
                 do_decode_message(message.response_name());
         }
 
-        generator.append(R"~~~(
+        endpoint_generator.append(R"~~~(
         default:
 )~~~");
 #ifdef GENERATE_DEBUG_CODE
-        generator.append(R"~~~(
+        endpoint_generator.append(R"~~~(
             dbgln("Failed to decode @endpoint.name@.({})", message_id);
 )~~~");
 #endif
-        generator.append(R"~~~(
+        endpoint_generator.append(R"~~~(
             return nullptr;
         }
 
         if (stream.handle_any_error()) {
 )~~~");
 #ifdef GENERATE_DEBUG_CODE
-        generator.append(R"~~~(
+        endpoint_generator.append(R"~~~(
             dbgln("Failed to read the message");
 )~~~");
 #endif
-        generator.append(R"~~~(
+        endpoint_generator.append(R"~~~(
             return nullptr;
         }
 
@@ -503,16 +519,18 @@ public:
 )~~~");
         for (auto& message : endpoint.messages) {
             auto do_decode_message = [&](const String& name, bool returns_something) {
-                generator.set("message.name", name);
-                generator.append(R"~~~(
+                ScopedSourceGenerator message_generator { endpoint_generator };
+
+                message_generator.set("message.name", name);
+                message_generator.append(R"~~~(
         case (int)Messages::@endpoint.name@::MessageID::@message.name@:
 )~~~");
                 if (returns_something) {
-                    generator.append(R"~~~(
+                    message_generator.append(R"~~~(
             return handle(static_cast<const Messages::@endpoint.name@::@message.name@&>(message));
 )~~~");
                 } else {
-                    generator.append(R"~~~(
+                    message_generator.append(R"~~~(
             handle(static_cast<const Messages::@endpoint.name@::@message.name@&>(message));
             return nullptr;
 )~~~");
@@ -522,7 +540,7 @@ public:
             if (message.is_synchronous)
                 do_decode_message(message.response_name(), false);
         }
-        generator.append(R"~~~(
+        endpoint_generator.append(R"~~~(
         default:
             return nullptr;
         }
@@ -530,7 +548,9 @@ public:
 )~~~");
 
         for (auto& message : endpoint.messages) {
-            generator.set("message.name", message.name);
+            ScopedSourceGenerator message_generator { endpoint_generator };
+
+            message_generator.set("message.name", message.name);
 
             String return_type = "void";
             if (message.is_synchronous) {
@@ -543,14 +563,14 @@ public:
                 builder.append(">");
                 return_type = builder.to_string();
             }
-            generator.set("message.complex_return_type", return_type);
+            message_generator.set("message.complex_return_type", return_type);
 
-            generator.append(R"~~~(
+            message_generator.append(R"~~~(
     virtual @message.complex_return_type@ handle(const Messages::@endpoint.name@::@message.name@&) = 0;
 )~~~");
         }
 
-        generator.append(R"~~~(
+        endpoint_generator.append(R"~~~(
 private:
 };
 )~~~");

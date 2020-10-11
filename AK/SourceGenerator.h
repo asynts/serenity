@@ -33,16 +33,6 @@
 
 namespace AK {
 
-// FIXME: Add another ScopedSourceGenerator which takes a SourceGenerator& and has
-//        it's own mapping, this mapping should passed as 'override_mapping' to 'append_pattern'.
-//
-//        That should prevent leaking placeholders to the parent scope. (I noticed that this would
-//        be helpful when I was about half done with the IPCCompiler stuff and was to lazy to add it
-//        then.)
-//
-//        Also I only ever call 'append_pattern' or 'append' with a raw string. No need to inherit from
-//        string builder, that should make the implementation of ScopedSourceGenerator simpler too.
-
 class SourceGenerator {
     AK_MAKE_NONCOPYABLE(SourceGenerator);
 
@@ -113,6 +103,10 @@ public:
         : m_parent(parent)
     {
     }
+    explicit ScopedSourceGenerator(ScopedSourceGenerator& parant)
+        : m_parent(parant)
+    {
+    }
 
     void set(StringView key, String value) override { m_mapping.set(key, value); }
     void append(StringView pattern) override { SourceGenerator::append(pattern, &m_mapping); }
@@ -124,4 +118,5 @@ private:
 
 }
 
+using AK::ScopedSourceGenerator;
 using AK::SourceGenerator;
