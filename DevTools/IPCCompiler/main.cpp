@@ -219,7 +219,7 @@ int main(int argc, char** argv)
 )~~~");
 
     for (auto& endpoint : endpoints) {
-        ScopedSourceGenerator endpoint_generator { generator };
+        SourceGenerator endpoint_generator { generator };
 
         endpoint_generator.set("endpoint.name", endpoint.name);
         endpoint_generator.set("endpoint.magic", String::number(endpoint.magic));
@@ -230,7 +230,7 @@ int main(int argc, char** argv)
 
         endpoint_generator.append("enum class MessageID : i32 {");
         for (auto& message : endpoint.messages) {
-            ScopedSourceGenerator message_generator { endpoint_generator };
+            SourceGenerator message_generator { endpoint_generator };
 
             message_ids.set(message.name, message_ids.size() + 1);
             message_generator.set("message.name", message.name);
@@ -282,7 +282,7 @@ int main(int argc, char** argv)
         };
 
         auto do_message = [&](const String& name, const Vector<Parameter>& parameters, const String& response_type = {}) {
-            ScopedSourceGenerator message_generator { endpoint_generator };
+            SourceGenerator message_generator { endpoint_generator };
 
             message_generator.set("message.name", name);
             message_generator.set("message.response_type", response_type);
@@ -313,9 +313,10 @@ public:
 )~~~");
 
             for (auto& parameter : parameters) {
-                ScopedSourceGenerator parameter_generator { message_generator };
+                SourceGenerator parameter_generator { message_generator };
 
                 parameter_generator.set("parameter.type", parameter.type);
+                parameter_generator.set("parameter.name", parameter.name);
 
                 if (parameter.type == "bool")
                     parameter_generator.set("parameter.initial_value", "false");
@@ -348,7 +349,7 @@ public:
 
             message_generator.append(R"~~~(
         size_in_bytes = stream.offset();
-        return make<@message.name@>(@message.constructor_call_parameters);
+        return make<@message.name@>(@message.constructor_call_parameters@);
     }
 )~~~");
 
@@ -362,7 +363,7 @@ public:
 )~~~");
 
             for (auto& parameter : parameters) {
-                ScopedSourceGenerator parameter_generator { message_generator };
+                SourceGenerator parameter_generator { message_generator };
 
                 parameter_generator.set("parameter.name", parameter.name);
                 parameter_generator.append(R"~~~(
@@ -376,7 +377,7 @@ public:
 )~~~");
 
             for (auto& parameter : parameters) {
-                ScopedSourceGenerator parameter_generator { message_generator };
+                SourceGenerator parameter_generator { message_generator };
 
                 parameter_generator.set("parameter.type", parameter.type);
                 parameter_generator.set("parameter.name", parameter.name);
@@ -390,7 +391,7 @@ private:
             )~~~");
 
             for (auto& parameter : parameters) {
-                ScopedSourceGenerator parameter_generator { message_generator };
+                SourceGenerator parameter_generator { message_generator };
 
                 parameter_generator.set("parameter.type", parameter.type);
                 parameter_generator.set("parameter.name", parameter.name);
@@ -420,11 +421,11 @@ private:
 class @endpoint.name@Endpoint : public IPC::Endpoint {
 public:
     @endpoint.name@Endpoint() { }
-    virtual ~@endpoint.name@Endpoint() override { }";
+    virtual ~@endpoint.name@Endpoint() override { }
 
     static int static_magic() { return @endpoint.magic@; }
     virtual int magic() const override { return @endpoint.magic@; }
-    virtual String name() const override { return "@endpoint.name@"; };
+    virtual String name() const override { return "@endpoint.name@"; }
 
     static OwnPtr<IPC::Message> decode_message(const ByteBuffer& buffer, size_t& size_in_bytes)
     {
@@ -472,7 +473,7 @@ public:
 
         for (auto& message : endpoint.messages) {
             auto do_decode_message = [&](const String& name) {
-                ScopedSourceGenerator message_generator { endpoint_generator };
+                SourceGenerator message_generator { endpoint_generator };
 
                 message_generator.set("message.name", name);
 
@@ -520,7 +521,7 @@ public:
 )~~~");
         for (auto& message : endpoint.messages) {
             auto do_decode_message = [&](const String& name, bool returns_something) {
-                ScopedSourceGenerator message_generator { endpoint_generator };
+                SourceGenerator message_generator { endpoint_generator };
 
                 message_generator.set("message.name", name);
                 message_generator.append(R"~~~(
@@ -549,7 +550,7 @@ public:
 )~~~");
 
         for (auto& message : endpoint.messages) {
-            ScopedSourceGenerator message_generator { endpoint_generator };
+            SourceGenerator message_generator { endpoint_generator };
 
             message_generator.set("message.name", message.name);
 

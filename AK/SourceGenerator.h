@@ -58,7 +58,10 @@ public:
         if (auto opt = m_mapping.get(key); opt.has_value())
             return opt.value();
 
-        ASSERT(m_parent);
+        if (m_parent == nullptr) {
+            dbgln("Can't find key '{}'", key);
+            ASSERT_NOT_REACHED();
+        }
 
         return m_parent->lookup(key);
     }
