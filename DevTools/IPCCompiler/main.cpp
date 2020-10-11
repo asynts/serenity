@@ -222,23 +222,23 @@ int main(int argc, char** argv)
         generator.set("endpoint.name", endpoint.name);
         generator.set("endpoint.magic", String::number(endpoint.magic));
 
-        generator.append_pattern("namespace Messages::@endpoint.name@ {\n");
+        generator.append("namespace Messages::@endpoint.name@ {\n");
 
         HashMap<String, int> message_ids;
 
-        generator.append_pattern("enum class MessageID : i32 {");
+        generator.append("enum class MessageID : i32 {");
         for (auto& message : endpoint.messages) {
             message_ids.set(message.name, message_ids.size() + 1);
             generator.set("message.name", message.name);
             generator.set("message.id", String::number(message_ids.size() + 1));
 
-            generator.append_pattern("    @message.name@ = @message.id@,\n");
+            generator.append("    @message.name@ = @message.id@,\n");
             if (message.is_synchronous) {
                 message_ids.set(message.response_name(), message_ids.size() + 1);
                 generator.set("message.name", message.response_name());
                 generator.set("message.id", String::number(message_ids.size() + 1));
 
-                generator.append_pattern("    @message.name@ = @message.id@,\n");
+                generator.append("    @message.name@ = @message.id@,\n");
             }
         }
         generator.append("};\n");
@@ -281,17 +281,17 @@ int main(int argc, char** argv)
             generator.set("message.name", name);
             generator.set("message.response_type", response_type);
 
-            generator.append_pattern(R"~~~(
+            generator.append(R"~~~(
 class @message.name@ final : public IPC::Message {
 public:
 )~~~");
 
             if (!response_type.is_null())
-                generator.append_pattern(R"~~~(
+                generator.append(R"~~~(
    typedef class @message.response_type@ ResponseType;
 )~~~");
 
-            generator.append_pattern(R"~~~(
+            generator.append(R"~~~(
     @message.constructor@
     virtual ~@message.name@() override {}
 
@@ -313,14 +313,14 @@ public:
                 else
                     generator.set("parameter.initial_value", "{}");
 
-                generator.append_pattern(R"~~~(
+                generator.append(R"~~~(
         @parameter.type@ @parameter.name@ = @parameter.initial_value@;
         if (!decoder.decode(@parameter.name@))
             return nullptr;
 )~~~");
 
                 if (parameter.attributes.contains_slow("UTF8")) {
-                    generator.append_pattern(R"~~~(
+                    generator.append(R"~~~(
         if (!Utf8View(@parameter.name@).validate())
             return nullptr;
 )~~~");
@@ -337,13 +337,13 @@ public:
 
             generator.set("message.constructor_call_parameters", builder.build());
 
-            generator.append_pattern(R"~~~(
+            generator.append(R"~~~(
         size_in_bytes = stream.offset();
         return make<@message.name@>(@message.constructor_call_parameters);
     }
 )~~~");
 
-            generator.append_pattern(R"~~~(
+            generator.append(R"~~~(
     virtual IPC::MessageBuffer encode() const override
     {
         IPC::MessageBuffer buffer;
@@ -354,12 +354,12 @@ public:
 
             for (auto& parameter : parameters) {
                 generator.set("parameter.name", parameter.name);
-                generator.append_pattern(R"~~~(
+                generator.append(R"~~~(
         stream << m_@parameter.name@;
 )~~~");
             }
 
-            generator.append_pattern(R"~~~(
+            generator.append(R"~~~(
         return buffer;
     }
 )~~~");
@@ -367,7 +367,7 @@ public:
             for (auto& parameter : parameters) {
                 generator.set("parameter.type", parameter.type);
                 generator.set("parameter.name", parameter.name);
-                generator.append_pattern(R"~~~(
+                generator.append(R"~~~(
     const @parameter.type@& @parameter.name@() const { return m_@parameter.name@; }
 )~~~");
             }
@@ -379,7 +379,7 @@ private:
             for (auto& parameter : parameters) {
                 generator.set("parameter.type", parameter.type);
                 generator.set("parameter.name", parameter.name);
-                generator.append_pattern(R"~~~(
+                generator.append(R"~~~(
     @parameter.type@ m_@parameter.name@;
 )~~~");
             }
@@ -397,11 +397,11 @@ private:
             do_message(message.name, message.inputs, response_name);
         }
 
-        generator.append_pattern(R"~~~(
+        generator.append(R"~~~(
 } // namespace Messages::@endpoint.name@
         )~~~");
 
-        generator.append_pattern(R"~~~(
+        generator.append(R"~~~(
 class @endpoint.name@Endpoint : public IPC::Endpoint {
 public:
     @endpoint.name@Endpoint() { }
@@ -419,22 +419,22 @@ public:
         if (stream.handle_any_error()) {
 )~~~");
 #ifdef GENERATE_DEBUG_CODE
-        generator.append_pattern(R"~~~(
+        generator.append(R"~~~(
             dbgln("Failed to read message endpoint magic");
 )~~~");
 #endif
-        generator.append_pattern(R"~~~(
+        generator.append(R"~~~(
             return nullptr;
         }
 
         if (message_endpoint_magic != @endpoint.magic@) {
 )~~~");
 #ifdef GENERATE_DEBUG_CODE
-        generator.append_pattern(R"~~~(
+        generator.append(R"~~~(
             dbgln("Endpoint magic number message_endpoint_magic != @endpoint.magic@");
 )~~~");
 #endif
-        generator.append_pattern(R"~~~(
+        generator.append(R"~~~(
             return nullptr;
         }
 
@@ -443,11 +443,11 @@ public:
         if (stream.handle_any_error()) {
 )~~~");
 #ifdef GENERATE_DEBUG_CODE
-        generator.append_pattern(R"~~~(
+        generator.append(R"~~~(
             dbgln("Failed to read message ID");
 )~~~");
 #endif
-        generator.append_pattern(R"~~~(
+        generator.append(R"~~~(
             return nullptr;
         }
 
@@ -459,7 +459,7 @@ public:
             auto do_decode_message = [&](const String& name) {
                 generator.set("message.name", name);
 
-                generator.append_pattern(R"~~~(
+                generator.append(R"~~~(
         case (int)Messages::@endpoint.name@::MessageID::@message.name@:
             message = Messages::@endpoint.name@::@message.name@::decode(stream, size_in_bytes);
             break;
@@ -471,26 +471,26 @@ public:
                 do_decode_message(message.response_name());
         }
 
-        generator.append_pattern(R"~~~(
+        generator.append(R"~~~(
         default:
 )~~~");
 #ifdef GENERATE_DEBUG_CODE
-        generator.append_pattern(R"~~~(
+        generator.append(R"~~~(
             dbgln("Failed to decode @endpoint.name@.({})", message_id);
 )~~~");
 #endif
-        generator.append_pattern(R"~~~(
+        generator.append(R"~~~(
             return nullptr;
         }
 
         if (stream.handle_any_error()) {
 )~~~");
 #ifdef GENERATE_DEBUG_CODE
-        generator.append_pattern(R"~~~(
+        generator.append(R"~~~(
             dbgln("Failed to read the message");
 )~~~");
 #endif
-        generator.append_pattern(R"~~~(
+        generator.append(R"~~~(
             return nullptr;
         }
 
@@ -504,15 +504,15 @@ public:
         for (auto& message : endpoint.messages) {
             auto do_decode_message = [&](const String& name, bool returns_something) {
                 generator.set("message.name", name);
-                generator.append_pattern(R"~~~(
+                generator.append(R"~~~(
         case (int)Messages::@endpoint.name@::MessageID::@message.name@:
 )~~~");
                 if (returns_something) {
-                    generator.append_pattern(R"~~~(
+                    generator.append(R"~~~(
             return handle(static_cast<const Messages::@endpoint.name@::@message.name@&>(message));
 )~~~");
                 } else {
-                    generator.append_pattern(R"~~~(
+                    generator.append(R"~~~(
             handle(static_cast<const Messages::@endpoint.name@::@message.name@&>(message));
             return nullptr;
 )~~~");
@@ -522,7 +522,7 @@ public:
             if (message.is_synchronous)
                 do_decode_message(message.response_name(), false);
         }
-        generator.append_pattern(R"~~~(
+        generator.append(R"~~~(
         default:
             return nullptr;
         }
@@ -545,12 +545,12 @@ public:
             }
             generator.set("message.complex_return_type", return_type);
 
-            generator.append_pattern(R"~~~(
+            generator.append(R"~~~(
     virtual @message.complex_return_type@ handle(const Messages::@endpoint.name@::@message.name@&) = 0;
 )~~~");
         }
 
-        generator.append_pattern(R"~~~(
+        generator.append(R"~~~(
 private:
 };
 )~~~");

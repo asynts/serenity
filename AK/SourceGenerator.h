@@ -33,7 +33,17 @@
 
 namespace AK {
 
-class SourceGenerator : public StringBuilder {
+// FIXME: Add another ScopedSourceGenerator which takes a SourceGenerator& and has
+//        it's own mapping, this mapping should passed as 'override_mapping' to 'append_pattern'.
+//
+//        That should prevent leaking placeholders to the parent scope. (I noticed that this would
+//        be helpful when I was about half done with the IPCCompiler stuff and was to lazy to add it
+//        then.)
+//
+//        Also I only ever call 'append_pattern' or 'append' with a raw string. No need to inherit from
+//        string builder, that should make the implementation of ScopedSourceGenerator simpler too.
+
+class SourceGenerator {
     AK_MAKE_NONCOPYABLE(SourceGenerator);
 
 public:
@@ -51,9 +61,13 @@ public:
     {
     }
 
-    void set(StringView key, String value) { m_mapping.set(key, value); }
+    virtual void set(StringView key, String value) { m_mapping.set(key, value); }
+    virtual void append(StringView pattern) { append(pattern, nullptr); }
 
-    void append_pattern(StringView pattern, const MappingType* override_mapping = nullptr)
+    String generate() const { return m_builder.build(); }
+
+protected:
+    void append(StringView pattern, const MappingType* override_mapping)
     {
         GenericLexer lexer { pattern };
 
@@ -64,7 +78,7 @@ public:
                 return lexer.consume_while([&](char ch) { return ch != stop; });
             };
 
-            append(consume_until_without_consuming_stop_character(m_opening));
+            m_builder.append(consume_until_without_consuming_stop_character(m_opening));
 
             if (lexer.consume_specific(m_opening)) {
                 const auto placeholder = consume_until_without_consuming_stop_character(m_closing);
@@ -80,21 +94,32 @@ public:
                 if (!optval.has_value())
                     optval = m_mapping.get(placeholder);
 
-                append(optval.value());
+                m_builder.append(optval.value());
             } else {
                 ASSERT(lexer.is_eof());
             }
         }
     }
 
-    String generate() const { return build(); }
-
-    const MappingType& mapping() const { return m_mapping; }
-    MappingType& mapping() { return m_mapping; }
-
 private:
     MappingType m_mapping;
+    StringBuilder m_builder;
     char m_opening, m_closing;
+};
+
+class ScopedSourceGenerator final : SourceGenerator {
+public:
+    explicit ScopedSourceGenerator(SourceGenerator& parent)
+        : m_parent(parent)
+    {
+    }
+
+    void set(StringView key, String value) override { m_mapping.set(key, value); }
+    void append(StringView pattern) override { SourceGenerator::append(pattern, &m_mapping); }
+
+private:
+    SourceGenerator& m_parent;
+    MappingType m_mapping;
 };
 
 }
