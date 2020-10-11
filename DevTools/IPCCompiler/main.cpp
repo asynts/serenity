@@ -65,13 +65,13 @@ struct Endpoint {
 int main(int argc, char** argv)
 {
     if (argc != 2) {
-        printf("usage: %s <IPC endpoint definition file>\n", argv[0]);
+        outln("usage: {} <IPC endpoint definition file>", argv[0]);
         return 0;
     }
 
     auto file = Core::File::construct(argv[1]);
     if (!file->open(Core::IODevice::ReadOnly)) {
-        fprintf(stderr, "Error: Cannot open %s: %s\n", argv[1], file->error_string());
+        warnln("Error: Cannot open {}: {}", argv[1], file->error_string());
         return 1;
     }
 
@@ -82,7 +82,7 @@ int main(int argc, char** argv)
 
     auto assert_specific = [&](char ch) {
         if (lexer.peek() != ch)
-            warn() << "assert_specific: wanted '" << ch << "', but got '" << lexer.peek() << "' at index " << lexer.tell();
+            warnln("assert_specific: wanted '{}', but got '{}' at index {}", ch, lexer.peek(), lexer.tell());
         bool saw_expected = lexer.consume_specific(ch);
         ASSERT(saw_expected);
     };
@@ -505,28 +505,33 @@ public:
             auto do_decode_message = [&](const String& name, bool returns_something) {
                 generator.set("message.name", name);
                 generator.append_pattern(R"~~~(
-    FIXME FIXME FIXME
+        case (int)Messages::@endpoint.name@::MessageID::@message.name@:
 )~~~");
-
-                out() << "        case (int)Messages::" << endpoint.name << "::MessageID::" << name << ":";
                 if (returns_something) {
-                    out() << "            return handle(static_cast<const Messages::" << endpoint.name << "::" << name << "&>(message));";
+                    generator.append_pattern(R"~~~(
+            return handle(static_cast<const Messages::@endpoint.name@::@message.name@&>(message));
+)~~~");
                 } else {
-                    out() << "            handle(static_cast<const Messages::" << endpoint.name << "::" << name << "&>(message));";
-                    out() << "            return nullptr;";
+                    generator.append_pattern(R"~~~(
+            handle(static_cast<const Messages::@endpoint.name@::@message.name@&>(message));
+            return nullptr;
+)~~~");
                 }
             };
             do_decode_message(message.name, message.is_synchronous);
             if (message.is_synchronous)
                 do_decode_message(message.response_name(), false);
         }
-        out() << "        default:";
-        out() << "            return nullptr;";
-
-        out() << "        }";
-        out() << "    }";
+        generator.append_pattern(R"~~~(
+        default:
+            return nullptr;
+        }
+    }
+)~~~");
 
         for (auto& message : endpoint.messages) {
+            generator.set("message.name", message.name);
+
             String return_type = "void";
             if (message.is_synchronous) {
                 StringBuilder builder;
@@ -538,30 +543,38 @@ public:
                 builder.append(">");
                 return_type = builder.to_string();
             }
-            out() << "    virtual " << return_type << " handle(const Messages::" << endpoint.name << "::" << message.name << "&) = 0;";
+            generator.set("message.complex_return_type", return_type);
+
+            generator.append_pattern(R"~~~(
+    virtual @message.complex_return_type@ handle(const Messages::@endpoint.name@::@message.name@&) = 0;
+)~~~");
         }
 
-        out() << "private:";
-        out() << "};";
+        generator.append_pattern(R"~~~(
+private:
+};
+)~~~");
     }
+
+    outln("{}", generator.generate());
 
 #ifdef DEBUG
     for (auto& endpoint : endpoints) {
-        warn() << "Endpoint: '" << endpoint.name << "' (magic: " << endpoint.magic << ")";
+        warnln("Endpoint '{}' (magic: {})", endpoint.name, endpoint.magic);
         for (auto& message : endpoint.messages) {
-            warn() << "  Message: '" << message.name << "'";
-            warn() << "    Sync: " << message.is_synchronous;
-            warn() << "    Inputs:";
+            warnln("  Message: '{}'", message.name);
+            warnln("    Sync: {}", message.is_synchronous);
+            warnln("    Inputs:");
             for (auto& parameter : message.inputs)
-                warn() << "        Parameter: " << parameter.name << " (" << parameter.type << ")";
+                warnln("      Parameter: {} ({})", parameter.name, parameter.type);
             if (message.inputs.is_empty())
-                warn() << "        (none)";
+                warnln("      (none)");
             if (message.is_synchronous) {
-                warn() << "    Outputs:";
+                warnln("    Outputs:");
                 for (auto& parameter : message.outputs)
-                    warn() << "        Parameter: " << parameter.name << " (" << parameter.type << ")";
+                    warnln("      Parameter: {} ({})", parameter.name, parameter.type);
                 if (message.outputs.is_empty())
-                    warn() << "        (none)";
+                    warnln("      (none)");
             }
         }
     }
