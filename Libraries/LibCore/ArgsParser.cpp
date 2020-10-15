@@ -24,6 +24,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <AK/Format.h>
 #include <AK/StringBuilder.h>
 #include <LibCore/ArgsParser.h>
 #include <getopt.h>
@@ -105,7 +106,7 @@ bool ArgsParser::parse(int argc, char** argv, bool exit_on_failure)
 
         const char* arg = found_option->requires_argument ? optarg : nullptr;
         if (!found_option->accept_value(arg)) {
-            fprintf(stderr, "\033[31mInvalid value for option \033[1m%s\033[22m, dude\033[0m\n", found_option->name_for_display().characters());
+            warnln("\033[31mInvalid value for option \033[1m{}\033[22m, dude\033[0m", found_option->name_for_display());
             print_usage_and_exit();
             return false;
         }
@@ -148,7 +149,7 @@ bool ArgsParser::parse(int argc, char** argv, bool exit_on_failure)
         for (int j = 0; j < num_values_for_arg[i]; j++) {
             const char* value = argv[optind++];
             if (!arg.accept_value(value)) {
-                fprintf(stderr, "Invalid value for argument %s\n", arg.name);
+                warnln("Invalid value for argument {}", arg.name);
                 print_usage_and_exit();
                 return false;
             }
