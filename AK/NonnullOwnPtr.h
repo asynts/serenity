@@ -193,6 +193,14 @@ inline void swap(NonnullOwnPtr<T>& a, NonnullOwnPtr<U>& b)
     a.swap(b);
 }
 
+template<typename T>
+struct Formatter<NonnullOwnPtr<T>> : Formatter<T*> {
+    void format(TypeErasedFormatParams& params, FormatBuilder& builder, const NonnullOwnPtr<T>& value)
+    {
+        Formatter<T*>::format(params, builder, value.ptr());
+    }
+};
+
 }
 
 using AK::adopt_own;
