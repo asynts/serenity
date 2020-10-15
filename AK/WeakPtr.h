@@ -102,6 +102,14 @@ inline const LogStream& operator<<(const LogStream& stream, const WeakPtr<T>& va
     return stream << value.ptr();
 }
 
+template<typename T>
+struct Formatter<WeakPtr<T>> : Formatter<T*> {
+    void format(TypeErasedFormatParams& params, FormatBuilder& builder, const WeakPtr<T>& value)
+    {
+        Formatter<T*>::format(params, builder, value.ptr());
+    }
+};
+
 }
 
 using AK::WeakPtr;
