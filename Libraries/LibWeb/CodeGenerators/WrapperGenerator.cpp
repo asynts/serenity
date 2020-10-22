@@ -573,7 +573,6 @@ void @wrapper_class@::initialize(Js::GlobalObject& global_object)
 }
 )~~~");
 
-    // Implementation: impl_from()
     if (!interface.attributes.is_empty() || !interface.functions.is_empty()) {
         generator.append(R"~~~(
 static @fully_qualified_name@* impl_from(JS::VM& vm, JS::GlobalObject& global_object)
@@ -590,6 +589,8 @@ static @fully_qualified_name@* impl_from(JS::VM& vm, JS::GlobalObject& global_ob
     }
 )~~~");
     }
+
+    // FIXME: Checkin.
 
     auto generate_to_cpp = [&](auto& parameter, auto& js_name, auto& js_suffix, auto cpp_name, bool return_void = false) {
         auto generate_return = [&] {
