@@ -718,51 +718,78 @@ static @fully_qualified_name@* impl_from(JS::VM& vm, JS::GlobalObject& global_ob
         }
     };
 
-    // Implementation: Attributes
     for (auto& attribute : interface.attributes) {
-        out() << "JS_DEFINE_NATIVE_GETTER(" << wrapper_class << "::" << attribute.getter_callback_name << ")";
-        out() << "{";
-        out() << "    auto* impl = impl_from(vm, global_object);";
-        out() << "    if (!impl)";
-        out() << "        return {};";
-
-        if (attribute.extended_attributes.contains("ReturnNullIfCrossOrigin")) {
-            out() << "    if (!impl->may_access_from_origin(static_cast<WindowObject&>(global_object).origin()))";
-            out() << "        return JS::js_null();";
-        }
+        SourceGenerator attribute_generator { generator };
+        attribute_generator.set("attribute.getter_callback", attribute.getter_callback_name);
+        attribute_generator.set("attribute.setter_callback", attribute.setter_callback_name);
+        attribute_generator.set("attribute.name:snakecase", snake_name(attribute.name));
 
         if (attribute.extended_attributes.contains("Reflect")) {
             auto attribute_name = attribute.extended_attributes.get("Reflect").value();
             if (attribute_name.is_null())
                 attribute_name = attribute.name;
             attribute_name = make_input_acceptable_cpp(attribute_name);
-            out() << "    auto retval = impl->attribute(HTML::AttributeNames::" << attribute_name << ");";
+
+            attribute_generator.set("attribute.reflect_name", attribute_name);
         } else {
-            out() << "    auto retval = impl->" << snake_name(attribute.name) << "();";
+            attribute_generator.set("attribute.reflect_name", snake_name(attribute.name));
+        }
+
+        generator.append(R"~~~(
+JS_DEFINE_NATIVE_GETTER(@wrapper_class@::@attribute.getter_callback@)
+{
+    auto* impl = impl_from(vm, global_object);
+    if (!impl)
+        return {};
+)~~~");
+
+        if (attribute.extended_attributes.contains("ReturnNullIfCrossOrigin")) {
+            generator.append(R"~~~(
+    if (!impl->may_access_from_origin(static_cast<WindowObject&>(global_object).origin()))
+        return JS::js_null();
+)~~~");
+        }
+
+        if (attribute.extended_attributes.contains("Reflect")) {
+            attribute_generator.append(R"~~~(
+    auto retval = impl->attribute(HTML::AttributeNames::@attribute.reflect_name@);
+)~~~");
+        } else {
+            attribute_generator.append(R"~~~(
+    auto retval = impl->@attribute.name:snakecase@();
+)~~~");
         }
 
         generate_return_statement(attribute.type);
-        out() << "}";
+
+        generator.append(R"~~~(
+}
+)~~~");
 
         if (!attribute.readonly) {
-            out() << "JS_DEFINE_NATIVE_SETTER(" << wrapper_class << "::" << attribute.setter_callback_name << ")";
-            out() << "{";
-            out() << "    auto* impl = impl_from(vm, global_object);";
-            out() << "    if (!impl)";
-            out() << "        return;";
+            attribute_generator.append(R"~~~(
+JS_DEFINE_NATIVE_SETTER(@wrapper_class@::@attribute.setter_callback@)
+{
+    auto* impl = impl_from(vm, global_object);
+    if (!impl)
+        return;
+)~~~");
 
             generate_to_cpp(attribute, "value", "", "cpp_value", true);
 
             if (attribute.extended_attributes.contains("Reflect")) {
-                auto attribute_name = attribute.extended_attributes.get("Reflect").value();
-                if (attribute_name.is_null())
-                    attribute_name = attribute.name;
-                attribute_name = make_input_acceptable_cpp(attribute_name);
-                out() << "    impl->set_attribute(HTML::AttributeNames::" << attribute_name << ", cpp_value);";
+                attribute_generator.append(R"~~~(
+    impl->set_attribute(HTML::AttributeNames::@attribute.reflect_name@, cpp_value);
+)~~~");
             } else {
-                out() << "    impl->set_" << snake_name(attribute.name) << "(cpp_value);";
+                attribute_generator.append(R"~~~(
+    impl->set_@attribute.name:snakecase@(cpp_value);
+)~~~");
             }
-            out() << "}";
+
+            generator.append(R"~~~(
+}
+)~~~");
         }
     }
 
