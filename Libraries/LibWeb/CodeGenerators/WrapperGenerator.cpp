@@ -795,41 +795,67 @@ JS_DEFINE_NATIVE_SETTER(@wrapper_class@::@attribute.setter_callback@)
 
     // Implementation: Functions
     for (auto& function : interface.functions) {
-        out() << "JS_DEFINE_NATIVE_FUNCTION(" << wrapper_class << "::" << snake_name(function.name) << ")";
-        out() << "{";
-        out() << "    auto* impl = impl_from(vm, global_object);";
-        out() << "    if (!impl)";
-        out() << "        return {};";
+        SourceGenerator function_generator { generator };
+        function_generator.set("function.name:snakecase", snake_name(function.name));
+        function_generator.set("function.nargs", String::number(function.length()));
+
+        function_generator.append(R"~~~(\
+JS_DEFINE_NATIVE_FUNCTION(@wrapper_class@::@function.name:snakecase@)
+{
+    auto* impl = impl_from(vm, global_object);
+    if (!impl)
+        return {};
+)~~~");
+
         if (function.length() > 0) {
-            out() << "    if (vm.argument_count() < " << function.length() << ") {";
-            if (function.length() == 1)
-                out() << "        vm.throw_exception<JS::TypeError>(global_object, JS::ErrorType::BadArgCountOne, \"" << function.name << "\");";
-            else
-                out() << "        vm.throw_exception<JS::TypeError>(global_object, JS::ErrorType::BadArgCountMany, \"" << function.name << "\", \"" << function.length() << "\");";
-            out() << "        return {};";
-            out() << "    }";
+            if (function.length() == 1) {
+                function_generator.set(".bad_arg_count", "JS::ErrorType::BadArgCountOne");
+                function_generator.set(".arg_count_suffix", "");
+            } else {
+                function_generator.set(".bad_arg_count", "JS::ErrorType::BadArgCountMany");
+                function_generator.set(".arg_count_suffix", String::formatted(", \"{}\"", function.length()));
+            }
+
+            function_generator.append(R"~~~(
+    if (vm.argument_count() < @function.nargs@) {
+        vm.throw_exception<JS::TypeError>(global_object, .bad_arg_count, "@function.name@"@.arg_count_suffix@);
+        return {};
+    }
+)~~~");
         }
 
         StringBuilder arguments_builder;
         generate_arguments(function.parameters, arguments_builder);
 
+        function_generator.set(".arguments", arguments_builder.string_view());
+
         if (function.return_type.name != "void") {
-            out() << "    auto retval = impl->" << snake_name(function.name) << "(" << arguments_builder.to_string() << ");";
+            function_generator.append(R"~~~(
+    auto retval = impl->@function.name:snakecase@(@.arguments@);
+)~~~");
         } else {
-            out() << "    impl->" << snake_name(function.name) << "(" << arguments_builder.to_string() << ");";
+            function_generator.append(R"~~~(
+    impl->@function.name:snakecase@(@.arguments@);
+)~~~");
         }
 
         generate_return_statement(function.return_type);
-        out() << "}";
+
+        function_generator.append(R"~~~(
+}
+)~~~");
     }
 
-    // Implementation: Wrapper factory
     if (should_emit_wrapper_factory(interface)) {
-        out() << wrapper_class << "* wrap(JS::GlobalObject& global_object, " << interface.fully_qualified_name << "& impl)";
-        out() << "{";
-        out() << "    return static_cast<" << wrapper_class << "*>(wrap_impl(global_object, impl));";
-        out() << "}";
+        generator.append(R"~~~(
+@wrapper_class@* wrap(JS::GlobalObject& global_object, @fully_qualified_name@& impl)
+{
+    return static_cast<@wrapper_class@*>(wrap_impl(global_object, impl));
+}
+)~~~");
     }
 
-    out() << "}";
+    generator.append(R"~~~(
+} // namespace Web::Bindings
+)~~~");
 }
