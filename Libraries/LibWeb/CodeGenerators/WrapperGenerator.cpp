@@ -590,52 +590,73 @@ static @fully_qualified_name@* impl_from(JS::VM& vm, JS::GlobalObject& global_ob
 )~~~");
     }
 
-    // FIXME: Checkin.
-
     auto generate_to_cpp = [&](auto& parameter, auto& js_name, auto& js_suffix, auto cpp_name, bool return_void = false) {
-        auto generate_return = [&] {
-            if (return_void)
-                out() << "        return;";
-            else
-                out() << "        return {};";
-        };
+        SourceGenerator scoped_generator { generator };
+        scoped_generator.set("cpp_name", cpp_name);
+        scoped_generator.set("js_name", js_name);
+        scoped_generator.set("js_suffix", String::number(js_suffix));
+        scoped_generator.set("parameter.type.name", parameter.type.name);
+
+        if (return_void)
+            scoped_generator.set("return_statement", "return;");
+        else
+            scoped_generator.set("return_statement", "return {};");
+
         if (parameter.type.name == "DOMString") {
-            out() << "    auto " << cpp_name << " = " << js_name << js_suffix << ".to_string(global_object);";
-            out() << "    if (vm.exception())";
-            generate_return();
+            scoped_generator.append(R"~~~(
+    auto @cpp_name@ = @js_name@@js_suffix@.to_string(global_object);
+    if (vm.exception())
+        @return_statement@
+)~~~");
         } else if (parameter.type.name == "EventListener") {
-            out() << "    if (!" << js_name << js_suffix << ".is_function()) {";
-            out() << "        vm.throw_exception<JS::TypeError>(global_object, JS::ErrorType::NotA, \"Function\");";
-            generate_return();
-            out() << "    }";
-            out() << "    auto " << cpp_name << " = adopt(*new EventListener(JS::make_handle(&" << js_name << js_suffix << ".as_function())));";
+            scoped_generator.append(R"~~~(
+    if (!@js_name@@js_suffix@.is_function()) {
+        vm.throw_exception<JS::TypeError>(global_object, JS::ErrorType::NotA, "Function");
+        @return_statement@
+    }
+    auto @cpp_name@ = adopt(*new EventListener(JS::make_handle(&@js_name@@js_suffix@.as_function())));
+)~~~");
         } else if (is_wrappable_type(parameter.type)) {
-            out() << "    auto " << cpp_name << "_object = " << js_name << js_suffix << ".to_object(global_object);";
-            out() << "    if (vm.exception())";
-            generate_return();
-            out() << "    if (!" << cpp_name << "_object->inherits(\"" << parameter.type.name << "Wrapper\")) {";
-            out() << "        vm.throw_exception<JS::TypeError>(global_object, JS::ErrorType::NotA, \"" << parameter.type.name << "\");";
-            generate_return();
-            out() << "    }";
-            out() << "    auto& " << cpp_name << " = static_cast<" << parameter.type.name << "Wrapper*>(" << cpp_name << "_object)->impl();";
+            generator.append(R"~~~(
+    auto @cpp_name@_object = @js_name@@js_suffix@.to_object(global_object);
+    if (vm.exception())
+        @return_statement@
+
+    if (!@cpp_name@_object->inherits("@parameter.type.name@Wrapper")) {
+        vm.throw_exception<JS::TypeError>(global_object, JS::ErrorType::NotA, "@parameter.type.name@");
+        @return_statement@
+    }
+
+    auto& @cpp_name@ = static_cast<@parameter.type.name@Wrapper*>(@cpp_name@_object)->impl();
+)~~~");
         } else if (parameter.type.name == "double") {
-            out() << "    auto " << cpp_name << " = " << js_name << js_suffix << ".to_double(global_object);";
-            out() << "    if (vm.exception())";
-            generate_return();
+            generator.append(R"~~~(
+    auto @cpp_name@ = @js_name@@js_suffix@.to_double(global_object);
+    if (vm.exception())
+        @return_statement@
+)~~~");
         } else if (parameter.type.name == "boolean") {
-            out() << "    auto " << cpp_name << " = " << js_name << js_suffix << ".to_boolean();";
+            generator.append(R"~~~(
+    auto @cpp_name@ = @js_name@@js_suffix@.to_boolean();
+)~~~");
         } else {
-            dbg() << "Unimplemented JS-to-C++ conversion: " << parameter.type.name;
+            dbgln("Unimplemented JS-to-C++ conversion: {}", parameter.type.name);
             ASSERT_NOT_REACHED();
         }
     };
 
     auto generate_arguments = [&](auto& parameters, auto& arguments_builder, bool return_void = false) {
+        SourceGenerator arguments_generator { generator };
+
         Vector<String> parameter_names;
         size_t argument_index = 0;
         for (auto& parameter : parameters) {
             parameter_names.append(snake_name(parameter.name));
-            out() << "    auto arg" << argument_index << " = vm.argument(" << argument_index << ");";
+            arguments_generator.set("argument.index", String::number(argument_index));
+
+            arguments_generator.append(R"~~~(
+    auto arg@argument.index@ = vm.argument(@argument.index@);
+)~~~");
             generate_to_cpp(parameter, "arg", argument_index, snake_name(parameter.name), return_void);
             ++argument_index;
         }
@@ -644,38 +665,56 @@ static @fully_qualified_name@* impl_from(JS::VM& vm, JS::GlobalObject& global_ob
     };
 
     auto generate_return_statement = [&](auto& return_type) {
+        SourceGenerator scoped_generator { generator };
+        scoped_generator.set("return_type", return_type.name);
+
         if (return_type.name == "void") {
-            out() << "    return JS::js_undefined();";
+            scoped_generator.append(R"~~~(
+    return JS::js_undefined();
+)~~~");
             return;
         }
 
         if (return_type.nullable) {
             if (return_type.name == "DOMString") {
-                out() << "    if (retval.is_null())";
+                scoped_generator.append(R"~~~(
+    if (retval.is_null())
+        return JS::js_null();
+)~~~");
             } else {
-                out() << "    if (!retval)";
+                scoped_generator.append(R"~~~(
+    if (!retval)
+        return JS::js_null();
+)~~~");
             }
-            out() << "        return JS::js_null();";
         }
 
         if (return_type.name == "DOMString") {
-            out() << "    return JS::js_string(vm, retval);";
+            scoped_generator.append(R"~~~(
+    return JS::js_string(vm, retval);
+)~~~");
         } else if (return_type.name == "ArrayFromVector") {
             // FIXME: Remove this fake type hack once it's no longer needed.
             //        Basically once we have NodeList we can throw this out.
-            out() << "    auto* new_array = JS::Array::create(global_object);";
-            out() << "    for (auto& element : retval) {";
-            out() << "        new_array->indexed_properties().append(wrap(global_object, element));";
-            out() << "    }";
-            out() << "    return new_array;";
-        } else if (return_type.name == "long" || return_type.name == "double") {
-            out() << "    return JS::Value(retval);";
+            scoped_generator.append(R"~~~(
+    auto* new_array = JS::Array::create(global_object);
+    for (auto& element : retval)
+        new_array->indexed_properties().append(wrap(global_object, element));
+
+    return new_array;
+)~~~");
+        } else if (return_type.name == "long" || return_type.name == "double" || return_type.name == "boolean") {
+            scoped_generator.append(R"~~~(
+    return JS::Value(retval);
+)~~~");
         } else if (return_type.name == "Uint8ClampedArray") {
-            out() << "    return retval;";
-        } else if (return_type.name == "boolean") {
-            out() << "    return JS::Value(retval);";
+            scoped_generator.append(R"~~~(
+    return retval;
+)~~~");
         } else {
-            out() << "    return wrap(global_object, const_cast<" << return_type.name << "&>(*retval));";
+            scoped_generator.append(R"~~~(
+    return wrap(global_object, const_cast<@return_type@&>(*retval));
+)~~~");
         }
     };
 
