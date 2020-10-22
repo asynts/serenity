@@ -28,6 +28,7 @@
 #include <AK/GenericLexer.h>
 #include <AK/HashMap.h>
 #include <AK/LexicalPath.h>
+#include <AK/SourceGenerator.h>
 #include <AK/StringBuilder.h>
 #include <LibCore/ArgsParser.h>
 #include <LibCore/File.h>
@@ -366,117 +367,166 @@ static bool is_wrappable_type(const IDL::Type& type)
 
 static void generate_header(const IDL::Interface& interface)
 {
-    auto& wrapper_class = interface.wrapper_class;
-    auto& wrapper_base_class = interface.wrapper_base_class;
+    SourceGenerator generator;
+    generator.set("name", interface.name);
+    generator.set("fully_qualified_name", interface.fully_qualified_name);
+    generator.set("wrapper_base_class", interface.wrapper_base_class);
+    generator.set("wrapper_class", interface.wrapper_class);
+    generator.set("wrapper_class:snakecase", snake_name(interface.wrapper_class));
 
-    out() << "#pragma once";
-    out() << "#include <LibWeb/Bindings/Wrapper.h>";
+    // FIXME: Fix this __has_include stuff.
+    generator.append(R"~~~(
+#pragma once
 
-    // FIXME: This is very strange.
-    out() << "#if __has_include(<LibWeb/DOM/" << interface.name << ".h>)";
-    out() << "#include <LibWeb/DOM/" << interface.name << ".h>";
-    out() << "#elif __has_include(<LibWeb/HTML/" << interface.name << ".h>)";
-    out() << "#include <LibWeb/HTML/" << interface.name << ".h>";
-    out() << "#elif __has_include(<LibWeb/UIEvents/" << interface.name << ".h>)";
-    out() << "#include <LibWeb/UIEvents/" << interface.name << ".h>";
-    out() << "#elif __has_include(<LibWeb/HighResolutionTime/" << interface.name << ".h>)";
-    out() << "#include <LibWeb/HighResolutionTime/" << interface.name << ".h>";
-    out() << "#elif __has_include(<LibWeb/SVG/" << interface.name << ".h>)";
-    out() << "#include <LibWeb/SVG/" << interface.name << ".h>";
-    out() << "#endif";
+#include <LibWeb/Bindings/Wrapper.h>
 
-    if (wrapper_base_class != "Wrapper")
-        out() << "#include <LibWeb/Bindings/" << wrapper_base_class << ".h>";
+#if __has_include(<LibWeb/DOM/@name@.h>)
+#    include <LibWeb/DOM/@name@.h>
+#elif __has_include(<LibWeb/HTML/@name@.h>)
+#    include <LibWeb/HTML/@name@.h>
+#elif __has_include(<LibWeb/UIEvents/@name@.h>)
+#    include <LibWeb/UIEvents/@name@.h>
+#elif __has_include(<LibWeb/HighResolutionTime/@name@.h>)
+#    include <LibWeb/HighResolutionTime/@name@.h>
+#elif __has_include(<LibWeb/SVG/@name@.h>)
+#    include <LibWeb/SVG/@name@.h>
+#endif
+)~~~");
 
-    out() << "namespace Web::Bindings {";
-
-    out() << "class " << wrapper_class << " : public " << wrapper_base_class << " {";
-    out() << "    JS_OBJECT(" << wrapper_class << ", " << wrapper_base_class << ");";
-    out() << "public:";
-    out() << "    " << wrapper_class << "(JS::GlobalObject&, " << interface.fully_qualified_name << "&);";
-    out() << "    virtual void initialize(JS::GlobalObject&) override;";
-    out() << "    virtual ~" << wrapper_class << "() override;";
-
-    if (wrapper_base_class == "Wrapper") {
-        out() << "    " << interface.fully_qualified_name << "& impl() { return *m_impl; }";
-        out() << "    const " << interface.fully_qualified_name << "& impl() const { return *m_impl; }";
-    } else {
-        out() << "    " << interface.fully_qualified_name << "& impl() { return static_cast<" << interface.fully_qualified_name << "&>(" << wrapper_base_class << "::impl()); }";
-        out() << "    const " << interface.fully_qualified_name << "& impl() const { return static_cast<const " << interface.fully_qualified_name << "&>(" << wrapper_base_class << "::impl()); }";
+    if (interface.wrapper_base_class != "Wrapper") {
+        generator.append(R"~~~(
+#include <LibWeb/Bindings/@wrapper_base_class@.h>
+)~~~");
     }
 
-    auto is_foo_wrapper_name = snake_name(String::format("Is%s", wrapper_class.characters()));
-    out() << "    virtual bool " << is_foo_wrapper_name << "() const final { return true; }";
+    generator.append(R"~~~(
+namespace Web::Bindings {
 
-    out() << "private:";
+class @wrapper_class@ : public @wrapper_base_class@ {
+    JS_OBJECT(@wrapper_class@, @wrapper_base_class@);
+public:
+    @wrapper_class@(JS::GlobalObject&, @fully_qualified_name@&);
+    virtual void initialize(JS::GlobalObject&) override;
+    virtual ~@wrapper_class@() override;
+)~~~");
+
+    if (interface.wrapper_base_class == "Wrapper") {
+        generator.append(R"~~~(
+    @fully_qualified_name@& impl() { return *m_impl; }
+    const @fully_qualified_name@& impl() const { return *m_impl; }
+)~~~");
+    } else {
+        generator.append(R"~~~(
+    @fully_qualified_name@& impl() { return static_cast<@fully_qualified_name@&>(@wrapper_base_class@::impl()); }
+    const @fully_qualified_name@& impl() const { return static_cast<@fully_qualified_name@&>(@wrapper_base_class@::impl());
+)~~~");
+    }
+
+    generator.append(R"~~~(
+    virtual bool is_@wrapper_class:snakecase@() const final { return true; }
+
+private:
+)~~~");
 
     for (auto& function : interface.functions) {
-        out() << "    JS_DECLARE_NATIVE_FUNCTION(" << snake_name(function.name) << ");";
+        SourceGenerator function_generator { generator };
+        function_generator.set("function.name:snakecase", snake_name(function.name));
+        function_generator.append(R"~~~(
+    JS_DECLARE_NATIVE_FUNCTION(@function.name:snakecase@);
+        )~~~");
     }
 
     for (auto& attribute : interface.attributes) {
-        out() << "    JS_DECLARE_NATIVE_GETTER(" << snake_name(attribute.name) << "_getter);";
-        if (!attribute.readonly)
-            out() << "    JS_DECLARE_NATIVE_SETTER(" << snake_name(attribute.name) << "_setter);";
+        SourceGenerator attribute_generator { generator };
+        attribute_generator.set("attribute.name:snakecase", snake_name(attribute.name));
+        generator.append(R"~~~(
+    JS_DECLARE_NATIVE_GETTER(@attribute.name:snakecase@_getter);
+)~~~");
+
+        if (!attribute.readonly) {
+            generator.append(R"~~~(
+    JS_DECLARE_NATIVE_SETTER(@attribute.name:snakecase@_setter);
+)~~~");
+        }
     }
 
-    if (wrapper_base_class == "Wrapper") {
-        out() << "    NonnullRefPtr<" << interface.fully_qualified_name << "> m_impl;";
+    if (interface.wrapper_base_class == "Wrapper") {
+        generator.append(R"~~~(
+    NonnullRefPtr<@fully_qualified_name@> m_impl;
+        )~~~");
     }
 
-    out() << "};";
+    generator.append(R"~~~(
+};
+)~~~");
 
     if (should_emit_wrapper_factory(interface)) {
-        out() << wrapper_class << "* wrap(JS::GlobalObject&, " << interface.fully_qualified_name << "&);";
+        generator.append(R"~~~(
+@wrapper_class@* wrap(JS::GlobalObject&, @fully_qualified_name@&);
+)~~~");
     }
 
-    out() << "}";
+    generator.append(R"~~~(
+} // namespace Web::Bindings
+)~~~");
+
+    outln(generator.generate());
 }
 
 void generate_implementation(const IDL::Interface& interface)
 {
-    auto& wrapper_class = interface.wrapper_class;
-    auto& wrapper_base_class = interface.wrapper_base_class;
+    SourceGenerator generator;
+    generator.set("wrapper_class", interface.wrapper_class);
+    generator.set("fully_qualified_name", interface.fully_qualified_name);
 
-    out() << "#include <AK/FlyString.h>";
-    out() << "#include <LibJS/Runtime/Array.h>";
-    out() << "#include <LibJS/Runtime/Value.h>";
-    out() << "#include <LibJS/Runtime/GlobalObject.h>";
-    out() << "#include <LibJS/Runtime/Error.h>";
-    out() << "#include <LibJS/Runtime/Function.h>";
-    out() << "#include <LibJS/Runtime/Uint8ClampedArray.h>";
-    out() << "#include <LibWeb/Bindings/NodeWrapperFactory.h>";
-    out() << "#include <LibWeb/Bindings/" << wrapper_class << ".h>";
-    out() << "#include <LibWeb/DOM/Element.h>";
-    out() << "#include <LibWeb/DOM/EventListener.h>";
-    out() << "#include <LibWeb/HTML/HTMLElement.h>";
-    out() << "#include <LibWeb/Origin.h>";
-    out() << "#include <LibWeb/Bindings/CommentWrapper.h>";
-    out() << "#include <LibWeb/Bindings/DocumentWrapper.h>";
-    out() << "#include <LibWeb/Bindings/DocumentFragmentWrapper.h>";
-    out() << "#include <LibWeb/Bindings/DocumentTypeWrapper.h>";
-    out() << "#include <LibWeb/Bindings/HTMLCanvasElementWrapper.h>";
-    out() << "#include <LibWeb/Bindings/HTMLHeadElementWrapper.h>";
-    out() << "#include <LibWeb/Bindings/HTMLImageElementWrapper.h>";
-    out() << "#include <LibWeb/Bindings/ImageDataWrapper.h>";
-    out() << "#include <LibWeb/Bindings/TextWrapper.h>";
-    out() << "#include <LibWeb/Bindings/CanvasRenderingContext2DWrapper.h>";
-    out() << "#include <LibWeb/Bindings/WindowObject.h>";
+    generator.append(R"~~~(
+#include <AK/FlyString.h>
+#include <LibJS/Runtime/Array.h>
+#include <LibJS/Runtime/Error.h>
+#include <LibJS/Runtime/Function.h>
+#include <LibJS/Runtime/GlobalObject.h>
+#include <LibJS/Runtime/Uint8ClampedArray.h>
+#include <LibJS/Runtime/Value.h>
+#include <LibWeb/Bindings/@wrapper_class@.h>
+#include <LibWeb/Bindings/CanvasRenderingContext2DWrapper.h>
+#include <LibWeb/Bindings/CommentWrapper.h>
+#include <LibWeb/Bindings/DocumentFragmentWrapper.h>
+#include <LibWeb/Bindings/DocumentTypeWrapper.h>
+#include <LibWeb/Bindings/DocumentWrapper.h>
+#include <LibWeb/Bindings/HTMLCanvasElementWrapper.h>
+#include <LibWeb/Bindings/HTMLHeadElementWrapper.h>
+#include <LibWeb/Bindings/HTMLImageElementWrapper.h>
+#include <LibWeb/Bindings/ImageDataWrapper.h>
+#include <LibWeb/Bindings/NodeWrapperFactory.h>
+#include <LibWeb/Bindings/TextWrapper.h>
+#include <LibWeb/Bindings/WindowObject.h>
+#include <LibWeb/DOM/Element.h>
+#include <LibWeb/DOM/EventListener.h>
+#include <LibWeb/HTML/HTMLElement.h>
+#include <LibWeb/Origin.h>
 
     // FIXME: This is a total hack until we can figure out the namespace for a given type somehow.
-    out() << "using namespace Web::DOM;";
-    out() << "using namespace Web::HTML;";
+    using namespace Web::DOM;
+    using namespace Web::HTML;
 
-    out() << "namespace Web::Bindings {";
+    namespace Web::Bindings {
 
-    // Implementation: Wrapper constructor
-    out() << wrapper_class << "::" << wrapper_class << "(JS::GlobalObject& global_object, " << interface.fully_qualified_name << "& impl)";
-    if (wrapper_base_class == "Wrapper") {
-        out() << "    : Wrapper(*global_object.object_prototype())";
-        out() << "    , m_impl(impl)";
+    @wrapper_class@::@wrapper_class@((JS::GlobalObject& global_object, @fully_qualified_name@& impl)
+)~~~");
+
+    if (interface.wrapper_base_class == "Wrapper") {
+        generator.append(R"~~~(
+    : Wrapper(*global_object.object_prototype())
+    , m_impl(impl)
+)~~~");
     } else {
-        out() << "    : " << wrapper_base_class << "(global_object, impl)";
+        generator.append(R"~~~(
+    : @wrapper_base_class@(global_object, impl)
+)~~~");
     }
+
+    // FIXME: Checkin.
+
     out() << "{";
     out() << "}";
 

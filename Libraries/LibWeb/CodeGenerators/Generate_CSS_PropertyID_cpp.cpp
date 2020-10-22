@@ -25,6 +25,7 @@
  */
 
 #include <AK/JsonObject.h>
+#include <AK/SourceGenerator.h>
 #include <AK/StringBuilder.h>
 #include <LibCore/File.h>
 #include <ctype.h>
@@ -48,7 +49,7 @@ static String title_casify(const String& dashy_name)
 int main(int argc, char** argv)
 {
     if (argc != 2) {
-        fprintf(stderr, "usage: %s <path/to/CSS/Properties.json>\n", argv[0]);
+        warnln("usage: {} <path/to/CSS/Properties.json>", argv[0]);
         return 1;
     }
     auto file = Core::File::construct(argv[1]);
@@ -59,34 +60,57 @@ int main(int argc, char** argv)
     ASSERT(json.has_value());
     ASSERT(json.value().is_object());
 
-    out() << "#include <AK/Assertions.h>";
-    out() << "#include <LibWeb/CSS/PropertyID.h>";
-    out() << "namespace Web::CSS {";
+    SourceGenerator generator;
 
-    out() << "PropertyID property_id_from_string(const StringView& string) {";
+    generator.append(R"~~~(
+#include <AK/Assertions.h>
+#include <LibWeb/CSS/PropertyID.h>
+
+namespace Web::CSS {
+
+PropertyID property_id_from_string(const StringView& string) {
+)~~~");
 
     json.value().as_object().for_each_member([&](auto& name, auto& value) {
         ASSERT(value.is_object());
-        out() << "    if (string.equals_ignoring_case(\"" << name << "\"))";
-        out() << "        return PropertyID::" << title_casify(name) << ";";
+
+        SourceGenerator member_generator { generator };
+        generator.set("name", name);
+        generator.set("name:titlecase", title_casify(name));
+        generator.append(R"~~~(
+    if (string.equals_ignoring_case("@name@"))
+        return PropertyID::@name:titlecase@;
+)~~~");
     });
 
-    out() << "    return PropertyID::Invalid;";
+    generator.append(R"~~~(
+    return PropertyID::Invalid;
+}
 
-    out() << "}";
+const char* string_from_property_id(PropertyID property_id) {
+    switch (property_id) {
+)~~~");
 
-    out() << "const char* string_from_property_id(PropertyID property_id) {";
-    out() << "    switch (property_id) {";
     json.value().as_object().for_each_member([&](auto& name, auto& value) {
         ASSERT(value.is_object());
-        out() << "    case PropertyID::" << title_casify(name) << ":";
-        out() << "        return \"" << name << "\";";
-    });
-    out() << "    default:";
-    out() << "        return \"(invalid CSS::PropertyID)\";";
-    out() << "    }";
-    out() << "}";
-    out() << "}";
 
-    return 0;
+        SourceGenerator member_generator { generator };
+        generator.set("name", name);
+        generator.set("name:titlecase", title_casify(name));
+        generator.append(R"~~~(
+    case PropertyID::@name:titlecase@:
+        return "@name@";
+        )~~~");
+    });
+
+    generator.append(R"~~~(
+    default:
+        return "(invalid CSS::PropertyID)";
+    }
+}
+
+} // namespace Web::CSS
+)~~~");
+
+    outln(generator.generate());
 }
