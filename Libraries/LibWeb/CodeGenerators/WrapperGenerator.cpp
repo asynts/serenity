@@ -477,6 +477,7 @@ void generate_implementation(const IDL::Interface& interface)
 {
     SourceGenerator generator;
     generator.set("wrapper_class", interface.wrapper_class);
+    generator.set("wrapper_base_class", interface.wrapper_base_class);
     generator.set("fully_qualified_name", interface.fully_qualified_name);
 
     generator.append(R"~~~(
@@ -511,59 +512,83 @@ void generate_implementation(const IDL::Interface& interface)
 
     namespace Web::Bindings {
 
-    @wrapper_class@::@wrapper_class@((JS::GlobalObject& global_object, @fully_qualified_name@& impl)
 )~~~");
 
     if (interface.wrapper_base_class == "Wrapper") {
         generator.append(R"~~~(
+    @wrapper_class@::@wrapper_class@((JS::GlobalObject& global_object, @fully_qualified_name@& impl)
     : Wrapper(*global_object.object_prototype())
     , m_impl(impl)
+    {
+    }
 )~~~");
     } else {
         generator.append(R"~~~(
+    @wrapper_class@::@wrapper_class@((JS::GlobalObject& global_object, @fully_qualified_name@& impl)
     : @wrapper_base_class@(global_object, impl)
+    {
+    }
 )~~~");
     }
 
-    // FIXME: Checkin.
+    generator.append(R"~~~(
+void @wrapper_class@::initialize(Js::GlobalObject& global_object)
+{
+    [[maybe_unused]] u8 default_attributes = JS::Attribute::Enumerable | JS::Attribute::Configurable;
 
-    out() << "{";
-    out() << "}";
-
-    // Implementation: Wrapper initialize()
-    out() << "void " << wrapper_class << "::initialize(JS::GlobalObject& global_object)";
-    out() << "{";
-    out() << "    [[maybe_unused]] u8 default_attributes = JS::Attribute::Enumerable | JS::Attribute::Configurable;";
-    out() << "    " << wrapper_base_class << "::initialize(global_object);";
+    @wrapper_base_class@::initialize(global_object);
+)~~~");
 
     for (auto& attribute : interface.attributes) {
-        out() << "    define_native_property(\"" << attribute.name << "\", " << attribute.getter_callback_name << ", " << (attribute.readonly ? "nullptr" : attribute.setter_callback_name) << ", default_attributes);";
+        SourceGenerator attribute_generator { generator };
+        generator.set("attribute.name", attribute.name);
+        generator.set("attribute.getter_callback", attribute.getter_callback_name);
+
+        if (attribute.readonly)
+            generator.set("attribute.setter_callback", "nullptr");
+        else
+            generator.set("attribute.setter_callback", attribute.setter_callback_name);
+
+        generator.append(R"~~~(
+    define_native_property("@attribute.name@", @attribute.getter_callback@, @attribute.setter_callback@, default_attributes);
+)~~~");
     }
 
     for (auto& function : interface.functions) {
-        out() << "    define_native_function(\"" << function.name << "\", " << snake_name(function.name) << ", " << function.length() << ", default_attributes);";
+        SourceGenerator function_generator { generator };
+        function_generator.set("function.name", function.name);
+        function_generator.set("function.name:snakecase", snake_name(function.name));
+        function_generator.set("function.name:length", String::formatted("{}", function.name.length()));
+
+        function_generator.append(R"~~~(
+    define_native_function("@function.name@, @function.name:snakecase@, @function.name:length@, default_attributes);
+)~~~");
     }
 
-    out() << "}";
+    generator.append(R"~~~(
+}
 
-    // Implementation: Wrapper destructor
-    out() << wrapper_class << "::~" << wrapper_class << "()";
-    out() << "{";
-    out() << "}";
+@wrapper_class@::~@wrapper_class@()
+{
+}
+)~~~");
 
     // Implementation: impl_from()
     if (!interface.attributes.is_empty() || !interface.functions.is_empty()) {
-        out() << "static " << interface.fully_qualified_name << "* impl_from(JS::VM& vm, JS::GlobalObject& global_object)";
-        out() << "{";
-        out() << "    auto* this_object = vm.this_value(global_object).to_object(global_object);";
-        out() << "    if (!this_object)";
-        out() << "        return {};";
-        out() << "    if (!this_object->inherits(\"" << wrapper_class << "\")) {";
-        out() << "        vm.throw_exception<JS::TypeError>(global_object, JS::ErrorType::NotA, \"" << interface.fully_qualified_name << "\");";
-        out() << "        return nullptr;";
-        out() << "    }";
-        out() << "    return &static_cast<" << wrapper_class << "*>(this_object)->impl();";
-        out() << "}";
+        generator.append(R"~~~(
+static @fully_qualified_name@* impl_from(JS::VM& vm, JS::GlobalObject& global_object)
+{
+    auto* this_object = vm.this_value(global_object).to_object(global_object);
+    if (!this_object)
+        return {};
+    if (!this_object->inherits("@wrapper_class@")) {
+        vm.throw_exception<JS::TypeError>(global_object, JS::ErrorType::NotA, "@fully_qualified_name@");
+        return nullptr;
+    }
+
+    return &static_cast<@wrapper_class@*>(this_object)->impl();
+    }
+)~~~");
     }
 
     auto generate_to_cpp = [&](auto& parameter, auto& js_name, auto& js_suffix, auto cpp_name, bool return_void = false) {
