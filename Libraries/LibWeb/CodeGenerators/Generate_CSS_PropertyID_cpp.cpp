@@ -77,9 +77,9 @@ PropertyID property_id_from_string(const StringView& string)
         ASSERT(value.is_object());
 
         auto member_generator = generator.fork();
-        generator.set("name", name);
-        generator.set("name:titlecase", title_casify(name));
-        generator.append(R"~~~(
+        member_generator.set("name", name);
+        member_generator.set("name:titlecase", title_casify(name));
+        member_generator.append(R"~~~(
     if (string.equals_ignoring_case("@name@"))
         return PropertyID::@name:titlecase@;
 )~~~");
@@ -97,9 +97,9 @@ const char* string_from_property_id(PropertyID property_id) {
         ASSERT(value.is_object());
 
         auto member_generator = generator.fork();
-        generator.set("name", name);
-        generator.set("name:titlecase", title_casify(name));
-        generator.append(R"~~~(
+        member_generator.set("name", name);
+        member_generator.set("name:titlecase", title_casify(name));
+        member_generator.append(R"~~~(
     case PropertyID::@name:titlecase@:
         return "@name@";
         )~~~");

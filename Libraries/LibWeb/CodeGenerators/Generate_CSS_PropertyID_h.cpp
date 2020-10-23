@@ -81,7 +81,7 @@ enum class PropertyID {
         member_generator.set("name:titlecase", title_casify(name));
 
         member_generator.append(R"~~~(
-    @name:title_case@,
+    @name:titlecase@,
 )~~~");
     });
 
