@@ -472,7 +472,7 @@ private:
 } // namespace Web::Bindings
 )~~~");
 
-    outln(generator.as_string_view());
+    outln("{}", generator.as_string_view());
 }
 
 void generate_implementation(const IDL::Interface& interface)
@@ -562,7 +562,7 @@ void @wrapper_class@::initialize(Js::GlobalObject& global_object)
         auto function_generator = generator.fork();
         function_generator.set("function.name", function.name);
         function_generator.set("function.name:snakecase", snake_name(function.name));
-        function_generator.set("function.name:length", String::formatted("{}", function.name.length()));
+        function_generator.set("function.name:length", String::number(function.name.length()));
 
         function_generator.append(R"~~~(
     define_native_function("@function.name@, @function.name:snakecase@, @function.name:length@, default_attributes);
@@ -800,6 +800,7 @@ JS_DEFINE_NATIVE_SETTER(@wrapper_class@::@attribute.setter_callback@)
     // Implementation: Functions
     for (auto& function : interface.functions) {
         auto function_generator = generator.fork();
+        function_generator.set("function.name", function.name);
         function_generator.set("function.name:snakecase", snake_name(function.name));
         function_generator.set("function.nargs", String::number(function.length()));
 
@@ -862,4 +863,6 @@ JS_DEFINE_NATIVE_FUNCTION(@wrapper_class@::@function.name:snakecase@)
     generator.append(R"~~~(
 } // namespace Web::Bindings
 )~~~");
+
+    outln("{}", generator.as_string_view());
 }

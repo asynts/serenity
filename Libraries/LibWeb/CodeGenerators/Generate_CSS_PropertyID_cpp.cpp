@@ -114,5 +114,5 @@ const char* string_from_property_id(PropertyID property_id) {
 } // namespace Web::CSS
 )~~~");
 
-    outln(generator.as_string_view());
+    outln("{}", generator.as_string_view());
 }

@@ -101,5 +101,5 @@ struct Traits<Web::CSS::PropertyID> : public GenericTraits<Web::CSS::PropertyID>
 } // namespace AK
 )~~~");
 
-    outln(generator.as_string_view());
+    outln("{}", generator.as_string_view());
 }
