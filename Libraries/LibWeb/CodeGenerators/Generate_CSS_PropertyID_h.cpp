@@ -78,8 +78,8 @@ enum class PropertyID {
         ASSERT(value.is_object());
 
         auto member_generator = generator.fork();
-
         member_generator.set("name:titlecase", title_casify(name));
+
         member_generator.append(R"~~~(
     @name:title_case@,
 )~~~");

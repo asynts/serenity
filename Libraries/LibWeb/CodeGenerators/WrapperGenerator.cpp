@@ -287,7 +287,7 @@ int main(int argc, char** argv)
     auto interface = IDL::parse_interface(data);
 
     if (!interface) {
-        fprintf(stderr, "Cannot parse %s\n", path);
+        warnln("Cannot parse {}", path);
         return 1;
     }
 
@@ -376,12 +376,12 @@ static void generate_header(const IDL::Interface& interface)
     generator.set("wrapper_class", interface.wrapper_class);
     generator.set("wrapper_class:snakecase", snake_name(interface.wrapper_class));
 
-    // FIXME: Fix this __has_include stuff.
     generator.append(R"~~~(
 #pragma once
 
 #include <LibWeb/Bindings/Wrapper.h>
 
+// FIXME: This is very strange.
 #if __has_include(<LibWeb/DOM/@name@.h>)
 #    include <LibWeb/DOM/@name@.h>
 #elif __has_include(<LibWeb/HTML/@name@.h>)
@@ -441,12 +441,12 @@ private:
     for (auto& attribute : interface.attributes) {
         auto attribute_generator = generator.fork();
         attribute_generator.set("attribute.name:snakecase", snake_name(attribute.name));
-        generator.append(R"~~~(
+        attribute_generator.append(R"~~~(
     JS_DECLARE_NATIVE_GETTER(@attribute.name:snakecase@_getter);
 )~~~");
 
         if (!attribute.readonly) {
-            generator.append(R"~~~(
+            attribute_generator.append(R"~~~(
     JS_DECLARE_NATIVE_SETTER(@attribute.name:snakecase@_setter);
 )~~~");
         }
@@ -545,15 +545,15 @@ void @wrapper_class@::initialize(Js::GlobalObject& global_object)
 
     for (auto& attribute : interface.attributes) {
         auto attribute_generator = generator.fork();
-        generator.set("attribute.name", attribute.name);
-        generator.set("attribute.getter_callback", attribute.getter_callback_name);
+        attribute_generator.set("attribute.name", attribute.name);
+        attribute_generator.set("attribute.getter_callback", attribute.getter_callback_name);
 
         if (attribute.readonly)
-            generator.set("attribute.setter_callback", "nullptr");
+            attribute_generator.set("attribute.setter_callback", "nullptr");
         else
-            generator.set("attribute.setter_callback", attribute.setter_callback_name);
+            attribute_generator.set("attribute.setter_callback", attribute.setter_callback_name);
 
-        generator.append(R"~~~(
+        attribute_generator.append(R"~~~(
     define_native_property("@attribute.name@", @attribute.getter_callback@, @attribute.setter_callback@, default_attributes);
 )~~~");
     }
@@ -621,7 +621,7 @@ static @fully_qualified_name@* impl_from(JS::VM& vm, JS::GlobalObject& global_ob
     auto @cpp_name@ = adopt(*new EventListener(JS::make_handle(&@js_name@@js_suffix@.as_function())));
 )~~~");
         } else if (is_wrappable_type(parameter.type)) {
-            generator.append(R"~~~(
+            scoped_generator.append(R"~~~(
     auto @cpp_name@_object = @js_name@@js_suffix@.to_object(global_object);
     if (vm.exception())
         @return_statement@
@@ -634,13 +634,13 @@ static @fully_qualified_name@* impl_from(JS::VM& vm, JS::GlobalObject& global_ob
     auto& @cpp_name@ = static_cast<@parameter.type.name@Wrapper*>(@cpp_name@_object)->impl();
 )~~~");
         } else if (parameter.type.name == "double") {
-            generator.append(R"~~~(
+            scoped_generator.append(R"~~~(
     auto @cpp_name@ = @js_name@@js_suffix@.to_double(global_object);
     if (vm.exception())
         @return_statement@
 )~~~");
         } else if (parameter.type.name == "boolean") {
-            generator.append(R"~~~(
+            scoped_generator.append(R"~~~(
     auto @cpp_name@ = @js_name@@js_suffix@.to_boolean();
 )~~~");
         } else {
@@ -739,7 +739,7 @@ static @fully_qualified_name@* impl_from(JS::VM& vm, JS::GlobalObject& global_ob
             attribute_generator.set("attribute.reflect_name", snake_name(attribute.name));
         }
 
-        generator.append(R"~~~(
+        attribute_generator.append(R"~~~(
 JS_DEFINE_NATIVE_GETTER(@wrapper_class@::@attribute.getter_callback@)
 {
     auto* impl = impl_from(vm, global_object);
@@ -748,7 +748,7 @@ JS_DEFINE_NATIVE_GETTER(@wrapper_class@::@attribute.getter_callback@)
 )~~~");
 
         if (attribute.extended_attributes.contains("ReturnNullIfCrossOrigin")) {
-            generator.append(R"~~~(
+            attribute_generator.append(R"~~~(
     if (!impl->may_access_from_origin(static_cast<WindowObject&>(global_object).origin()))
         return JS::js_null();
 )~~~");
@@ -766,7 +766,7 @@ JS_DEFINE_NATIVE_GETTER(@wrapper_class@::@attribute.getter_callback@)
 
         generate_return_statement(attribute.type);
 
-        generator.append(R"~~~(
+        attribute_generator.append(R"~~~(
 }
 )~~~");
 
@@ -791,7 +791,7 @@ JS_DEFINE_NATIVE_SETTER(@wrapper_class@::@attribute.setter_callback@)
 )~~~");
             }
 
-            generator.append(R"~~~(
+            attribute_generator.append(R"~~~(
 }
 )~~~");
         }

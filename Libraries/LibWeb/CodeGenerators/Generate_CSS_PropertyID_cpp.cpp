@@ -69,7 +69,8 @@ int main(int argc, char** argv)
 
 namespace Web::CSS {
 
-PropertyID property_id_from_string(const StringView& string) {
+PropertyID property_id_from_string(const StringView& string)
+{
 )~~~");
 
     json.value().as_object().for_each_member([&](auto& name, auto& value) {
