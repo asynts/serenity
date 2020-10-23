@@ -60,7 +60,8 @@ int main(int argc, char** argv)
     ASSERT(json.has_value());
     ASSERT(json.value().is_object());
 
-    SourceGenerator generator;
+    StringBuilder builder;
+    SourceGenerator generator { builder };
 
     generator.append(R"~~~(
 #include <AK/Assertions.h>
@@ -74,7 +75,7 @@ PropertyID property_id_from_string(const StringView& string) {
     json.value().as_object().for_each_member([&](auto& name, auto& value) {
         ASSERT(value.is_object());
 
-        SourceGenerator member_generator { generator };
+        auto member_generator = generator.fork();
         generator.set("name", name);
         generator.set("name:titlecase", title_casify(name));
         generator.append(R"~~~(
@@ -94,7 +95,7 @@ const char* string_from_property_id(PropertyID property_id) {
     json.value().as_object().for_each_member([&](auto& name, auto& value) {
         ASSERT(value.is_object());
 
-        SourceGenerator member_generator { generator };
+        auto member_generator = generator.fork();
         generator.set("name", name);
         generator.set("name:titlecase", title_casify(name));
         generator.append(R"~~~(
@@ -112,5 +113,5 @@ const char* string_from_property_id(PropertyID property_id) {
 } // namespace Web::CSS
 )~~~");
 
-    outln(generator.generate());
+    outln(generator.as_string_view());
 }

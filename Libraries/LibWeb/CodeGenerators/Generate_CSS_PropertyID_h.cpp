@@ -60,7 +60,8 @@ int main(int argc, char** argv)
     ASSERT(json.has_value());
     ASSERT(json.value().is_object());
 
-    SourceGenerator generator;
+    StringBuilder builder;
+    SourceGenerator generator { builder };
     generator.append(R"~~~(
 #pragma once
 
@@ -76,7 +77,7 @@ enum class PropertyID {
     json.value().as_object().for_each_member([&](auto& name, auto& value) {
         ASSERT(value.is_object());
 
-        SourceGenerator member_generator { generator };
+        auto member_generator = generator.fork();
 
         member_generator.set("name:titlecase", title_casify(name));
         member_generator.append(R"~~~(
@@ -100,5 +101,5 @@ struct Traits<Web::CSS::PropertyID> : public GenericTraits<Web::CSS::PropertyID>
 } // namespace AK
 )~~~");
 
-    outln(generator.generate());
+    outln(generator.as_string_view());
 }

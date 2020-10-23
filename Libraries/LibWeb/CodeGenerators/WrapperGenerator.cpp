@@ -367,7 +367,9 @@ static bool is_wrappable_type(const IDL::Type& type)
 
 static void generate_header(const IDL::Interface& interface)
 {
-    SourceGenerator generator;
+    StringBuilder builder;
+    SourceGenerator generator { builder };
+
     generator.set("name", interface.name);
     generator.set("fully_qualified_name", interface.fully_qualified_name);
     generator.set("wrapper_base_class", interface.wrapper_base_class);
@@ -429,7 +431,7 @@ private:
 )~~~");
 
     for (auto& function : interface.functions) {
-        SourceGenerator function_generator { generator };
+        auto function_generator = generator.fork();
         function_generator.set("function.name:snakecase", snake_name(function.name));
         function_generator.append(R"~~~(
     JS_DECLARE_NATIVE_FUNCTION(@function.name:snakecase@);
@@ -437,7 +439,7 @@ private:
     }
 
     for (auto& attribute : interface.attributes) {
-        SourceGenerator attribute_generator { generator };
+        auto attribute_generator = generator.fork();
         attribute_generator.set("attribute.name:snakecase", snake_name(attribute.name));
         generator.append(R"~~~(
     JS_DECLARE_NATIVE_GETTER(@attribute.name:snakecase@_getter);
@@ -470,12 +472,14 @@ private:
 } // namespace Web::Bindings
 )~~~");
 
-    outln(generator.generate());
+    outln(generator.as_string_view());
 }
 
 void generate_implementation(const IDL::Interface& interface)
 {
-    SourceGenerator generator;
+    StringBuilder builder;
+    SourceGenerator generator { builder };
+
     generator.set("wrapper_class", interface.wrapper_class);
     generator.set("wrapper_base_class", interface.wrapper_base_class);
     generator.set("fully_qualified_name", interface.fully_qualified_name);
@@ -540,7 +544,7 @@ void @wrapper_class@::initialize(Js::GlobalObject& global_object)
 )~~~");
 
     for (auto& attribute : interface.attributes) {
-        SourceGenerator attribute_generator { generator };
+        auto attribute_generator = generator.fork();
         generator.set("attribute.name", attribute.name);
         generator.set("attribute.getter_callback", attribute.getter_callback_name);
 
@@ -555,7 +559,7 @@ void @wrapper_class@::initialize(Js::GlobalObject& global_object)
     }
 
     for (auto& function : interface.functions) {
-        SourceGenerator function_generator { generator };
+        auto function_generator = generator.fork();
         function_generator.set("function.name", function.name);
         function_generator.set("function.name:snakecase", snake_name(function.name));
         function_generator.set("function.name:length", String::formatted("{}", function.name.length()));
@@ -590,11 +594,11 @@ static @fully_qualified_name@* impl_from(JS::VM& vm, JS::GlobalObject& global_ob
 )~~~");
     }
 
-    auto generate_to_cpp = [&](auto& parameter, auto& js_name, auto& js_suffix, auto cpp_name, bool return_void = false) {
-        SourceGenerator scoped_generator { generator };
+    auto generate_to_cpp = [&](auto& parameter, auto& js_name, const auto& js_suffix, auto cpp_name, bool return_void = false) {
+        auto scoped_generator = generator.fork();
         scoped_generator.set("cpp_name", cpp_name);
         scoped_generator.set("js_name", js_name);
-        scoped_generator.set("js_suffix", String::number(js_suffix));
+        scoped_generator.set("js_suffix", js_suffix);
         scoped_generator.set("parameter.type.name", parameter.type.name);
 
         if (return_void)
@@ -646,7 +650,7 @@ static @fully_qualified_name@* impl_from(JS::VM& vm, JS::GlobalObject& global_ob
     };
 
     auto generate_arguments = [&](auto& parameters, auto& arguments_builder, bool return_void = false) {
-        SourceGenerator arguments_generator { generator };
+        auto arguments_generator = generator.fork();
 
         Vector<String> parameter_names;
         size_t argument_index = 0;
@@ -657,7 +661,7 @@ static @fully_qualified_name@* impl_from(JS::VM& vm, JS::GlobalObject& global_ob
             arguments_generator.append(R"~~~(
     auto arg@argument.index@ = vm.argument(@argument.index@);
 )~~~");
-            generate_to_cpp(parameter, "arg", argument_index, snake_name(parameter.name), return_void);
+            generate_to_cpp(parameter, "arg", String::number(argument_index), snake_name(parameter.name), return_void);
             ++argument_index;
         }
 
@@ -665,7 +669,7 @@ static @fully_qualified_name@* impl_from(JS::VM& vm, JS::GlobalObject& global_ob
     };
 
     auto generate_return_statement = [&](auto& return_type) {
-        SourceGenerator scoped_generator { generator };
+        auto scoped_generator = generator.fork();
         scoped_generator.set("return_type", return_type.name);
 
         if (return_type.name == "void") {
@@ -719,7 +723,7 @@ static @fully_qualified_name@* impl_from(JS::VM& vm, JS::GlobalObject& global_ob
     };
 
     for (auto& attribute : interface.attributes) {
-        SourceGenerator attribute_generator { generator };
+        auto attribute_generator = generator.fork();
         attribute_generator.set("attribute.getter_callback", attribute.getter_callback_name);
         attribute_generator.set("attribute.setter_callback", attribute.setter_callback_name);
         attribute_generator.set("attribute.name:snakecase", snake_name(attribute.name));
@@ -795,7 +799,7 @@ JS_DEFINE_NATIVE_SETTER(@wrapper_class@::@attribute.setter_callback@)
 
     // Implementation: Functions
     for (auto& function : interface.functions) {
-        SourceGenerator function_generator { generator };
+        auto function_generator = generator.fork();
         function_generator.set("function.name:snakecase", snake_name(function.name));
         function_generator.set("function.nargs", String::number(function.length()));
 
