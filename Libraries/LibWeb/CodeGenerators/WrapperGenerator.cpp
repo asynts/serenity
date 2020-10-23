@@ -420,7 +420,7 @@ public:
     } else {
         generator.append(R"~~~(
     @fully_qualified_name@& impl() { return static_cast<@fully_qualified_name@&>(@wrapper_base_class@::impl()); }
-    const @fully_qualified_name@& impl() const { return static_cast<@fully_qualified_name@&>(@wrapper_base_class@::impl());
+    const @fully_qualified_name@& impl() const { return static_cast<const @fully_qualified_name@&>(@wrapper_base_class@::impl()); }
 )~~~");
     }
 
@@ -510,33 +510,33 @@ void generate_implementation(const IDL::Interface& interface)
 #include <LibWeb/HTML/HTMLElement.h>
 #include <LibWeb/Origin.h>
 
-    // FIXME: This is a total hack until we can figure out the namespace for a given type somehow.
-    using namespace Web::DOM;
-    using namespace Web::HTML;
+// FIXME: This is a total hack until we can figure out the namespace for a given type somehow.
+using namespace Web::DOM;
+using namespace Web::HTML;
 
-    namespace Web::Bindings {
+namespace Web::Bindings {
 
 )~~~");
 
     if (interface.wrapper_base_class == "Wrapper") {
         generator.append(R"~~~(
-    @wrapper_class@::@wrapper_class@((JS::GlobalObject& global_object, @fully_qualified_name@& impl)
-    : Wrapper(*global_object.object_prototype())
-    , m_impl(impl)
-    {
-    }
+@wrapper_class@::@wrapper_class@(JS::GlobalObject& global_object, @fully_qualified_name@& impl)
+: Wrapper(*global_object.object_prototype())
+, m_impl(impl)
+{
+}
 )~~~");
     } else {
         generator.append(R"~~~(
-    @wrapper_class@::@wrapper_class@((JS::GlobalObject& global_object, @fully_qualified_name@& impl)
-    : @wrapper_base_class@(global_object, impl)
-    {
-    }
+@wrapper_class@::@wrapper_class@(JS::GlobalObject& global_object, @fully_qualified_name@& impl)
+: @wrapper_base_class@(global_object, impl)
+{
+}
 )~~~");
     }
 
     generator.append(R"~~~(
-void @wrapper_class@::initialize(Js::GlobalObject& global_object)
+void @wrapper_class@::initialize(JS::GlobalObject& global_object)
 {
     [[maybe_unused]] u8 default_attributes = JS::Attribute::Enumerable | JS::Attribute::Configurable;
 
@@ -565,7 +565,7 @@ void @wrapper_class@::initialize(Js::GlobalObject& global_object)
         function_generator.set("function.name:length", String::number(function.name.length()));
 
         function_generator.append(R"~~~(
-    define_native_function("@function.name@, @function.name:snakecase@, @function.name:length@, default_attributes);
+    define_native_function("@function.name@", @function.name:snakecase@, @function.name:length@, default_attributes);
 )~~~");
     }
 
@@ -823,7 +823,7 @@ JS_DEFINE_NATIVE_FUNCTION(@wrapper_class@::@function.name:snakecase@)
 
             function_generator.append(R"~~~(
     if (vm.argument_count() < @function.nargs@) {
-        vm.throw_exception<JS::TypeError>(global_object, .bad_arg_count, "@function.name@"@.arg_count_suffix@);
+        vm.throw_exception<JS::TypeError>(global_object, @.bad_arg_count@, "@function.name@"@.arg_count_suffix@);
         return {};
     }
 )~~~");
