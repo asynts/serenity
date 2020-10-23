@@ -56,11 +56,7 @@ public:
     SourceGenerator fork() { return SourceGenerator { m_builder, m_mapping, m_opening, m_closing }; }
 
     void set(StringView key, String value) { m_mapping.set(key, value); }
-    String get(StringView key) const
-    {
-        dbgln("{}:{}: {}: key={}", __FILE__, __LINE__, __PRETTY_FUNCTION__, key);
-        return m_mapping.get(key).value();
-    }
+    String get(StringView key) const { return m_mapping.get(key).value(); }
 
     StringView as_string_view() const { return m_builder.string_view(); }
     String as_string() const { return m_builder.build(); }
