@@ -35,20 +35,25 @@ int main(int argc, char** argv)
     Core::ArgsParser args_parser;
 
     const char* pid_argument = nullptr;
-    const char* cmd_argument = nullptr;
     bool enable = false;
     bool disable = false;
+    Vector<const char*> command;
 
     args_parser.add_option(pid_argument, "Target PID", nullptr, 'p', "PID");
     args_parser.add_option(enable, "Enable", nullptr, 'e');
     args_parser.add_option(disable, "Disable", nullptr, 'd');
-    args_parser.add_option(cmd_argument, "Command", nullptr, 'c', "command");
+
+    args_parser.add_positional_argument(command, "Command to execute", "command", Core::ArgsParser::Required::No);
 
     args_parser.parse(argc, argv);
 
-    if (!pid_argument && !cmd_argument) {
+    if (pid_argument != nullptr && command.size() > 0) {
         args_parser.print_usage(stdout, argv[0]);
-        return 0;
+        return 1;
+    }
+    if (!pid_argument && command.size() == 0) {
+        args_parser.print_usage(stdout, argv[0]);
+        return 1;
     }
 
     if (pid_argument) {
@@ -75,17 +80,12 @@ int main(int argc, char** argv)
         return 0;
     }
 
-    auto cmd_parts = String(cmd_argument).split(' ');
-    Vector<const char*> cmd_argv;
+    // We need a terminating null for 'execvp'.
+    command.append(nullptr);
 
-    for (auto& part : cmd_parts)
-        cmd_argv.append(part.characters());
-
-    cmd_argv.append(nullptr);
-
-    dbg() << "Enabling profiling for PID " << getpid();
+    dbgln("Enableing profiling for PID {}.", getpid());
     profiling_enable(getpid());
-    if (execvp(cmd_argv[0], const_cast<char**>(cmd_argv.data())) < 0) {
+    if (execvp(command[0], const_cast<char**>(command.data())) < 0) {
         perror("execv");
         return 1;
     }
