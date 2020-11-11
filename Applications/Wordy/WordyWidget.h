@@ -26,19 +26,24 @@
 
 #pragma once
 
-#include "Document.h"
-#include "DocumentView.h"
-
-#include <LibGUI/Widget.h>
-#include <AK/String.h>
+#include <LibGUI/ScrollableWidget.h>
+#include <LibWeb/DOM/Document.h>
+#include <LibWeb/Page/Page.h>
 
 namespace Wordy {
-    class WordyWidget final : public GUI::Widget {
+    class WordyWidget final : public GUI::ScrollableWidget, public Web::PageClient {
         C_OBJECT(WordyWidget);
 
-    private:
-        WordyWidget(Document&);
+    public:
+        Gfx::Palette palette() const override { return GUI::ScrollableWidget::palette(); }
 
-        RefPtr<DocumentView> m_document_view;
+    private:
+        WordyWidget();
+
+        void paint_event(GUI::PaintEvent&) override;
+
+        RefPtr<Web::DOM::Document> m_document;
+        Web::Page m_page;
+        RefPtr<Web::Frame> m_frame;
     };
 }

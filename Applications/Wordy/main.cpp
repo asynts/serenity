@@ -32,22 +32,10 @@
 int main(int argc, char** argv) {
     auto app = GUI::Application::construct(argc, argv);
 
-    auto document = Wordy::Document::construct();
-
-    auto paragraph1 = Wordy::ParagraphNode::construct();
-    paragraph1->snippets().append(Wordy::TextNode::construct("Hello, "));
-    paragraph1->snippets().append(Wordy::TextNode::construct("World", true));
-    paragraph1->snippets().append(Wordy::TextNode::construct("!"));
-    document->paragraphs().append(paragraph1);
-
-    auto paragraph2 = Wordy::ParagraphNode::construct();
-    paragraph2->snippets().append(Wordy::TextNode::construct("This is another paragraph!"));
-    document->paragraphs().append(paragraph2);
-
     auto window = GUI::Window::construct();
     window->set_title("Wordy");
+    window->set_main_widget<Wordy::WordyWidget>();
     window->resize(640, 480);
-    window->set_main_widget<Wordy::WordyWidget>(*document);
     window->show();
 
     return app->exec();
