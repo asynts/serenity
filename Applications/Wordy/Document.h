@@ -26,21 +26,23 @@
 
 #pragma once
 
+#include "Nodes/ParagraphNode.h"
+
 #include <LibCore/Object.h>
 #include <AK/String.h>
+#include <AK/Span.h>
 
 namespace Wordy {
     class Document final : public Core::Object {
         C_OBJECT(Document);
 
-        String contents() const { return m_contents; }
+    public:
+        const Vector<RefPtr<ParagraphNode>>& paragraphs() const { return m_paragraphs; };
+        Vector<RefPtr<ParagraphNode>>& paragraphs() { return m_paragraphs; };
 
     private:
-        explicit Document(String contents)
-            : m_contents(contents)
-        {
-        }
+        Document() = default;
 
-        String m_contents;
+        Vector<RefPtr<ParagraphNode>> m_paragraphs;
     };
 }

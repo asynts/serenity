@@ -24,31 +24,24 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <LibGUI/Application.h>
-#include <LibGUI/Window.h>
+#pragma once
 
-#include "WordyWidget.h"
+#include "Node.h"
+#include "TextNode.h"
 
-int main(int argc, char** argv) {
-    auto app = GUI::Application::construct(argc, argv);
+#include <AK/Vector.h>
 
-    auto document = Wordy::Document::construct();
+namespace Wordy {
+    class ParagraphNode : public Node {
+        C_OBJECT(ParagraphNode);
 
-    auto paragraph1 = Wordy::ParagraphNode::construct();
-    paragraph1->snippets().append(Wordy::TextNode::construct("Hello, "));
-    paragraph1->snippets().append(Wordy::TextNode::construct("World", true));
-    paragraph1->snippets().append(Wordy::TextNode::construct("!"));
-    document->paragraphs().append(paragraph1);
+    public:
+        const Vector<RefPtr<TextNode>>& snippets() const { return m_snippets; }
+        Vector<RefPtr<TextNode>>& snippets() { return m_snippets; }
 
-    auto paragraph2 = Wordy::ParagraphNode::construct();
-    paragraph2->snippets().append(Wordy::TextNode::construct("This is another paragraph!"));
-    document->paragraphs().append(paragraph2);
+    private:
+        ParagraphNode() = default;
 
-    auto window = GUI::Window::construct();
-    window->set_title("Wordy");
-    window->resize(640, 480);
-    window->set_main_widget<Wordy::WordyWidget>(*document);
-    window->show();
-
-    return app->exec();
+        Vector<RefPtr<TextNode>> m_snippets;
+    };
 }

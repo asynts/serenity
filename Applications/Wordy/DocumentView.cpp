@@ -1,4 +1,5 @@
 #include "DocumentView.h"
+#include "ParagraphView.h"
 
 #include <LibGUI/Layout.h>
 #include <LibGUI/BoxLayout.h>
@@ -9,6 +10,7 @@ namespace Wordy {
     {
         set_layout<GUI::VerticalBoxLayout>().set_margins({ 2, 2, 2, 2 });
 
-        m_contents_label = add<GUI::Label>(document.contents());
+        for(auto& paragraph : m_document->paragraphs())
+            add<ParagraphView>(*paragraph);
     }
 }

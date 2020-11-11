@@ -24,31 +24,20 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <LibGUI/Application.h>
-#include <LibGUI/Window.h>
+#pragma once
 
-#include "WordyWidget.h"
+#include "Nodes/ParagraphNode.h"
 
-int main(int argc, char** argv) {
-    auto app = GUI::Application::construct(argc, argv);
+#include <LibGUI/Widget.h>
+#include <LibGUI/Label.h>
 
-    auto document = Wordy::Document::construct();
+namespace Wordy {
+    class ParagraphView final : public GUI::Widget {
+        C_OBJECT(ParagraphView);
 
-    auto paragraph1 = Wordy::ParagraphNode::construct();
-    paragraph1->snippets().append(Wordy::TextNode::construct("Hello, "));
-    paragraph1->snippets().append(Wordy::TextNode::construct("World", true));
-    paragraph1->snippets().append(Wordy::TextNode::construct("!"));
-    document->paragraphs().append(paragraph1);
+    private:
+        ParagraphView(ParagraphNode&);
 
-    auto paragraph2 = Wordy::ParagraphNode::construct();
-    paragraph2->snippets().append(Wordy::TextNode::construct("This is another paragraph!"));
-    document->paragraphs().append(paragraph2);
-
-    auto window = GUI::Window::construct();
-    window->set_title("Wordy");
-    window->resize(640, 480);
-    window->set_main_widget<Wordy::WordyWidget>(*document);
-    window->show();
-
-    return app->exec();
+        NonnullRefPtr<ParagraphNode> m_paragraph;
+    };
 }

@@ -39,7 +39,5 @@ namespace Wordy {
         DocumentView(Document&);
 
         NonnullRefPtr<Document> m_document;
-
-        RefPtr<GUI::Label> m_contents_label;
     };
 }
