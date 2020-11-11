@@ -33,8 +33,9 @@ int main(int argc, char** argv) {
     auto app = GUI::Application::construct(argc, argv);
 
     auto window = GUI::Window::construct();
-    window->set_title("Wordy");
     window->set_main_widget<Wordy::WordyWidget>();
+
+    window->set_title("Wordy");
     window->resize(640, 480);
     window->show();
 
