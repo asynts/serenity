@@ -6,12 +6,10 @@
 
 namespace Wordy {
     WordyWidget::WordyWidget(Document& document)
-        : m_document(document)
     {
         set_fill_with_background_color(true);
-        set_layout<GUI::VerticalBoxLayout>();
-        layout()->set_margins({ 2, 2, 2, 2 });
+        set_layout<GUI::VerticalBoxLayout>().set_margins({ 2, 2, 2, 2 });
 
-        add<GUI::Label>(m_document->contents());
+        m_document_view = add<DocumentView>(document);
     }
 }

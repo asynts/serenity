@@ -27,18 +27,19 @@
 #pragma once
 
 #include "Document.h"
-#include "DocumentView.h"
 
 #include <LibGUI/Widget.h>
-#include <AK/String.h>
+#include <LibGUI/Label.h>
 
 namespace Wordy {
-    class WordyWidget final : public GUI::Widget {
-        C_OBJECT(WordyWidget);
+    class DocumentView final : public GUI::Widget {
+        C_OBJECT(DocumentView);
 
     private:
-        WordyWidget(Document&);
+        DocumentView(Document&);
 
-        RefPtr<DocumentView> m_document_view;
+        NonnullRefPtr<Document> m_document;
+
+        RefPtr<GUI::Label> m_contents_label;
     };
 }
