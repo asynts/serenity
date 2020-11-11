@@ -27,7 +27,9 @@
 #pragma once
 
 #include <LibGUI/Widget.h>
-#include <LibWeb/OutOfProcessWebView.h>
+#include <LibWeb/InProcessWebView.h>
+
+#include "Paragraph.h"
 
 namespace Wordy {
     class WordyWidget : public GUI::Widget {
@@ -36,6 +38,7 @@ namespace Wordy {
     private:
         WordyWidget();
 
-        RefPtr<Web::OutOfProcessWebView> m_web_view;
+        RefPtr<Web::InProcessWebView> m_web_view;
+        Vector<Paragraph> m_paragraphs;
     };
 }

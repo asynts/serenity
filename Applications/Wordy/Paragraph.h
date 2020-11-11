@@ -24,27 +24,26 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <LibGUI/BoxLayout.h>
+#pragma once
 
-#include "WordyWidget.h"
+#include <LibCore/Object.h>
+#include <AK/String.h>
+#include <LibWeb/Forward.h>
 
 namespace Wordy {
-    WordyWidget::WordyWidget()
-    {
-        set_layout<GUI::VerticalBoxLayout>();
-        set_fill_with_background_color(true);
-
-        m_paragraphs.empend("This is the first paragraph!");
-        m_paragraphs.empend("This is the second paragraph!");
-
-        m_web_view = add<Web::InProcessWebView>();
-        m_web_view->load_empty_document();
-
-        // FIXME: Why is m_web_view->document() == nullptr?
-
-        for (auto& paragraph : m_paragraphs) {
-            auto node = paragraph.generate(*m_web_view->document());
-            m_web_view->document()->append_child(node);
+    class Paragraph {
+    public:
+        explicit Paragraph(String contents)
+            : m_contents(contents)
+        {
         }
-    }
+
+        String contents() const { return m_contents; }
+        void set_contents(String value) { m_contents = value; }
+
+        NonnullRefPtr<Web::DOM::Node> generate(Web::DOM::Document&) const;
+
+    private:
+        String m_contents;
+    };
 }
