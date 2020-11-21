@@ -99,6 +99,9 @@ public:
         s_global = nullptr;
     }
 
+    bool in_master_process() const { return m_in_master_process; }
+    void set_in_master_process(bool value) { m_in_master_process = value; }
+
     void run(const NonnullRefPtrVector<TestCase>&);
     void main(const String& suite_name, int argc, char** argv);
     NonnullRefPtrVector<TestCase> find_cases(const String& search, bool find_tests, bool find_benchmarks);
@@ -113,6 +116,7 @@ private:
     u64 m_testtime = 0;
     u64 m_benchtime = 0;
     String m_suite_name;
+    bool m_in_master_process = true;
 };
 
 void TestSuite::main(const String& suite_name, int argc, char** argv)
@@ -184,6 +188,7 @@ void TestSuite::run(const NonnullRefPtrVector<TestCase>& tests)
             ASSERT(pid >= 0);
 
             if (pid == 0) {
+                TestSuite::the().set_in_master_process(false);
                 t.func()();
             } else {
                 int retval;
@@ -273,29 +278,35 @@ using AK::TestSuite;
         TestSuite::release();                                       \
     }
 
-// FIXME: Currently, this won't print helpful debugging information anymore.
-//        If I turn EXPECT and EXPECT_EQ into functions, maybe I can get the best of both worlds.
+template<typename T, typename S>
+void EXPECT_EQ(const T& lhs, const S& rhs, const char* filename = __builtin_FILE(), size_t line = __builtin_LINE())
+{
+    if (lhs != rhs) {
+        if (TestSuite::the().in_master_process())
+            warnln("\033[31;1mFAIL\033[0m: {}:{}: EXPECT_EQ() failed with lhs={} and rhs={}", filename, line, FormatIfSupported { lhs }, FormatIfSupported { rhs });
+        else
+            exit(1);
+    }
+}
 
-#define EXPECT_EQ(a, b) \
-    do {                \
-        auto lhs = (a); \
-        auto rhs = (b); \
-        if (lhs != rhs) \
-            ::exit(1);  \
-    } while (false)
+// This is useful for debugging when EXPECT_EQ doesn't produce anything useful.
+template<typename T, typename S>
+void EXPECT_EQ_FORCE(const T& lhs, const S& rhs, const char* filename = __builtin_FILE(), size_t line = __builtin_LINE())
+{
+    if (lhs != rhs) {
+        if (TestSuite::the().in_master_process())
+            warnln("\033[31;1mFAIL\033[0m: {}:{}: EXPECT_EQ_FORCE() failed with lhs={} and rhs={}", filename, line, lhs, rhs);
+        else
+            exit(1);
+    }
+}
 
-// If you're stuck and `EXPECT_EQ` seems to refuse to print anything useful,
-// try this: It'll spit out a nice compiler error telling you why it doesn't print.
-#define EXPECT_EQ_FORCE(a, b) \
-    do {                      \
-        auto lhs = (a);       \
-        auto rhs = (b);       \
-        if (lhs != rhs)       \
-            ::exit(1);        \
-    } while (false)
-
-#define EXPECT(x)      \
-    do {               \
-        if (!(x))      \
-            ::exit(1); \
-    } while (false)
+inline void EXPECT(bool condition, const char* filename = __builtin_FILE(), size_t line = __builtin_LINE())
+{
+    if (!condition) {
+        if (TestSuite::the().in_master_process())
+            warnln("\033[31;1mFAIL\033[0m: {}:{}: EXPECT() failed", filename, line);
+        else
+            exit(1);
+    }
+}
