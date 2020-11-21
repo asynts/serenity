@@ -184,6 +184,9 @@ void TestSuite::run(const NonnullRefPtrVector<TestCase>& tests)
             ASSERT(pid >= 0);
 
             if (pid == 0) {
+                fclose(stdout);
+                fclose(stderr);
+
                 t.func()();
             } else {
                 int retval;
