@@ -26,43 +26,6 @@
 
 #pragma once
 
-#define AK_TEST_SUITE
-
-namespace AK {
-
-template<typename... Parameters>
-void warnln(const char* fmtstr, const Parameters&...);
-
-}
-
-using AK::warnln;
-
-#define ASSERT(x)                                                                                    \
-    do {                                                                                             \
-        if (!(x))                                                                                    \
-            ::AK::warnln("\033[31;1mFAIL\033[0m: {}:{}: ASSERT({}) failed", __FILE__, __LINE__, #x); \
-    } while (false)
-
-#define RELEASE_ASSERT(x)                                                                                    \
-    do {                                                                                                     \
-        if (!(x))                                                                                            \
-            ::AK::warnln("\033[31;1mFAIL\033[0m: {}:{}: RELEASE_ASSERT({}) failed", __FILE__, __LINE__, #x); \
-    } while (false)
-
-#define ASSERT_NOT_REACHED()                                                                           \
-    do {                                                                                               \
-        ::AK::warnln("\033[31;1mFAIL\033[0m: {}:{}: ASSERT_NOT_REACHED() called", __FILE__, __LINE__); \
-        ::abort();                                                                                     \
-    } while (false)
-
-#define TODO()                                                                                   \
-    do {                                                                                         \
-        ::AK::warnln(stderr, "\033[31;1mFAIL\033[0m: {}:{}: TODO() called", __FILE__, __LINE__); \
-        ::abort();                                                                               \
-    } while (false)
-
-#include <stdlib.h>
-
 #include <AK/Format.h>
 #include <AK/Function.h>
 #include <AK/NonnullRefPtrVector.h>
