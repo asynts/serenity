@@ -34,6 +34,7 @@
 #include <LibCore/ArgsParser.h>
 
 #include <sys/time.h>
+#include <sys/wait.h>
 
 namespace AK {
 
@@ -62,21 +63,24 @@ using TestFunction = AK::Function<void()>;
 
 class TestCase : public RefCounted<TestCase> {
 public:
-    TestCase(const String& name, TestFunction&& fn, bool is_benchmark)
+    TestCase(const String& name, TestFunction&& fn, bool is_benchmark, bool expect_failure)
         : m_name(name)
         , m_function(move(fn))
         , m_is_benchmark(is_benchmark)
+        , m_expect_failure(expect_failure)
     {
     }
 
     bool is_benchmark() const { return m_is_benchmark; }
     const String& name() const { return m_name; }
     const TestFunction& func() const { return m_function; }
+    bool expect_failure() const { return m_expect_failure; }
 
 private:
     String m_name;
     TestFunction m_function;
     bool m_is_benchmark;
+    bool m_expect_failure;
 };
 
 class TestSuite {
@@ -171,13 +175,33 @@ void TestSuite::run(const NonnullRefPtrVector<TestCase>& tests)
     for (const auto& t : tests) {
         const auto test_type = t.is_benchmark() ? "benchmark" : "test";
 
-        warnln("Running {} '{}'.", test_type, t.name());
+        warnln("Running {} {}.", test_type, t.name());
 
         TestElapsedTimer timer;
-        t.func()();
+
+        if (t.expect_failure()) {
+            int pid = ::fork();
+            ASSERT(pid >= 0);
+
+            if (pid == 0) {
+                t.func()();
+            } else {
+                int retval;
+                int exit_code;
+                while ((retval = ::waitpid(pid, &exit_code, 0)) > 0)
+                    ;
+
+                if (exit_code == 0) {
+                    warnln("\033[31;1mFAIL\033[0m: {} {} passed even though it should not!", test_type, t.name());
+                    exit(1);
+                }
+            }
+        } else {
+            t.func()();
+        }
         const auto time = timer.elapsed_milliseconds();
 
-        dbgln("Completed {} '{}' in {}ms", test_type, t.name(), time);
+        dbgln("Completed {} {} in {}ms", test_type, t.name(), time);
 
         if (t.is_benchmark()) {
             m_benchtime += time;
@@ -205,25 +229,34 @@ using AK::TestSuite;
 #define __TESTCASE_FUNC(x) __test_##x
 #define __TESTCASE_TYPE(x) __TestCase_##x
 
-#define TEST_CASE(x)                                                                           \
-    static void __TESTCASE_FUNC(x)();                                                          \
-    struct __TESTCASE_TYPE(x) {                                                                \
-        __TESTCASE_TYPE(x)                                                                     \
-        () { TestSuite::the().add_case(adopt(*new TestCase(#x, __TESTCASE_FUNC(x), false))); } \
-    };                                                                                         \
-    static struct __TESTCASE_TYPE(x) __TESTCASE_TYPE(x);                                       \
+#define TEST_CASE(x)                                                                                  \
+    static void __TESTCASE_FUNC(x)();                                                                 \
+    struct __TESTCASE_TYPE(x) {                                                                       \
+        __TESTCASE_TYPE(x)                                                                            \
+        () { TestSuite::the().add_case(adopt(*new TestCase(#x, __TESTCASE_FUNC(x), false, false))); } \
+    };                                                                                                \
+    static struct __TESTCASE_TYPE(x) __TESTCASE_TYPE(x);                                              \
+    static void __TESTCASE_FUNC(x)()
+
+#define XFAIL_TEST_CASE(x)                                                                           \
+    static void __TESTCASE_FUNC(x)();                                                                \
+    struct __TESTCASE_TYPE(x) {                                                                      \
+        __TESTCASE_TYPE(x)                                                                           \
+        () { TestSuite::the().add_case(adopt(*new TestCase(#x, __TESTCASE_FUNC(x), false, true))); } \
+    };                                                                                               \
+    static struct __TESTCASE_TYPE(x) __TESTCASE_TYPE(x);                                             \
     static void __TESTCASE_FUNC(x)()
 
 #define __BENCHMARK_FUNC(x) __benchmark_##x
 #define __BENCHMARK_TYPE(x) __BenchmarkCase_##x
 
-#define BENCHMARK_CASE(x)                                                                      \
-    static void __BENCHMARK_FUNC(x)();                                                         \
-    struct __BENCHMARK_TYPE(x) {                                                               \
-        __BENCHMARK_TYPE(x)                                                                    \
-        () { TestSuite::the().add_case(adopt(*new TestCase(#x, __BENCHMARK_FUNC(x), true))); } \
-    };                                                                                         \
-    static struct __BENCHMARK_TYPE(x) __BENCHMARK_TYPE(x);                                     \
+#define BENCHMARK_CASE(x)                                                                             \
+    static void __BENCHMARK_FUNC(x)();                                                                \
+    struct __BENCHMARK_TYPE(x) {                                                                      \
+        __BENCHMARK_TYPE(x)                                                                           \
+        () { TestSuite::the().add_case(adopt(*new TestCase(#x, __BENCHMARK_FUNC(x), true, false))); } \
+    };                                                                                                \
+    static struct __BENCHMARK_TYPE(x) __BENCHMARK_TYPE(x);                                            \
     static void __BENCHMARK_FUNC(x)()
 
 #define TEST_MAIN(x)                                                \
