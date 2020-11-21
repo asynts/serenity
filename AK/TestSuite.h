@@ -273,26 +273,29 @@ using AK::TestSuite;
         TestSuite::release();                                       \
     }
 
-#define EXPECT_EQ(a, b)                                                                                                                                                                \
-    do {                                                                                                                                                                               \
-        auto lhs = (a);                                                                                                                                                                \
-        auto rhs = (b);                                                                                                                                                                \
-        if (lhs != rhs)                                                                                                                                                                \
-            warnln("\033[31;1mFAIL\033[0m: {}:{}: EXPECT_EQ({}, {}) failed with lhs={} and rhs={}", __FILE__, __LINE__, #a, #b, FormatIfSupported { lhs }, FormatIfSupported { rhs }); \
+// FIXME: Currently, this won't print helpful debugging information anymore.
+//        If I turn EXPECT and EXPECT_EQ into functions, maybe I can get the best of both worlds.
+
+#define EXPECT_EQ(a, b) \
+    do {                \
+        auto lhs = (a); \
+        auto rhs = (b); \
+        if (lhs != rhs) \
+            ::exit(1);  \
     } while (false)
 
 // If you're stuck and `EXPECT_EQ` seems to refuse to print anything useful,
 // try this: It'll spit out a nice compiler error telling you why it doesn't print.
-#define EXPECT_EQ_FORCE(a, b)                                                                                                              \
-    do {                                                                                                                                   \
-        auto lhs = (a);                                                                                                                    \
-        auto rhs = (b);                                                                                                                    \
-        if (lhs != rhs)                                                                                                                    \
-            warnln("\033[31;1mFAIL\033[0m: {}:{}: EXPECT_EQ({}, {}) failed with lhs={} and rhs={}", __FILE__, __LINE__, #a, #b, lhs, rhs); \
+#define EXPECT_EQ_FORCE(a, b) \
+    do {                      \
+        auto lhs = (a);       \
+        auto rhs = (b);       \
+        if (lhs != rhs)       \
+            ::exit(1);        \
     } while (false)
 
-#define EXPECT(x)                                                                              \
-    do {                                                                                       \
-        if (!(x))                                                                              \
-            warnln("\033[31;1mFAIL\033[0m: {}:{}: EXPECT({}) failed", __FILE__, __LINE__, #x); \
+#define EXPECT(x)      \
+    do {               \
+        if (!(x))      \
+            ::exit(1); \
     } while (false)
