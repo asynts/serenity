@@ -40,6 +40,9 @@ namespace Writer {
 class Node;
 
 class NodeClassRegistration {
+    AK_MAKE_NONCOPYABLE(NodeClassRegistration);
+    AK_MAKE_NONMOVABLE(NodeClassRegistration);
+
 public:
     NodeClassRegistration(const String& class_name, Function<NonnullRefPtr<Node>()> factory);
 
@@ -57,8 +60,13 @@ private:
 class Node : public Core::Object {
     C_OBJECT(Node);
 
+public:
     void load_from_json(StringView);
     void load_from_json(const JsonObject&);
+};
+
+class DocumentNode : public Node {
+    C_OBJECT(DocumentNode);
 };
 
 class ParagraphNode : public Node {

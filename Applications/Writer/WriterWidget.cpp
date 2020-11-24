@@ -30,10 +30,4 @@ namespace Writer {
 
 REGISTER_WIDGET(Writer, WriterWidget)
 
-WriterWidget::WriterWidget()
-    : m_top_node(Node::construct())
-{
-    add_child(m_top_node);
-}
-
 }
