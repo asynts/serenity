@@ -56,7 +56,9 @@ int main(int argc, char** argv)
     widget.load_from_json(main_window_ui_json);
 
     auto& writer = static_cast<Writer::WriterWidget&>(*widget.find_descendant_by_name("writer"));
-    writer.top_node().load_from_json(input_file);
+
+    writer.create_document();
+    writer.document()->load_from_json(input_file);
 
     window->show();
 
