@@ -40,7 +40,9 @@ static HashMap<String, NodeClassRegistration*>& node_classes()
     return *map;
 }
 
-NodeClassRegistration::NodeClassRegistration(const String& class_name, Function<NonnullRefPtr<Core::Object>()> factory)
+NodeClassRegistration::NodeClassRegistration(const String& class_name, Function<NonnullRefPtr<Node>()> factory)
+    : m_class_name(class_name)
+    , m_factory(move(factory))
 {
     node_classes().set(class_name, this);
 }

@@ -26,6 +26,9 @@
 
 #pragma once
 
+// FIXME: Why do I need this include here?
+#include <AK/JsonObject.h>
+
 #include <AK/NeverDestroyed.h>
 #include <LibCore/Object.h>
 
@@ -34,26 +37,32 @@
 
 namespace Writer {
 
+class Node;
+
 class NodeClassRegistration {
 public:
-    NodeClassRegistration(const String& class_name, Function<NonnullRefPtr<Core::Object>()> factory);
+    NodeClassRegistration(const String& class_name, Function<NonnullRefPtr<Node>()> factory);
 
     static void for_each(Function<void(const NodeClassRegistration&)>);
     static const NodeClassRegistration* find(const String& class_name);
 
     String class_name() const { return m_class_name; }
-    NonnullRefPtr<Core::Object> construct() const { return m_factory(); }
+    NonnullRefPtr<Node> construct() const { return m_factory(); }
 
 private:
     String m_class_name;
-    Function<NonnullRefPtr<Core::Object>()> m_factory;
+    Function<NonnullRefPtr<Node>()> m_factory;
 };
 
-class ParagraphNode : public Core::Object {
+class Node : public Core::Object {
+    C_OBJECT(Node);
+};
+
+class ParagraphNode : public Node {
     C_OBJECT(ParagraphNode);
 };
 
-class FragmentNode : public Core::Object {
+class FragmentNode : public Node {
     C_OBJECT(FragmentNode);
 
 public:

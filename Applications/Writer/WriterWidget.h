@@ -24,39 +24,32 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <Applications/Writer/MainWindowUI.h>
-#include <Applications/Writer/WriterWidget.h>
-#include <LibCore/ArgsParser.h>
+#pragma once
+
+#include <AK/Vector.h>
+#include <Applications/Writer/Nodes.h>
+#include <LibGUI/Widget.h>
 #include <LibWeb/InProcessWebView.h>
 
-const char input_file[] = R"~~~(
-[
-    {
-        "class": "ParagraphNode",
-        "children": [
-            { "class": "FragmentNode", "content": "Hello, " },
-            { "class": "FragmentNode", "content": "Paul", "bold": true },
-            { "class": "FragmentNode", "content": "!" }
-        ]
-    }
-]
-)~~~";
+namespace Writer {
 
-int main(int argc, char** argv)
-{
-    auto app = GUI::Application::construct(argc, argv);
+class WriterWidget : public GUI::Widget {
+    C_OBJECT(WriterWidget);
 
-    auto window = GUI::Window::construct();
-    window->set_title("Writer");
-    window->resize(570, 500);
+public:
+    void load_from_json(StringView);
 
-    auto& widget = window->set_main_widget<GUI::Widget>();
-    widget.load_from_json(main_window_ui_json);
+    const Node& top_node() const { return m_top_node; }
+    Node& top_node() { return m_top_node; }
 
-    auto& writer = static_cast<Writer::WriterWidget&>(*widget.find_descendant_by_name("writer"));
-    writer.load_from_json(input_file);
+    const Web::InProcessWebView& page_view() const { return m_page_view; }
+    Web::InProcessWebView& page_view() { return m_page_view; }
 
-    window->show();
+private:
+    WriterWidget();
 
-    return app->exec();
+    NonnullRefPtr<Node> m_top_node;
+    Web::InProcessWebView& m_page_view;
+};
+
 }
