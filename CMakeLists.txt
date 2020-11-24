@@ -140,6 +140,7 @@ endfunction()
 
 function(compile_json_gui source output string_name)
     set(source ${CMAKE_CURRENT_SOURCE_DIR}/${source})
+    set(output ${CMAKE_CURRENT_SOURCE_DIR}/${output})
     add_custom_command(
         OUTPUT ${output}
         COMMAND ${write_if_different} ${output} ${CMAKE_SOURCE_DIR}/Meta/text-to-cpp-string.sh ${string_name} ${source}
@@ -147,8 +148,6 @@ function(compile_json_gui source output string_name)
         DEPENDS ${CMAKE_SOURCE_DIR}/Meta/text-to-cpp-string.sh
         MAIN_DEPENDENCY ${source}
     )
-    get_filename_component(output_name ${output} NAME)
-    add_custom_target(generate_${output_name} DEPENDS ${output})
 endfunction()
 
 function(compile_ipc source output)
