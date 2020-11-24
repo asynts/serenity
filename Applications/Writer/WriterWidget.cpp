@@ -24,41 +24,16 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <Applications/Writer/MainWindowUI.h>
 #include <Applications/Writer/WriterWidget.h>
-#include <LibCore/ArgsParser.h>
-#include <LibWeb/InProcessWebView.h>
 
-const char input_file[] = R"~~~(
+namespace Writer {
+
+REGISTER_WIDGET(Writer, WriterWidget)
+
+WriterWidget::WriterWidget()
+    : m_top_node(Node::construct())
 {
-    "children": [
-        {
-            "class": "ParagraphNode",
-            "children": [
-                { "class": "FragmentNode", "content": "Hello, " },
-                { "class": "FragmentNode", "content": "Paul", "bold": true },
-                { "class": "FragmentNode", "content": "!" }
-            ]
-        }
-    ]
+    add_child(m_top_node);
 }
-)~~~";
 
-int main(int argc, char** argv)
-{
-    auto app = GUI::Application::construct(argc, argv);
-
-    auto window = GUI::Window::construct();
-    window->set_title("Writer");
-    window->resize(570, 500);
-
-    auto& widget = window->set_main_widget<GUI::Widget>();
-    widget.load_from_json(main_window_ui_json);
-
-    auto& writer = static_cast<Writer::WriterWidget&>(*widget.find_descendant_by_name("writer"));
-    writer.top_node().load_from_json(input_file);
-
-    window->show();
-
-    return app->exec();
 }
