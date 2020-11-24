@@ -1,0 +1,15 @@
+{
+    "name": "main",
+
+    "layout": {
+        "class": "GUI::VerticalBoxLayout",
+        "spacing": 2
+    },
+
+    "children": [
+        {
+            "name": "page_view",
+            "class": "Web::InProcessWebView"
+        }
+    ]
+}
