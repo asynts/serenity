@@ -10,7 +10,19 @@ const char main_window_ui_json[] = R"({
     "children": [
         {
             "class": "Writer::WriterWidget",
-            "name": "writer"
+            "name": "writer",
+
+            "layout": {
+                "class": "GUI::VerticalBoxLayout",
+                "spacing": 2
+            },
+
+            "children": [
+                {
+                    "class": "Web::InProcessWebView",
+                    "name": "web_view"
+                }
+            ]
         }
     ]
 }

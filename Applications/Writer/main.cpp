@@ -53,6 +53,7 @@ int main(int argc, char** argv)
     window->resize(570, 500);
 
     auto& widget = window->set_main_widget<GUI::Widget>();
+    dbgln("{}", main_window_ui_json);
     widget.load_from_json(main_window_ui_json);
 
     auto& writer = static_cast<Writer::WriterWidget&>(*widget.find_descendant_by_name("writer"));

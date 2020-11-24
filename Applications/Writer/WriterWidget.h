@@ -29,6 +29,7 @@
 #include <AK/Vector.h>
 #include <Applications/Writer/Nodes.h>
 #include <LibGUI/Widget.h>
+#include <LibWeb/InProcessWebView.h>
 
 namespace Writer {
 
@@ -50,7 +51,14 @@ public:
     }
 
 private:
+    WriterWidget()
+        : m_web_view(static_cast<Web::InProcessWebView&>(*find_descendant_by_name("web_view")))
+    {
+        m_web_view.load_empty_document();
+    }
+
     RefPtr<DocumentNode> m_document;
+    Web::InProcessWebView& m_web_view;
 };
 
 }
