@@ -36,13 +36,21 @@ class WriterWidget : public GUI::Widget {
     C_OBJECT(WriterWidget);
 
 public:
-    const Node& top_node() const { return m_top_node; }
-    Node& top_node() { return m_top_node; }
+    const DocumentNode* document() const { return m_document; }
+    DocumentNode* document() { return m_document; }
+
+    void create_document()
+    {
+        if (m_document)
+            remove_child(*m_document);
+
+        m_document = DocumentNode::construct();
+
+        add_child(*m_document);
+    }
 
 private:
-    WriterWidget();
-
-    NonnullRefPtr<Node> m_top_node;
+    RefPtr<DocumentNode> m_document;
 };
 
 }
