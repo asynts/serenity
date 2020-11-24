@@ -56,6 +56,9 @@ private:
 
 class Node : public Core::Object {
     C_OBJECT(Node);
+
+    void load_from_json(StringView);
+    void load_from_json(const JsonObject&);
 };
 
 class ParagraphNode : public Node {

@@ -36,11 +36,4 @@ WriterWidget::WriterWidget()
     m_page_view.load_empty_document();
 }
 
-void WriterWidget::load_from_json(StringView)
-{
-    m_top_node->children().clear();
-
-    // FIXME: Parse json, etc...
-}
-
 }

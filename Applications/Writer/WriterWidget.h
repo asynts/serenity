@@ -37,8 +37,6 @@ class WriterWidget : public GUI::Widget {
     C_OBJECT(WriterWidget);
 
 public:
-    void load_from_json(StringView);
-
     const Node& top_node() const { return m_top_node; }
     Node& top_node() { return m_top_node; }
 

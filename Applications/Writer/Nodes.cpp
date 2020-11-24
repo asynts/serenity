@@ -58,4 +58,39 @@ const NodeClassRegistration* NodeClassRegistration::find(const String& class_nam
     return node_classes().get(class_name).value_or(nullptr);
 }
 
+void Node::load_from_json(StringView json_string)
+{
+    // FIXME: Error handling.
+
+    auto json_value = JsonValue::from_string(json_string);
+    load_from_json(json_value.value().as_object());
+}
+
+void Node::load_from_json(const JsonObject& json)
+{
+    // FIXME: Error handling.
+
+    json.for_each_member([&](auto key, auto value) {
+        set_property(key, value);
+    });
+
+    const auto& children = json.get("children");
+    if (children.is_array()) {
+        for (const auto& child_json_value : children.as_array().values()) {
+            const auto& child_json = child_json_value.as_object();
+
+            auto* registration = NodeClassRegistration::find(child_json.get("class").as_string());
+
+            if (!registration) {
+                dbgln("Missing registration for class {}", child_json.get("class").as_string());
+                ASSERT_NOT_REACHED();
+            }
+
+            auto child_node = registration->construct();
+            add_child(child_node);
+            child_node->load_from_json(child_json);
+        }
+    }
+}
+
 }

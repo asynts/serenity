@@ -30,16 +30,18 @@
 #include <LibWeb/InProcessWebView.h>
 
 const char input_file[] = R"~~~(
-[
-    {
-        "class": "ParagraphNode",
-        "children": [
-            { "class": "FragmentNode", "content": "Hello, " },
-            { "class": "FragmentNode", "content": "Paul", "bold": true },
-            { "class": "FragmentNode", "content": "!" }
-        ]
-    }
-]
+{
+    "children": [
+        {
+            "class": "ParagraphNode",
+            "children": [
+                { "class": "FragmentNode", "content": "Hello, " },
+                { "class": "FragmentNode", "content": "Paul", "bold": true },
+                { "class": "FragmentNode", "content": "!" }
+            ]
+        }
+    ]
+}
 )~~~";
 
 int main(int argc, char** argv)
@@ -54,7 +56,7 @@ int main(int argc, char** argv)
     widget.load_from_json(main_window_ui_json);
 
     auto& writer = static_cast<Writer::WriterWidget&>(*widget.find_descendant_by_name("writer"));
-    writer.load_from_json(input_file);
+    writer.top_node().load_from_json(input_file);
 
     window->show();
 
