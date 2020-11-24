@@ -29,6 +29,7 @@
 #include <AK/Vector.h>
 #include <Applications/Writer/Nodes.h>
 #include <LibGUI/Widget.h>
+#include <LibWeb/InProcessWebView.h>
 
 namespace Writer {
 
@@ -44,12 +45,18 @@ public:
         if (m_document)
             remove_child(*m_document);
 
+        // FIXME: Do this here?
+        m_web_view->load_empty_document();
+
         m_document = DocumentNode::construct();
 
         add_child(*m_document);
     }
 
 private:
+    WriterWidget();
+
+    RefPtr<Web::InProcessWebView> m_web_view;
     RefPtr<DocumentNode> m_document;
 };
 
