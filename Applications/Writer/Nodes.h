@@ -24,38 +24,54 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <Applications/Writer/MainWindowUI.h>
-#include <LibCore/ArgsParser.h>
-#include <LibWeb/InProcessWebView.h>
+#pragma once
 
-const char input_file[] = R"~~~(
-[
+#include <AK/NeverDestroyed.h>
+#include <LibCore/Object.h>
+
+#define REGISTER_NODE(class_name) \
+    NeverDestroyed<NodeClassRegistration> registration_##class_name { #class_name, [] { return class_name::construct(); } };
+
+namespace Writer {
+
+class NodeClassRegistration {
+public:
+    NodeClassRegistration(const String& class_name, Function<NonnullRefPtr<Core::Object>()> factory);
+
+    static void for_each(Function<void(const NodeClassRegistration&)>);
+    static const NodeClassRegistration* find(const String& class_name);
+
+    String class_name() const { return m_class_name; }
+    NonnullRefPtr<Core::Object> construct() const { return m_factory(); }
+
+private:
+    String m_class_name;
+    Function<NonnullRefPtr<Core::Object>()> m_factory;
+};
+
+class ParagraphNode : public Core::Object {
+    C_OBJECT(ParagraphNode);
+};
+
+class FragmentNode : public Core::Object {
+    C_OBJECT(FragmentNode);
+
+public:
+    FragmentNode()
     {
-        "class": "ParagraphNode",
-        "children": [
-            { "class": "FragmentNode", "content": "Hello, " },
-            { "class": "FragmentNode", "content": "Paul", "bold": true },
-            { "class": "FragmentNode", "content": "!" }
-        ]
+        REGISTER_BOOL_PROPERTY("bold", bold, set_bold);
+        REGISTER_STRING_PROPERTY("content", content, set_content);
     }
-]
-)~~~";
 
-int main(int argc, char** argv)
-{
-    auto app = GUI::Application::construct(argc, argv);
+    bool bold() const { return m_bold; }
+    void set_bold(bool value) { m_bold = value; }
 
-    auto window = GUI::Window::construct();
-    window->set_title("Writer");
-    window->resize(570, 500);
+    String content() const { return m_content; }
+    void set_content(const String& value) { m_content = value; }
 
-    auto& widget = window->set_main_widget<GUI::Widget>();
-    widget.load_from_json(main_window_ui_json);
+private:
+    bool m_bold = false;
+    String m_content;
+};
 
-    auto& page_view = static_cast<Web::InProcessWebView&>(*widget.find_descendant_by_name("page_view"));
-    page_view.load_empty_document();
-
-    window->show();
-
-    return app->exec();
 }

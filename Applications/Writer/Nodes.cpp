@@ -24,38 +24,36 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <Applications/Writer/MainWindowUI.h>
-#include <LibCore/ArgsParser.h>
-#include <LibWeb/InProcessWebView.h>
+#include <AK/HashMap.h>
+#include <Applications/Writer/Nodes.h>
 
-const char input_file[] = R"~~~(
-[
-    {
-        "class": "ParagraphNode",
-        "children": [
-            { "class": "FragmentNode", "content": "Hello, " },
-            { "class": "FragmentNode", "content": "Paul", "bold": true },
-            { "class": "FragmentNode", "content": "!" }
-        ]
-    }
-]
-)~~~";
+namespace Writer {
 
-int main(int argc, char** argv)
+REGISTER_NODE(ParagraphNode)
+REGISTER_NODE(FragmentNode)
+
+static HashMap<String, NodeClassRegistration*>& node_classes()
 {
-    auto app = GUI::Application::construct(argc, argv);
+    static HashMap<String, NodeClassRegistration*>* map;
+    if (!map)
+        map = new HashMap<String, NodeClassRegistration*>;
+    return *map;
+}
 
-    auto window = GUI::Window::construct();
-    window->set_title("Writer");
-    window->resize(570, 500);
+NodeClassRegistration::NodeClassRegistration(const String& class_name, Function<NonnullRefPtr<Core::Object>()> factory)
+{
+    node_classes().set(class_name, this);
+}
 
-    auto& widget = window->set_main_widget<GUI::Widget>();
-    widget.load_from_json(main_window_ui_json);
+void NodeClassRegistration::for_each(Function<void(const NodeClassRegistration&)> callback)
+{
+    for (auto& it : node_classes())
+        callback(*it.value);
+}
 
-    auto& page_view = static_cast<Web::InProcessWebView&>(*widget.find_descendant_by_name("page_view"));
-    page_view.load_empty_document();
+const NodeClassRegistration* NodeClassRegistration::find(const String& class_name)
+{
+    return node_classes().get(class_name).value_or(nullptr);
+}
 
-    window->show();
-
-    return app->exec();
 }
