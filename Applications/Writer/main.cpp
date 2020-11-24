@@ -24,7 +24,6 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <Applications/Writer/MainWindowUI.h>
 #include <Applications/Writer/WriterWidget.h>
 #include <LibCore/ArgsParser.h>
 #include <LibWeb/InProcessWebView.h>
@@ -52,10 +51,7 @@ int main(int argc, char** argv)
     window->set_title("Writer");
     window->resize(570, 500);
 
-    auto& widget = window->set_main_widget<GUI::Widget>();
-    widget.load_from_json(main_window_ui_json);
-
-    auto& writer = static_cast<Writer::WriterWidget&>(*widget.find_descendant_by_name("writer"));
+    auto& writer = window->set_main_widget<Writer::WriterWidget>();
 
     writer.create_document();
     writer.document()->load_from_json(input_file);
