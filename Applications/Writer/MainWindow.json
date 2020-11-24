@@ -8,8 +8,8 @@
 
     "children": [
         {
-            "class": "Writer::WriterWidget",
-            "name": "writer"
+            "class": "Web::InProcessWebView",
+            "name": "web_view"
         }
     ]
 }
