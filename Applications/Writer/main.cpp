@@ -24,6 +24,25 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-int main()
+#include <Applications/Writer/MainWindowUI.h>
+#include <LibCore/ArgsParser.h>
+#include <LibWeb/InProcessWebView.h>
+
+int main(int argc, char** argv)
 {
+    auto app = GUI::Application::construct(argc, argv);
+
+    auto window = GUI::Window::construct();
+    window->set_title("Writer");
+    window->resize(570, 500);
+
+    auto& widget = window->set_main_widget<GUI::Widget>();
+    widget.load_from_json(main_window_ui_json);
+
+    auto& page_view = static_cast<Web::InProcessWebView&>(*widget.find_descendant_by_name("page_view"));
+    page_view.load_empty_document();
+
+    window->show();
+
+    return app->exec();
 }
