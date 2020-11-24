@@ -28,12 +28,12 @@
 
 namespace Writer {
 
+REGISTER_WIDGET(Writer, WriterWidget)
+
 WriterWidget::WriterWidget()
     : m_top_node(Node::construct())
-    , m_page_view(static_cast<Web::InProcessWebView&>(*find_descendant_by_name("page_view")))
 {
-    // FIXME: Create a template.
-    m_page_view.load_empty_document();
+    add_child(m_top_node);
 }
 
 }

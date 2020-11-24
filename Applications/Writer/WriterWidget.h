@@ -29,7 +29,6 @@
 #include <AK/Vector.h>
 #include <Applications/Writer/Nodes.h>
 #include <LibGUI/Widget.h>
-#include <LibWeb/InProcessWebView.h>
 
 namespace Writer {
 
@@ -40,14 +39,10 @@ public:
     const Node& top_node() const { return m_top_node; }
     Node& top_node() { return m_top_node; }
 
-    const Web::InProcessWebView& page_view() const { return m_page_view; }
-    Web::InProcessWebView& page_view() { return m_page_view; }
-
 private:
     WriterWidget();
 
     NonnullRefPtr<Node> m_top_node;
-    Web::InProcessWebView& m_page_view;
 };
 
 }

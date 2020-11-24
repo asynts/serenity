@@ -1,4 +1,5 @@
-{
+extern const char main_window_ui_json[];
+const char main_window_ui_json[] = R"({
     "name": "main",
 
     "layout": {
@@ -13,3 +14,4 @@
         }
     ]
 }
+)";
