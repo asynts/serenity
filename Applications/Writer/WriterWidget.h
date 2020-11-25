@@ -51,14 +51,9 @@ public:
     }
 
 private:
-    WriterWidget()
-        : m_web_view(static_cast<Web::InProcessWebView&>(*find_descendant_by_name("web_view")))
-    {
-        m_web_view.load_empty_document();
-    }
+    // FIXME: How can I get a reference to the InProcessWebView?
 
     RefPtr<DocumentNode> m_document;
-    Web::InProcessWebView& m_web_view;
 };
 
 }
