@@ -24,8 +24,12 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <Applications/Writer/InspectorWidget.h>
 #include <Applications/Writer/WriterWidget.h>
 #include <LibCore/ArgsParser.h>
+#include <LibGUI/Action.h>
+#include <LibGUI/Menu.h>
+#include <LibGUI/MenuBar.h>
 #include <LibWeb/InProcessWebView.h>
 
 const char input_file[] = R"~~~(
@@ -55,6 +59,29 @@ int main(int argc, char** argv)
 
     writer.create_document();
     writer.document()->load_from_json(input_file);
+
+    RefPtr<GUI::Window> inspector_window;
+
+    auto inspect_dom_tree_action = GUI::Action::create("Inspect DOM tree", [&](auto&) {
+        if (!inspector_window) {
+            inspector_window = GUI::Window::construct();
+            inspector_window->resize(300, 500);
+            inspector_window->set_title("DOM inspector");
+            inspector_window->set_icon(Gfx::Bitmap::load_from_file("/res/icons/16x16/inspector-object.png"));
+        }
+
+        auto& inspector = inspector_window->set_main_widget<Writer::InspectorWidget>();
+        inspector.set_document(*writer.web_view()->document());
+
+        inspector_window->show();
+    });
+
+    auto menubar = GUI::MenuBar::construct();
+
+    auto& inspect_menu = menubar->add_menu("Inspect");
+    inspect_menu.add_action(*inspect_dom_tree_action);
+
+    app->set_menubar(menubar);
 
     window->show();
 
