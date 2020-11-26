@@ -127,7 +127,12 @@ public:
     }
 
     String content() const { return m_content; }
-    void set_content(const String& value) { m_content = value; }
+    void set_content(const String& value)
+    {
+        m_element->set_text_content(value);
+
+        m_content = value;
+    }
 
 private:
     bool m_bold = false;
