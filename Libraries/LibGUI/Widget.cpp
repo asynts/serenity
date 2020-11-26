@@ -47,6 +47,7 @@
 #include <LibGUI/TextBox.h>
 #include <LibGUI/ToolBar.h>
 #include <LibGUI/ToolBarContainer.h>
+#include <LibGUI/TreeView.h>
 #include <LibGUI/Widget.h>
 #include <LibGUI/Window.h>
 #include <LibGUI/WindowServerConnection.h>
@@ -74,6 +75,7 @@ REGISTER_WIDGET(GUI, TextEditor)
 REGISTER_WIDGET(GUI, ToolBar)
 REGISTER_WIDGET(GUI, ToolBarContainer)
 REGISTER_WIDGET(GUI, Widget)
+REGISTER_WIDGET(GUI, TreeView)
 
 static HashMap<String, WidgetClassRegistration*>& widget_classes()
 {
