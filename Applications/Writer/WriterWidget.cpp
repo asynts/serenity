@@ -56,8 +56,7 @@ void WriterWidget::create_document()
 
     m_web_view->load_html(html_document_template, "application://writer");
 
-    // FIXME: m_web_view->document()->body() returns a const element for some reason?
-    m_document = Node::construct(*m_web_view->document(), nullptr, const_cast<Web::HTML::HTMLElement*>(m_web_view->document()->body()));
+    m_document = Node::construct(*m_web_view->document(), nullptr, m_web_view->document()->body());
     add_child(*m_document);
 }
 
