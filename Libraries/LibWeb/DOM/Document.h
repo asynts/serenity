@@ -88,9 +88,16 @@ public:
     const Node* inspected_node() const { return m_inspected_node; }
 
     const Element* document_element() const;
+    Element* document_element();
+
     const HTML::HTMLHtmlElement* html_element() const;
+    HTML::HTMLHtmlElement* html_element();
+
     const HTML::HTMLHeadElement* head() const;
+
     const HTML::HTMLElement* body() const;
+    HTML::HTMLElement* body();
+
     void set_body(HTML::HTMLElement& new_body);
 
     String title() const;
