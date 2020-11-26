@@ -1,5 +1,5 @@
 {
-    "name": "main",
+    "name": "inspector",
 
     "layout": {
         "class": "GUI::VerticalBoxLayout"
@@ -7,8 +7,8 @@
 
     "children": [
         {
-            "class": "Web::InProcessWebView",
-            "name": "web_view"
+            "class": "GUI::TreeView",
+            "name": "dom_view"
         }
     ]
 }

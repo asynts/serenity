@@ -24,31 +24,24 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#pragma once
-
-#include <Applications/Writer/Nodes.h>
-#include <LibGUI/Widget.h>
-#include <LibWeb/Forward.h>
+#include <Applications/Writer/InspectorWidget.h>
+#include <Applications/Writer/InspectorWindowUI.h>
+#include <LibGUI/TreeView.h>
+#include <LibWeb/DOM/Document.h>
+#include <LibWeb/DOMTreeModel.h>
 
 namespace Writer {
 
-class WriterWidget : public GUI::Widget {
-    C_OBJECT(WriterWidget);
+InspectorWidget::InspectorWidget()
+{
+    load_from_json(inspector_window_ui_json);
 
-public:
-    const Node* document() const { return m_document; }
-    Node* document() { return m_document; }
+    m_dom_view = static_cast<GUI::TreeView&>(*find_descendant_by_name("dom_view"));
+}
 
-    void create_document();
-
-    const RefPtr<Web::InProcessWebView>& web_view() const { return m_web_view; }
-    RefPtr<Web::InProcessWebView>& web_view() { return m_web_view; }
-
-private:
-    WriterWidget();
-
-    RefPtr<Web::InProcessWebView> m_web_view;
-    RefPtr<Node> m_document;
-};
+void InspectorWidget::set_document(Web::DOM::Document& document)
+{
+    m_dom_view->set_model(Web::DOMTreeModel::create(document));
+}
 
 }
