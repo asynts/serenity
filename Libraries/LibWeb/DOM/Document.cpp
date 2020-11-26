@@ -175,6 +175,10 @@ const Element* Document::document_element() const
 {
     return first_child_of_type<Element>();
 }
+Element* Document::document_element()
+{
+    return const_cast<Element*>(static_cast<const Document&>(*this).document_element());
+}
 
 const HTML::HTMLHtmlElement* Document::html_element() const
 {
@@ -182,6 +186,10 @@ const HTML::HTMLHtmlElement* Document::html_element() const
     if (is<HTML::HTMLHtmlElement>(html))
         return downcast<HTML::HTMLHtmlElement>(html);
     return nullptr;
+}
+HTML::HTMLHtmlElement* Document::html_element()
+{
+    return const_cast<HTML::HTMLHtmlElement*>(static_cast<const Document&>(*this).html_element());
 }
 
 const HTML::HTMLHeadElement* Document::head() const
@@ -204,6 +212,10 @@ const HTML::HTMLElement* Document::body() const
     if (first_frameset)
         return first_frameset;
     return nullptr;
+}
+HTML::HTMLElement* Document::body()
+{
+    return const_cast<HTML::HTMLElement*>(static_cast<const Document&>(*this).body());
 }
 
 void Document::set_body(HTML::HTMLElement& new_body)
