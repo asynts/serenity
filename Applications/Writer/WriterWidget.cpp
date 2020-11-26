@@ -24,10 +24,18 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <Applications/Writer/MainWindowUI.h>
 #include <Applications/Writer/WriterWidget.h>
 
 namespace Writer {
 
 REGISTER_WIDGET(Writer, WriterWidget)
+
+WriterWidget::WriterWidget()
+{
+    load_from_json(main_window_ui_json);
+
+    m_web_view = static_cast<Web::InProcessWebView&>(*find_descendant_by_name("web_view"));
+}
 
 }

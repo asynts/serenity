@@ -8,20 +8,8 @@
 
     "children": [
         {
-            "class": "Writer::WriterWidget",
-            "name": "writer",
-
-            "layout": {
-                "class": "GUI::VerticalBoxLayout",
-                "spacing": 2
-            },
-
-            "children": [
-                {
-                    "class": "Web::InProcessWebView",
-                    "name": "web_view"
-                }
-            ]
+            "class": "Web::InProcessWebView",
+            "name": "web_view"
         }
     ]
 }

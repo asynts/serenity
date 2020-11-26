@@ -45,14 +45,18 @@ public:
         if (m_document)
             remove_child(*m_document);
 
+        // FIXME: Do this here?
+        m_web_view->load_empty_document();
+
         m_document = DocumentNode::construct();
 
         add_child(*m_document);
     }
 
 private:
-    // FIXME: How can I get a reference to the InProcessWebView?
+    WriterWidget();
 
+    RefPtr<Web::InProcessWebView> m_web_view;
     RefPtr<DocumentNode> m_document;
 };
 
