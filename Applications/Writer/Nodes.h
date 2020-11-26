@@ -75,18 +75,17 @@ public:
     ~Node()
     {
         if (m_parent)
-            m_parent->element().remove_child(*m_element);
+            m_parent->element()->remove_child(*m_element);
     }
 
     void load_from_json(StringView);
     void load_from_json(const JsonObject&);
 
-    // Every node must have an element, it's just not possible to initlize it in the member initializer list.
-    const Web::DOM::Element& element() const { return *m_element; }
-    Web::DOM::Element& element() { return *m_element; }
+    const RefPtr<Web::DOM::Element>& element() const { return m_element; }
+    RefPtr<Web::DOM::Element>& element() { return m_element; }
 
 protected:
-    Web::DOM::Element* m_element;
+    RefPtr<Web::DOM::Element> m_element;
     Node* m_parent;
 
 private:
@@ -101,7 +100,7 @@ public:
         : Node(document, &parent)
     {
         m_element = document.create_element("p");
-        parent.element().append_child(*m_element);
+        parent.element()->append_child(*m_element);
     }
 };
 
@@ -113,7 +112,7 @@ public:
         : Node(document, &parent)
     {
         m_element = document.create_element("span");
-        parent.element().append_child(*m_element);
+        parent.element()->append_child(*m_element);
 
         REGISTER_BOOL_PROPERTY("bold", bold, set_bold);
         REGISTER_STRING_PROPERTY("content", content, set_content);
