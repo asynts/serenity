@@ -31,9 +31,11 @@
 
 #include <AK/NeverDestroyed.h>
 #include <LibCore/Object.h>
+#include <LibWeb/DOM/Document.h>
+#include <LibWeb/DOM/Element.h>
 
 #define REGISTER_NODE(class_name) \
-    NeverDestroyed<NodeClassRegistration> registration_##class_name { #class_name, [] { return class_name::construct(); } };
+    NeverDestroyed<NodeClassRegistration> registration_##class_name { #class_name, [](auto& document, auto& parent) { return class_name::construct(document, parent); } };
 
 namespace Writer {
 
@@ -44,47 +46,85 @@ class NodeClassRegistration {
     AK_MAKE_NONMOVABLE(NodeClassRegistration);
 
 public:
-    NodeClassRegistration(const String& class_name, Function<NonnullRefPtr<Node>()> factory);
+    NodeClassRegistration(const String& class_name, Function<NonnullRefPtr<Node>(Web::DOM::Document&, Node&)> factory);
 
     static void for_each(Function<void(const NodeClassRegistration&)>);
     static const NodeClassRegistration* find(const String& class_name);
 
     String class_name() const { return m_class_name; }
-    NonnullRefPtr<Node> construct() const { return m_factory(); }
+    NonnullRefPtr<Node> construct(Web::DOM::Document& document, Node& parent) const
+    {
+        return m_factory(document, parent);
+    }
 
 private:
     String m_class_name;
-    Function<NonnullRefPtr<Node>()> m_factory;
+    Function<NonnullRefPtr<Node>(Web::DOM::Document&, Node&)> m_factory;
 };
 
 class Node : public Core::Object {
     C_OBJECT(Node);
 
 public:
+    explicit Node(Web::DOM::Document& document, Node* parent = nullptr, Web::DOM::Element* element = nullptr)
+        : m_element(element)
+        , m_parent(parent)
+        , m_document(document)
+    {
+    }
+    ~Node()
+    {
+        if (m_parent)
+            m_parent->element()->remove_child(*m_element);
+    }
+
     void load_from_json(StringView);
     void load_from_json(const JsonObject&);
-};
 
-class DocumentNode : public Node {
-    C_OBJECT(DocumentNode);
+    const RefPtr<Web::DOM::Element>& element() const { return m_element; }
+    RefPtr<Web::DOM::Element>& element() { return m_element; }
+
+protected:
+    RefPtr<Web::DOM::Element> m_element;
+    Node* m_parent;
+
+private:
+    Web::DOM::Document& m_document;
 };
 
 class ParagraphNode : public Node {
     C_OBJECT(ParagraphNode);
+
+public:
+    explicit ParagraphNode(Web::DOM::Document& document, Node& parent)
+        : Node(document, &parent)
+    {
+        m_element = document.create_element("p");
+        parent.element()->append_child(*m_element);
+    }
 };
 
 class FragmentNode : public Node {
     C_OBJECT(FragmentNode);
 
 public:
-    FragmentNode()
+    FragmentNode(Web::DOM::Document& document, Node& parent)
+        : Node(document, &parent)
     {
+        m_element = document.create_element("span");
+        parent.element()->append_child(*m_element);
+
         REGISTER_BOOL_PROPERTY("bold", bold, set_bold);
         REGISTER_STRING_PROPERTY("content", content, set_content);
     }
 
     bool bold() const { return m_bold; }
-    void set_bold(bool value) { m_bold = value; }
+    void set_bold(bool value)
+    {
+        // FIXME: Add or remove 'bold' class.
+
+        m_bold = value;
+    }
 
     String content() const { return m_content; }
     void set_content(const String& value) { m_content = value; }
