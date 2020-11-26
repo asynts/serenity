@@ -26,8 +26,18 @@
 
 #include <Applications/Writer/MainWindowUI.h>
 #include <Applications/Writer/WriterWidget.h>
+#include <LibWeb/InProcessWebView.h>
 
 namespace Writer {
+
+constexpr const char* html_document_template = R"~~~(
+<html>
+    <head>
+    </head>
+    <body>
+    </body>
+</html>
+)~~~";
 
 REGISTER_WIDGET(Writer, WriterWidget)
 
@@ -36,6 +46,18 @@ WriterWidget::WriterWidget()
     load_from_json(main_window_ui_json);
 
     m_web_view = static_cast<Web::InProcessWebView&>(*find_descendant_by_name("web_view"));
+}
+
+void WriterWidget::create_document()
+{
+    if (m_document)
+        remove_child(*m_document);
+
+    m_web_view->load_html(html_document_template, "application://writer");
+
+    // FIXME: m_web_view->document()->body() returns a const element for some reason?
+    m_document = Node::construct(m_web_view->document(), nullptr, m_web_view->document()->body());
+    add_child(*m_document);
 }
 
 }

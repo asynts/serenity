@@ -40,7 +40,7 @@ static HashMap<String, NodeClassRegistration*>& node_classes()
     return *map;
 }
 
-NodeClassRegistration::NodeClassRegistration(const String& class_name, Function<NonnullRefPtr<Node>()> factory)
+NodeClassRegistration::NodeClassRegistration(const String& class_name, Function<NonnullRefPtr<Node>(Web::DOM::Document&, Node&)> factory)
     : m_class_name(class_name)
     , m_factory(move(factory))
 {
@@ -86,7 +86,7 @@ void Node::load_from_json(const JsonObject& json)
                 ASSERT_NOT_REACHED();
             }
 
-            auto child_node = registration->construct();
+            auto child_node = registration->construct(m_document, *this);
             add_child(child_node);
             child_node->load_from_json(child_json);
         }
