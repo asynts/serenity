@@ -26,10 +26,9 @@
 
 #pragma once
 
-#include <AK/Vector.h>
 #include <Applications/Writer/Nodes.h>
 #include <LibGUI/Widget.h>
-#include <LibWeb/InProcessWebView.h>
+#include <LibWeb/Forward.h>
 
 namespace Writer {
 
@@ -37,27 +36,16 @@ class WriterWidget : public GUI::Widget {
     C_OBJECT(WriterWidget);
 
 public:
-    const DocumentNode* document() const { return m_document; }
-    DocumentNode* document() { return m_document; }
+    const Node* document() const { return m_document; }
+    Node* document() { return m_document; }
 
-    void create_document()
-    {
-        if (m_document)
-            remove_child(*m_document);
-
-        // FIXME: Do this here?
-        m_web_view->load_empty_document();
-
-        m_document = DocumentNode::construct();
-
-        add_child(*m_document);
-    }
+    void create_document();
 
 private:
     WriterWidget();
 
     RefPtr<Web::InProcessWebView> m_web_view;
-    RefPtr<DocumentNode> m_document;
+    RefPtr<Node> m_document;
 };
 
 }
