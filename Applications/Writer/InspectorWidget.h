@@ -26,29 +26,23 @@
 
 #pragma once
 
-#include <Applications/Writer/Nodes.h>
+// FIXME: Remove replication with Applications/Browser/InspectorWidget.h.
+
 #include <LibGUI/Widget.h>
 #include <LibWeb/Forward.h>
 
 namespace Writer {
 
-class WriterWidget : public GUI::Widget {
-    C_OBJECT(WriterWidget);
+class InspectorWidget : public GUI::Widget {
+    C_OBJECT(InspectorWidget);
 
 public:
-    const Node* document() const { return m_document; }
-    Node* document() { return m_document; }
-
-    void create_document();
-
-    const RefPtr<Web::InProcessWebView>& web_view() const { return m_web_view; }
-    RefPtr<Web::InProcessWebView>& web_view() { return m_web_view; }
+    void set_document(Web::DOM::Document&);
 
 private:
-    WriterWidget();
+    InspectorWidget();
 
-    RefPtr<Web::InProcessWebView> m_web_view;
-    RefPtr<Node> m_document;
+    RefPtr<GUI::TreeView> m_dom_view;
 };
 
 }
