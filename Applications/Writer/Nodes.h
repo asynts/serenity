@@ -141,12 +141,10 @@ private:
         if (m_bold)
             element->class_names().append("bold");
 
-        if (m_element) {
-            // FIXME: Somehow this leaves the DOM in an invalid state.
+        if (m_element)
             m_element->replace_with(element);
-        } else {
+        else
             m_parent->element()->append_child(*element);
-        }
 
         m_element = element;
     }
