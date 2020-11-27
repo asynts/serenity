@@ -74,9 +74,10 @@ public:
     }
     ~Node()
     {
-        if (m_parent)
-            m_parent->element()->remove_child(*m_element);
+        destroy_element();
     }
+
+    bool is_writer_node() const override final { return true; }
 
     void load_from_json(StringView);
     void load_from_json(const JsonObject&);
@@ -88,6 +89,21 @@ protected:
     RefPtr<Web::DOM::Element> m_element;
     Node* m_parent;
     Web::DOM::Document& m_document;
+
+private:
+    void destroy_element()
+    {
+        for_each_child_of_type<Node>([](auto& child) {
+            child.destroy_element();
+
+            return IterationDecision::Continue;
+        });
+
+        if (m_parent && m_element)
+            m_parent->element()->remove_child(*m_element);
+
+        m_element.clear();
+    }
 };
 
 class ParagraphNode : public Node {
@@ -154,3 +170,7 @@ private:
 };
 
 }
+
+AK_BEGIN_TYPE_TRAITS(Writer::Node)
+static bool is_type(const Core::Object& object) { return object.is_writer_node(); }
+AK_END_TYPE_TRAITS()

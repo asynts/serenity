@@ -58,6 +58,7 @@ void WriterWidget::create_document()
 {
     if (m_document)
         remove_child(*m_document);
+    m_document.clear();
 
     m_web_view->load_html(html_document_template, "application://writer");
 

@@ -113,6 +113,7 @@ public:
     bool is_widget() const { return m_widget; }
     virtual bool is_action() const { return false; }
     virtual bool is_window() const { return false; }
+    virtual bool is_writer_node() const { return false; }
 
     void save_to(AK::JsonObject&);
 
