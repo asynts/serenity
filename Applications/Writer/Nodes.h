@@ -87,8 +87,6 @@ public:
 protected:
     RefPtr<Web::DOM::Element> m_element;
     Node* m_parent;
-
-private:
     Web::DOM::Document& m_document;
 };
 
@@ -111,30 +109,44 @@ public:
     FragmentNode(Web::DOM::Document& document, Node& parent)
         : Node(document, &parent)
     {
-        m_element = document.create_element("span");
-        parent.element()->append_child(*m_element);
-
         REGISTER_BOOL_PROPERTY("bold", bold, set_bold);
         REGISTER_STRING_PROPERTY("content", content, set_content);
+
+        render();
     }
 
     bool bold() const { return m_bold; }
     void set_bold(bool value)
     {
-        // FIXME: Add or remove 'bold' class.
-
         m_bold = value;
+        render();
     }
 
     String content() const { return m_content; }
     void set_content(const String& value)
     {
-        m_element->set_text_content(value);
-
         m_content = value;
+        render();
     }
 
 private:
+    void render()
+    {
+        auto element = m_document.create_element("span");
+        element->set_text_content(m_content);
+
+        if (m_bold)
+            element->class_names().append("bold");
+
+        if (m_element) {
+            m_element->replace_with(element);
+        } else {
+            m_parent->element()->append_child(*m_element);
+        }
+
+        m_element = element;
+    }
+
     bool m_bold = false;
     String m_content;
 };
