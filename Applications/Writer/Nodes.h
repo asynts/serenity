@@ -97,6 +97,9 @@ public:
     explicit ParagraphNode(Web::DOM::Document& document, Node& parent)
         : Node(document, &parent)
     {
+        // FIXME: I need to put this into a render() method and then figure out how to
+        //        invalidate all children...
+
         m_element = document.create_element("p");
         parent.element()->append_child(*m_element);
     }
@@ -139,16 +142,17 @@ private:
             element->class_names().append("bold");
 
         if (m_element) {
+            // FIXME: Somehow this leaves the DOM in an invalid state.
             m_element->replace_with(element);
         } else {
-            m_parent->element()->append_child(*m_element);
+            m_parent->element()->append_child(*element);
         }
 
         m_element = element;
     }
 
     bool m_bold = false;
-    String m_content;
+    String m_content = "";
 };
 
 }
