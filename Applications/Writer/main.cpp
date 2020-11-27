@@ -62,7 +62,7 @@ int main(int argc, char** argv)
 
     RefPtr<GUI::Window> inspector_window;
 
-    auto inspect_dom_tree_action = GUI::Action::create("Inspect DOM tree", [&](auto&) {
+    auto inspect_dom_tree_action = GUI::Action::create("Inspect DOM tree", { Mod_None, Key_F12 }, [&](auto&) {
         if (!inspector_window) {
             inspector_window = GUI::Window::construct();
             inspector_window->resize(300, 500);
