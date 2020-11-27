@@ -469,6 +469,17 @@ inline const LogStream& operator<<(const LogStream& stream, const RefPtr<T, PtrT
 }
 
 template<typename T>
+struct Formatter<RefPtr<T>> : Formatter<T*> {
+    void format(TypeErasedFormatParams& params, FormatBuilder& builder, const RefPtr<T>& value)
+    {
+        Formatter<FlatPtr> formatter { *this };
+        formatter.m_mode = StandardFormatter::Mode::Pointer;
+
+        formatter.format(params, builder, reinterpret_cast<FlatPtr>(value.ptr()));
+    }
+};
+
+template<typename T>
 struct Traits<RefPtr<T>> : public GenericTraits<RefPtr<T>> {
     using PeekType = const T*;
     static unsigned hash(const RefPtr<T>& p) { return ptr_hash(p.ptr()); }
