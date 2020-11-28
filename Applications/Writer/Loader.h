@@ -37,15 +37,44 @@ namespace Writer {
 struct Property {
     String name;
     Function<JsonValue(DOM::Node&)> getter;
-    Function<bool(DOM::Node&, const JsonValue&)> setter;
+    Function<void(DOM::Node&, const JsonValue&)> setter;
 };
 
 struct NodeRegistration {
     static HashMap<String, const NonnullOwnPtr<NodeRegistration>>& registrations();
 
     String name;
-    Function<NonnullRefPtr<DOM::Node>()> constructor;
-    HashMap<String, Core::Property> properties;
+    Function<NonnullRefPtr<DOM::Node&>()> create;
+    HashMap<String, Property> properties;
 };
+
+template<typename T, typename S>
+Function<JsonValue(const DOM::Node&)> getter(S (T::*method)() const)
+{
+    return [method](const DOM::Node& node) {
+        return (static_cast<const T&>(node).*(method))();
+    };
+}
+
+template<typename T, typename S>
+Function<void(DOM::Node&, const JsonValue&)> setter(void (T::*method)(S))
+{
+    return [method](DOM::Node& node, const JsonValue& json) {
+        if constexpr (IsSame<S, String>::value)
+            (static_cast<T&>(node).*(method))(json.as_string());
+        else if constexpr (IsSame<S, bool>::value)
+            (static_cast<T&>(node).*(method))(json.as_bool());
+        else
+            ASSERT_NOT_REACHED();
+    };
+}
+
+template<typename T>
+Function<RefPtr<DOM::Node>()> constructor()
+{
+    return [](DOM::Document& document) {
+        return adopt(new T { document });
+    };
+}
 
 }
