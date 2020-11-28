@@ -25,6 +25,7 @@
  */
 
 #include <AK/JsonObject.h>
+#include <Applications/Writer/DOM/Document.h>
 #include <Applications/Writer/DOM/Node.h>
 #include <Applications/Writer/Loader.h>
 #include <LibWeb/DOM/Element.h>
@@ -58,10 +59,12 @@ RefPtr<DOM::Node> Node::load_from_json(const JsonObject& json)
     ASSERT(class_name);
     ASSERT(class_name->is_string());
 
-    auto object = NodeRegistration::registrations().get(class_name->as_string()).value()->constructor();
+    const auto& registration = NodeRegistration::registrations().get(class_name->as_string()).value();
 
-    json.for_each_member([](String property, JsonValue value) {
-        // FIXME: How?
+    auto object = registration->create();
+
+    json.for_each_member([&](String property, JsonValue value) {
+        registration->properties.get(property).value().setter(object, value);
     });
 }
 
@@ -76,6 +79,7 @@ void ParagraphNode::register_in_loader()
     if (!exchange(registered, true)) {
         auto registration = make<NodeRegistration>();
         registration->name = "ParagraphNode";
+        registration->create = constructor<ParagraphNode>();
 
         NodeRegistration::registrations().set(registration->name, move(registration));
     }
@@ -88,10 +92,11 @@ void FragmentNode::register_in_loader()
     if (!exchange(registered, true)) {
         auto registration = make<NodeRegistration>();
         registration->name = "FragmentNode";
+        registration->create = constructor<FragmentNode>();
 
-        registration->properties.set("content", { "content", content, set_content });
-        registration->properties.set("bold", { "bold", bold, set_bold });
-        registration->properties.set("italic", { "italic", italic, set_italic });
+        registration->properties.set("content", { "content", getter(content), setter(set_content) });
+        registration->properties.set("bold", { "bold", getter(bold), setter(set_bold) });
+        registration->properties.set("italic", { "italic", getter(italic), setter(set_italic) });
 
         NodeRegistration::registrations().set(registration->name, move(registration));
     }

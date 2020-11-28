@@ -27,6 +27,7 @@
 #pragma once
 
 #include <AK/RefPtr.h>
+#include <Applications/Writer/Forward.h>
 #include <LibWeb/Forward.h>
 
 namespace Writer::DOM {
@@ -34,6 +35,9 @@ namespace Writer::DOM {
 class Document {
 public:
     Document();
+
+    template<typename T>
+    RefPtr<Node> create_node() { return adopt(*new T(*this)); }
 
 private:
     RefPtr<Web::DOM::Document> m_web_document;

@@ -28,11 +28,11 @@
 
 namespace Writer {
 
-Vector<HashMap<String, NodeRegistration*>>& NodeRegistration::registrations()
+HashMap<String, const NonnullOwnPtr<NodeRegistration>>& NodeRegistration::registrations()
 {
-    static Vector<HashMap<String, NodeRegistration*>>* map = nullptr;
+    static HashMap<String, const NonnullOwnPtr<NodeRegistration>>* map = nullptr;
     if (!map)
-        map = new Vector<HashMap<String, NodeRegistration*>>();
+        map = new HashMap<String, const NonnullOwnPtr<NodeRegistration>>();
 
     return *map;
 }
