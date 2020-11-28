@@ -62,7 +62,11 @@ void WriterWidget::create_document()
 
     m_web_view->load_html(html_document_template, "application://writer");
 
-    m_document = Node::construct(*m_web_view->document(), nullptr, m_web_view->document()->body());
+    m_document = DOM::Document::construct();
+
+    m_document->set_root(m_document->create_node<DOM::Node>());
+    m_document->root()->set_rendered(*m_web_view->document()->body());
+
     add_child(*m_document);
 }
 

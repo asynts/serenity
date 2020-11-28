@@ -28,18 +28,27 @@
 
 #include <AK/RefPtr.h>
 #include <Applications/Writer/Forward.h>
+#include <LibCore/Object.h>
 #include <LibWeb/Forward.h>
 
 namespace Writer::DOM {
 
-class Document {
-public:
-    Document();
+class Document : public Core::Object {
+    C_OBJECT(Document);
 
+public:
     template<typename T>
     RefPtr<Node> create_node() { return adopt(*new T(*this)); }
 
+    const Node* root() const { return m_root_node; }
+    Node* root() { return m_root_node; }
+
+    void set_root(Node* node) { m_root_node = node; }
+
 private:
+    Document();
+
+    RefPtr<Node> m_root_node;
     RefPtr<Web::DOM::Document> m_web_document;
 };
 

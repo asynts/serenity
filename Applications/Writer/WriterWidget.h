@@ -26,7 +26,7 @@
 
 #pragma once
 
-#include <Applications/Writer/Nodes.h>
+#include <Applications/Writer/Forward.h>
 #include <LibGUI/Widget.h>
 #include <LibWeb/Forward.h>
 
@@ -36,8 +36,8 @@ class WriterWidget : public GUI::Widget {
     C_OBJECT(WriterWidget);
 
 public:
-    const Node* document() const { return m_document; }
-    Node* document() { return m_document; }
+    const DOM::Document* document() const { return m_document; }
+    DOM::Document* document() { return m_document; }
 
     void create_document();
 
@@ -48,7 +48,7 @@ private:
     WriterWidget();
 
     RefPtr<Web::InProcessWebView> m_web_view;
-    RefPtr<Node> m_document;
+    RefPtr<DOM::Document> m_document;
 };
 
 }

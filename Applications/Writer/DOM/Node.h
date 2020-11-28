@@ -47,6 +47,8 @@ public:
     static RefPtr<DOM::Node> load_from_json(StringView);
     static RefPtr<DOM::Node> load_from_json(const JsonObject&);
 
+    void set_rendered(Web::DOM::Element& element) { m_rendered = &element; }
+
     static void register_in_loader();
 
 protected:
