@@ -28,6 +28,8 @@
 
 #include <AK/JsonObject.h>
 #include <AK/String.h>
+#include <Applications/Writer/Layout/Block.h>
+#include <LibGfx/Painter.h>
 #include <LibWeb/TreeNode.h>
 
 namespace Writer::DOM {
@@ -49,6 +51,8 @@ public:
     void inserted_into(const Node&) { }
     void children_changed() { }
 
+    virtual NonnullRefPtr<Layout::Block> layout() const = 0;
+
 protected:
     explicit Node(NodeType type)
         : m_type(type)
@@ -67,6 +71,8 @@ public:
     }
 
     JsonValue to_json() override;
+    Gfx::IntRect draw(Gfx::Painter&, Gfx::IntPoint);
+    NonnullRefPtr<Layout::Block> layout() const override;
 
     static NonnullRefPtr<DocumentNode> from_json(const JsonObject&);
 };
@@ -79,6 +85,8 @@ public:
     }
 
     JsonValue to_json() override;
+    Gfx::IntRect draw(Gfx::Painter&, Gfx::IntPoint);
+    NonnullRefPtr<Layout::Block> layout() const override;
 };
 
 class FragmentNode final : public Node {
@@ -89,6 +97,8 @@ public:
     }
 
     JsonValue to_json() override;
+    Gfx::IntRect draw(Gfx::Painter&, Gfx::IntPoint);
+    NonnullRefPtr<Layout::Block> layout() const override;
 
     String content() const { return m_content; }
     void set_content(String value) { m_content = value; }

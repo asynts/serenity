@@ -81,6 +81,19 @@ JsonValue DocumentNode::to_json()
     return object;
 }
 
+NonnullRefPtr<Layout::Block> DocumentNode::layout() const
+{
+    auto block = adopt(*new Layout::VerticalBlock);
+
+    for_each_child([&](const Node& node) {
+        block->append_child(node.layout());
+
+        return IterationDecision::Continue;
+    });
+
+    return block;
+}
+
 JsonValue ParagraphNode::to_json()
 {
     JsonObject object;
@@ -92,6 +105,21 @@ JsonValue ParagraphNode::to_json()
     for_each_child([&](Node& node) { tree.append(node.to_json()); });
 
     return object;
+}
+
+NonnullRefPtr<Layout::Block> ParagraphNode::layout() const
+{
+    // FIXME: Line wraping?
+
+    auto block = adopt(*new Layout::HorizontalBlock);
+
+    for_each_child([&](const Node& node) {
+        block->append_child(node.layout());
+
+        return IterationDecision::Continue;
+    });
+
+    return block;
 }
 
 JsonValue FragmentNode::to_json()
@@ -107,6 +135,16 @@ JsonValue FragmentNode::to_json()
     for_each_child([&](Node& node) { tree.append(node.to_json()); });
 
     return object;
+}
+
+NonnullRefPtr<Layout::Block> FragmentNode::layout() const
+{
+    // FIXME: How to render italic text?
+
+    if (bold())
+        return adopt(*new Layout::TextBlock { Gfx::Font::default_bold_font(), content() });
+    else
+        return adopt(*new Layout::TextBlock { Gfx::Font::default_font(), content() });
 }
 
 }
