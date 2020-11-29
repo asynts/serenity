@@ -39,7 +39,7 @@ Frame::Frame(DOM::Element& host_element, Frame& main_frame)
     : m_page(*main_frame.page())
     , m_main_frame(main_frame)
     , m_loader(*this)
-    , m_event_handler({}, *this)
+    , m_event_handler(adopt(*new EventHandler(*this)))
     , m_host_element(host_element)
 {
     setup();
@@ -49,7 +49,7 @@ Frame::Frame(Page& page)
     : m_page(page)
     , m_main_frame(*this)
     , m_loader(*this)
-    , m_event_handler({}, *this)
+    , m_event_handler(adopt(*new EventHandler(*this)))
 {
     setup();
 }

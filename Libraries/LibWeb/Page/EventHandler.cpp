@@ -50,7 +50,7 @@ static Gfx::IntPoint compute_mouse_event_offset(const Gfx::IntPoint& position, c
     };
 }
 
-EventHandler::EventHandler(Badge<Frame>, Frame& frame)
+EventHandler::EventHandler(Frame& frame)
     : m_frame(frame)
 {
 }
