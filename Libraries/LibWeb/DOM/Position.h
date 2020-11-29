@@ -27,6 +27,7 @@
 #pragma once
 
 #include <AK/RefPtr.h>
+#include <LibWeb/DOM/Node.h>
 #include <LibWeb/Forward.h>
 
 namespace Web::DOM {

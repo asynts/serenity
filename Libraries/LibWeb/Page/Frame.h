@@ -74,6 +74,8 @@ public:
     EventHandler& event_handler() { return m_event_handler; }
     const EventHandler& event_handler() const { return m_event_handler; }
 
+    void set_event_handler(EventHandler& handler) { m_event_handler = handler; }
+
     void scroll_to(const Gfx::IntPoint&);
     void scroll_to_anchor(const String&);
 
@@ -104,7 +106,7 @@ private:
     Frame& m_main_frame;
 
     FrameLoader m_loader;
-    EventHandler m_event_handler;
+    NonnullRefPtr<EventHandler> m_event_handler;
 
     WeakPtr<DOM::Element> m_host_element;
     RefPtr<DOM::Document> m_document;

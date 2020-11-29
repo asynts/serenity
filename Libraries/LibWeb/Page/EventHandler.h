@@ -37,18 +37,21 @@ namespace Web {
 
 class Frame;
 
-class EventHandler {
+class EventHandler : public RefCounted<EventHandler> {
 public:
-    explicit EventHandler(Badge<Frame>, Frame&);
-    ~EventHandler();
+    explicit EventHandler(Frame&);
+    virtual ~EventHandler();
 
     bool handle_mouseup(const Gfx::IntPoint&, unsigned button, unsigned modifiers);
     bool handle_mousedown(const Gfx::IntPoint&, unsigned button, unsigned modifiers);
     bool handle_mousemove(const Gfx::IntPoint&, unsigned buttons, unsigned modifiers);
 
-    bool handle_keydown(KeyCode, unsigned modifiers, u32 code_point);
+    virtual bool handle_keydown(KeyCode, unsigned modifiers, u32 code_point);
 
     void set_mouse_event_tracking_layout_node(Layout::Node*);
+
+protected:
+    Frame& m_frame;
 
 private:
     bool focus_next_element();
@@ -58,8 +61,6 @@ private:
     const Layout::InitialContainingBlockBox* layout_root() const;
 
     void dump_selection(const char* event_name) const;
-
-    Frame& m_frame;
 
     bool m_in_mouse_selection { false };
 
