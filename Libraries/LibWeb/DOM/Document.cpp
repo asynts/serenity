@@ -206,6 +206,11 @@ const HTML::HTMLElement* Document::body() const
     return nullptr;
 }
 
+HTML::HTMLElement* Document::body()
+{
+    return const_cast<HTML::HTMLElement*>(const_cast<const Document&>(*this).body());
+}
+
 void Document::set_body(HTML::HTMLElement& new_body)
 {
     if (!is<HTML::HTMLBodyElement>(new_body) && !is<HTML::HTMLFrameSetElement>(new_body)) {
