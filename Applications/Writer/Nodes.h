@@ -67,8 +67,8 @@ class Node : public Core::Object {
 
 public:
     explicit Node(Web::DOM::Document& document, Node* parent = nullptr, Web::DOM::Element* element = nullptr)
-        : m_element(element)
-        , m_parent(parent)
+        : Core::Object(parent)
+        , m_element(element)
         , m_document(document)
     {
     }
@@ -85,9 +85,11 @@ public:
     const RefPtr<Web::DOM::Element>& element() const { return m_element; }
     RefPtr<Web::DOM::Element>& element() { return m_element; }
 
+    const Node* parent() const { return downcast<Node>(Object::parent()); }
+    Node* parent() { return downcast<Node>(Object::parent()); }
+
 protected:
     RefPtr<Web::DOM::Element> m_element;
-    Node* m_parent;
     Web::DOM::Document& m_document;
 
 private:
@@ -99,8 +101,8 @@ private:
             return IterationDecision::Continue;
         });
 
-        if (m_parent && m_element)
-            m_parent->element()->remove_child(*m_element);
+        if (parent() && m_element)
+            parent()->element()->remove_child(*m_element);
 
         m_element.clear();
     }
@@ -160,7 +162,7 @@ private:
         if (m_element)
             m_element->replace_with(element);
         else
-            m_parent->element()->append_child(*element);
+            parent()->element()->append_child(*element);
 
         m_element = element;
     }
