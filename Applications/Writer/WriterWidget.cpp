@@ -34,6 +34,11 @@ namespace Writer {
 constexpr const char* html_document_template = R"~~~(
 <html>
     <head>
+        <style>
+            .bold {
+                font-weight: bold;
+            }
+        </style>
     </head>
     <body>
     </body>
