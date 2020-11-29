@@ -38,6 +38,7 @@ public:
     }
 
     bool handle_keydown(KeyCode, unsigned modifiers, u32 code_point) override;
+    bool handle_mousedown(const Gfx::IntPoint&, unsigned button, unsigned modifiers) override;
 };
 
 }

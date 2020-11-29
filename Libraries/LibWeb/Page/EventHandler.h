@@ -43,7 +43,7 @@ public:
     virtual ~EventHandler();
 
     bool handle_mouseup(const Gfx::IntPoint&, unsigned button, unsigned modifiers);
-    bool handle_mousedown(const Gfx::IntPoint&, unsigned button, unsigned modifiers);
+    virtual bool handle_mousedown(const Gfx::IntPoint&, unsigned button, unsigned modifiers);
     bool handle_mousemove(const Gfx::IntPoint&, unsigned buttons, unsigned modifiers);
 
     virtual bool handle_keydown(KeyCode, unsigned modifiers, u32 code_point);
@@ -53,12 +53,12 @@ public:
 protected:
     Frame& m_frame;
 
+    Layout::InitialContainingBlockBox* layout_root();
+    const Layout::InitialContainingBlockBox* layout_root() const;
+
 private:
     bool focus_next_element();
     bool focus_previous_element();
-
-    Layout::InitialContainingBlockBox* layout_root();
-    const Layout::InitialContainingBlockBox* layout_root() const;
 
     void dump_selection(const char* event_name) const;
 

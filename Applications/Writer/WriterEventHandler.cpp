@@ -25,6 +25,9 @@
  */
 
 #include <Applications/Writer/WriterEventHandler.h>
+#include <LibGUI/Event.h>
+#include <LibWeb/Layout/InitialContainingBlockBox.h>
+#include <LibWeb/Layout/Node.h>
 #include <LibWeb/Page/Frame.h>
 
 namespace Writer {
@@ -32,6 +35,22 @@ namespace Writer {
 bool WriterEventHandler::handle_keydown(KeyCode key, unsigned modifiers, u32 code_point)
 {
     return true;
+}
+
+bool WriterEventHandler::handle_mousedown(const Gfx::IntPoint& position, unsigned button, unsigned modifiers)
+{
+    if (button == GUI::MouseButton::Left) {
+        auto result = layout_root()->hit_test(position, Layout::HitTestType::TextCursor);
+
+        if (result.layout_node && result.layout_node->dom_node()) {
+            m_frame.set_cursor_position(DOM::Position(*node, result.index_in_node));
+            layout_root()->set_selection({ { result.layout_node, result.index_in_node }, {} });
+            dump_selection("MouseDown");
+            m_in_mouse_selection = true;
+        }
+    }
+
+    return EventHandler::handle_mousedown(position, button, modifiers);
 }
 
 }
