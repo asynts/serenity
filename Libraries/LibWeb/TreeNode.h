@@ -99,10 +99,16 @@ public:
 
     bool is_ancestor_of(const TreeNode&) const;
 
+    void replace_with(NonnullRefPtr<T> node)
+    {
+        m_parent->replace_child(node, *this);
+    }
+
     void prepend_child(NonnullRefPtr<T> node);
     void append_child(NonnullRefPtr<T> node, bool notify = true);
+    void replace_child(NonnullRefPtr<T> node, NonnullRefPtr<T> child, bool notify = true);
     void insert_before(NonnullRefPtr<T> node, RefPtr<T> child, bool notify = true);
-    NonnullRefPtr<T> remove_child(NonnullRefPtr<T> node);
+    NonnullRefPtr<T> remove_child(NonnullRefPtr<T> node, bool notify = true);
 
     bool is_child_allowed(const T&) const { return true; }
 
@@ -313,7 +319,7 @@ private:
 };
 
 template<typename T>
-inline NonnullRefPtr<T> TreeNode<T>::remove_child(NonnullRefPtr<T> node)
+inline NonnullRefPtr<T> TreeNode<T>::remove_child(NonnullRefPtr<T> node, bool notify)
 {
     ASSERT(node->m_parent == this);
 
@@ -337,7 +343,8 @@ inline NonnullRefPtr<T> TreeNode<T>::remove_child(NonnullRefPtr<T> node)
 
     node->unref();
 
-    static_cast<T*>(this)->children_changed();
+    if (notify)
+        static_cast<T*>(this)->children_changed();
 
     return node;
 }
@@ -360,6 +367,16 @@ inline void TreeNode<T>::append_child(NonnullRefPtr<T> node, bool notify)
     if (notify)
         node->inserted_into(static_cast<T&>(*this));
     (void)node.leak_ref();
+
+    if (notify)
+        static_cast<T*>(this)->children_changed();
+}
+
+template<typename T>
+void TreeNode<T>::replace_child(NonnullRefPtr<T> node, NonnullRefPtr<T> child, bool notify)
+{
+    insert_before(node, child, false);
+    remove_child(child, false);
 
     if (notify)
         static_cast<T*>(this)->children_changed();
