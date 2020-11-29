@@ -24,50 +24,20 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <Applications/Writer/MainWindowUI.h>
-#include <Applications/Writer/WriterEventHandler.h>
-#include <Applications/Writer/WriterWidget.h>
-#include <LibWeb/HTML/HTMLElement.h>
-#include <LibWeb/InProcessWebView.h>
-#include <LibWeb/Page/Frame.h>
+#pragma once
+
+#include <LibWeb/Page/EventHandler.h>
 
 namespace Writer {
 
-constexpr const char* html_document_template = R"~~~(
-<html contenteditable="true">
-    <head>
-        <style>
-            .bold {
-                font-weight: bold;
-            }
-        </style>
-    </head>
-    <body>
-    </body>
-</html>
-)~~~";
+class WriterEventHandler final : public Web::EventHandler {
+public:
+    explicit WriterEventHandler(Web::Frame& frame)
+        : Web::EventHandler(frame)
+    {
+    }
 
-REGISTER_WIDGET(Writer, WriterWidget)
-
-WriterWidget::WriterWidget()
-{
-    load_from_json(main_window_ui_json);
-
-    m_web_view = static_cast<Web::InProcessWebView&>(*find_descendant_by_name("web_view"));
-}
-
-void WriterWidget::create_document()
-{
-    if (m_document)
-        remove_child(*m_document);
-    m_document.clear();
-
-    m_web_view->load_html(html_document_template, "application://writer");
-
-    m_web_view->document()->frame()->set_event_handler(adopt(*new WriterEventHandler(*m_web_view->document()->frame())));
-
-    m_document = Node::construct(*m_web_view->document(), nullptr, m_web_view->document()->body());
-    add_child(*m_document);
-}
+    bool handle_keydown(KeyCode, unsigned modifiers, u32 code_point) override;
+};
 
 }
