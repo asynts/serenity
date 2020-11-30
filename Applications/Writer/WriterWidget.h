@@ -24,20 +24,23 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <Applications/Writer/WriterWidget.h>
-#include <LibGUI/Application.h>
-#include <LibGUI/Window.h>
+#pragma once
 
-int main(int argc, char** argv)
-{
-    auto application = GUI::Application::construct(argc, argv);
+#include <Applications/Writer/DOM/Node.h>
+#include <LibGUI/Widget.h>
 
-    auto window = GUI::Window::construct();
-    window->set_title("Writer");
-    window->resize(640, 400);
+namespace Writer {
 
-    window->set_main_widget<Writer::WriterWidget>();
+class WriterWidget final : public GUI::Widget {
+    C_OBJECT(WriterWidget);
 
-    window->show();
-    return application->exec();
+public:
+    WriterWidget();
+
+    void paint_event(GUI::PaintEvent&) override;
+
+private:
+    RefPtr<DOM::DocumentNode> m_document;
+};
+
 }

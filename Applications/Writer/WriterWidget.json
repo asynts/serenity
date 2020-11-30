@@ -1,0 +1,7 @@
+{
+    "class": "Writer::WriterWidget",
+    "fill_with_background_color": true,
+    "layout": {
+        "class": "GUI::VerticalBoxLayout"
+    }
+}

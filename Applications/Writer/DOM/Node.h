@@ -75,6 +75,7 @@ public:
     NonnullRefPtr<Layout::Block> layout() const override;
 
     static NonnullRefPtr<DocumentNode> from_json(const JsonObject&);
+    static NonnullRefPtr<DocumentNode> from_json(StringView);
 };
 
 class ParagraphNode final : public Node {

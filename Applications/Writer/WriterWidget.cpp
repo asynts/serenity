@@ -25,19 +25,43 @@
  */
 
 #include <Applications/Writer/WriterWidget.h>
-#include <LibGUI/Application.h>
-#include <LibGUI/Window.h>
+#include <Applications/Writer/WriterWidgetUI.h>
+#include <LibGUI/Event.h>
+#include <LibGUI/Painter.h>
 
-int main(int argc, char** argv)
+namespace Writer {
+
+WriterWidget::WriterWidget()
 {
-    auto application = GUI::Application::construct(argc, argv);
+    load_from_json(writer_widget_ui_json);
 
-    auto window = GUI::Window::construct();
-    window->set_title("Writer");
-    window->resize(640, 400);
+    m_document = DOM::DocumentNode::from_json(R"~~~(
+{
+    "type": "doc",
+    "tree": [
+        {
+            "type": "para",
+            "tree": [
+                { "type": "frag", "c": "Hello ", "b": false, "i": false },
+                { "type": "frag", "c": "Paul", "b": true, "i": false },
+                { "type": "frag", "c": "!", "b": false, "i": false }
+            ]
+        }
+    ]
+}
+)~~~");
+}
 
-    window->set_main_widget<Writer::WriterWidget>();
+void WriterWidget::paint_event(GUI::PaintEvent&)
+{
+    if (m_document) {
+        // FIXME: Only partially recompute layout.
+        auto layout = m_document->layout();
 
-    window->show();
-    return application->exec();
+        // FIXME: Clipping bounds.
+        auto painter = GUI::Painter { *this };
+        layout->draw(painter, {});
+    }
+}
+
 }

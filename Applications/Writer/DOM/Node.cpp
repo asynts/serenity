@@ -33,6 +33,7 @@ static NonnullRefPtr<Node> decode_document(const JsonObject& json)
     if (json.get("type").as_string() == "doc") {
         auto element = adopt(*new DocumentNode);
 
+        // FIXME: This child.to_string() or child.as_object() crashes here?
         for (const auto& child : json.get("tree").as_array().values())
             element->append_child(decode_document(child.as_object()));
 
@@ -61,6 +62,11 @@ static NonnullRefPtr<Node> decode_document(const JsonObject& json)
     } else {
         ASSERT_NOT_REACHED();
     }
+}
+
+NonnullRefPtr<DocumentNode> DocumentNode::from_json(StringView input)
+{
+    return from_json(JsonValue::from_string(input).value().as_object());
 }
 
 NonnullRefPtr<DocumentNode> DocumentNode::from_json(const JsonObject& json)
@@ -126,13 +132,9 @@ JsonValue FragmentNode::to_json()
 {
     JsonObject object;
     object.set("type", "frag");
+    object.set("c", content());
     object.set("b", bold());
     object.set("i", italic());
-
-    JsonArray tree;
-    object.set("tree", tree);
-
-    for_each_child([&](Node& node) { tree.append(node.to_json()); });
 
     return object;
 }
