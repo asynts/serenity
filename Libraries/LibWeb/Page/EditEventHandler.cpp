@@ -41,29 +41,36 @@ void EditEventHandler::handle_delete(DOM::Range)
 
 void EditEventHandler::handle_delete(DOM::Position position)
 {
-    dbgln("{}", __PRETTY_FUNCTION__);
-
     if (position.offset() == 0)
         TODO();
 
     if (is<DOM::Text>(*position.node())) {
         auto& node = downcast<DOM::Text>(*position.node());
-
         StringBuilder builder;
         builder.append(node.data().substring_view(0, position.offset() - 1));
         builder.append(node.data().substring_view(position.offset()));
-
         node.set_data(builder.to_string());
 
         m_frame.cursor_position().set_offset(m_frame.cursor_position().offset() - 1);
-
         node.invalidate_style();
     }
 }
 
-void EditEventHandler::handle_insert(DOM::Position, u32)
+void EditEventHandler::handle_insert(DOM::Position position, u32 code_point)
 {
-    dbgln("{}", __PRETTY_FUNCTION__);
+    // FIXME: Unicode fiasco.
+
+    if (is<DOM::Text>(*position.node())) {
+        auto& node = downcast<DOM::Text>(*position.node());
+        StringBuilder builder;
+        builder.append(node.data().substring_view(0, position.offset()));
+        builder.append_code_point(code_point);
+        builder.append(node.data().substring_view(position.offset()));
+        node.set_data(builder.to_string());
+
+        m_frame.cursor_position().set_offset(m_frame.cursor_position().offset() + 1);
+        node.invalidate_style();
+    }
 }
 
 }
