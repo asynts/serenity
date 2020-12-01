@@ -166,6 +166,7 @@ class ReplacedBox;
 
 namespace Web {
 class EventHandler;
+class EditEventHandler;
 class Frame;
 class FrameLoader;
 class InProcessWebView;
