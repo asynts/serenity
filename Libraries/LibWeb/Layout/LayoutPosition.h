@@ -27,6 +27,7 @@
 #pragma once
 
 #include <AK/RefPtr.h>
+#include <LibWeb/Forward.h>
 
 namespace Web::Layout {
 
@@ -35,6 +36,8 @@ class Node;
 struct LayoutPosition {
     RefPtr<Node> layout_node;
     int index_in_node { 0 };
+
+    DOM::Position to_dom_position() const;
 };
 
 class LayoutRange {
@@ -58,7 +61,9 @@ public:
     void set_end(const LayoutPosition& end) { m_end = end; }
 
     const LayoutPosition& start() const { return m_start; }
+    LayoutPosition& start() { return m_start; }
     const LayoutPosition& end() const { return m_end; }
+    LayoutPosition& end() { return m_end; }
 
     LayoutRange normalized() const;
 

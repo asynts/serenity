@@ -24,10 +24,20 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <LibWeb/DOM/Position.h>
 #include <LibWeb/Layout/LayoutPosition.h>
 #include <LibWeb/Layout/Node.h>
 
 namespace Web::Layout {
+
+DOM::Position LayoutPosition::to_dom_position() const
+{
+    if (!layout_node)
+        return {};
+
+    // FIXME: Verify that there are no shenanigans going on.
+    return { const_cast<DOM::Node&>(*layout_node->dom_node()), (unsigned)index_in_node };
+}
 
 LayoutRange LayoutRange::normalized() const
 {

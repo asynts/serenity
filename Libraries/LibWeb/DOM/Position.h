@@ -44,6 +44,7 @@ public:
     const Node* node() const { return m_node; }
 
     unsigned offset() const { return m_offset; }
+    void set_offset(unsigned value) { m_offset = value; }
 
     bool operator==(const Position& other) const
     {
