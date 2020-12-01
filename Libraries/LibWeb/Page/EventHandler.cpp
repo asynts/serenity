@@ -52,7 +52,7 @@ static Gfx::IntPoint compute_mouse_event_offset(const Gfx::IntPoint& position, c
 
 EventHandler::EventHandler(Badge<Frame>, Frame& frame)
     : m_frame(frame)
-    , m_edit_event_handler(make<EditEventHandler>())
+    , m_edit_event_handler(make<EditEventHandler>(frame))
 {
 }
 
