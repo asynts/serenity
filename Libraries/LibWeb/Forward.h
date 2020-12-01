@@ -50,6 +50,7 @@ class MouseEvent;
 class Node;
 class ParentNode;
 class Position;
+class Range;
 class Text;
 class Timer;
 class Window;
@@ -163,6 +164,7 @@ class ReplacedBox;
 
 namespace Web {
 class EventHandler;
+class EditEventHandler;
 class Frame;
 class FrameLoader;
 class InProcessWebView;
