@@ -138,22 +138,6 @@ public:
     }
 
     template<typename Callback>
-    IterationDecision for_each_in_post_order(Callback callback)
-    {
-        auto* child = first_child();
-        while (child) {
-            auto* next_sibling = child->next_sibling();
-
-            if (child->for_each_in_post_order(callback) == IterationDecision::Break)
-                return IterationDecision::Break;
-
-            child = next_sibling;
-        }
-
-        return callback(static_cast<T&>(*this));
-    }
-
-    template<typename Callback>
     IterationDecision for_each_in_subtree(Callback callback) const
     {
         if (callback(static_cast<const T&>(*this)) == IterationDecision::Break)

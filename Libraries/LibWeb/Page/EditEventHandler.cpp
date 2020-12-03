@@ -44,8 +44,6 @@ void EditEventHandler::handle_delete(DOM::Range range)
     auto* end = downcast<DOM::Text>(range.end().node());
 
     // Remove all the nodes that are fully enclosed in the range.
-    //
-    // FIXME: This is not a very efficent algorithm, but I can't get something proper to work.
     HashTable<DOM::Node*> queued_for_deletion;
     for (auto* node = start->next_in_pre_order(); node; node = node->next_in_pre_order()) {
         if (node == end)
@@ -59,22 +57,6 @@ void EditEventHandler::handle_delete(DOM::Range range)
         queued_for_deletion.remove(parent);
     for (auto* node : queued_for_deletion)
         node->parent()->remove_child(*node);
-
-    // // Remove all the nodes that are fully enclosed in the range.
-    // bool start_seen = false;
-    // // FIXME: This algorithm is inefficent but I can't find anything better. Basically, we want to iterate
-    // //        in post-order but end might not be in the subtree of start.
-    // m_frame.document()->for_each_in_post_order([&](DOM::Node& node) {
-    //     if (&node == end)
-    //         return IterationDecision::Break;
-
-    //     if (start_seen)
-    //         node.parent()->remove_child(node);
-    //     else if (&node == start)
-    //         start_seen = true;
-
-    //     return IterationDecision::Continue;
-    // });
 
     if (start == end || start->next_sibling() == end) {
         // If the start and end text nodes are now immediate siblings, merge the remainders into one.
