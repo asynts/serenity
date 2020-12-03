@@ -40,45 +40,42 @@ namespace Web {
 
 void EditEventHandler::handle_delete(DOM::Range range)
 {
-    if (range.start().node() != range.end().node()) {
-        if (range.start().node()->parent() == range.end().node()->parent()) {
-            // Remove all intermediate nodes.
-            auto* current = range.start().node()->next_sibling();
-            while (current != range.end().node()) {
-                auto* next = current->next_sibling();
-                current->parent()->remove_child(*current);
-                current = next;
-            }
+    auto* start = downcast<DOM::Text>(range.start().node());
+    auto* end = downcast<DOM::Text>(range.end().node());
 
-            // Join remaining text together.
+    if (start->is_before(*end)) {
+        // First we remove all the nodes in the "middle" which are entriely covered by the selection.
+        DOM::Node* next_in_pre_order;
+        for (auto* node = start->next_sibling(); node != end; node = next_in_pre_order) {
+            next_in_pre_order = node->next_in_pre_order();
+            node->parent()->remove_child(node);
+        }
+
+        if (start->next_sibling() == end) {
+            // If the start and end text nodes are now immediate siblings, merge the remainders into one.
+
             StringBuilder builder;
-            builder.append(downcast<DOM::Text>(range.start().node())->data().substring_view(0, range.start().offset()));
-            builder.append(downcast<DOM::Text>(range.end().node())->data().substring_view(range.end().offset()));
+            builder.append(start->data().substring_view(0, range.start().offset()));
+            builder.append(end->data().substring_view(range.end().offset()));
 
-            range.start().node()->parent()->remove_child(*range.end().node());
-            downcast<DOM::Text>(range.start().node())->set_data(builder.to_string());
-
-            range.start().node()->invalidate_style();
+            start->set_data(builder.to_string());
+            start->parent()->remove_child(end);
         } else {
-            TODO();
+            // Otherwise, remove parts from both nodes.
+
+            start->set_data(start->data().substring_view(0, range.start().offset()));
+            end->set_data(end->data().substring_view(range.end().offset()));
         }
+
+        start->invalidate_style();
+        end->invalidate_style();
     } else {
-        if (is<DOM::Text>(*range.start().node())) {
-            m_frame.document()->layout_node()->set_selection({});
-
-            auto& node = downcast<DOM::Text>(*range.start().node());
-
-            StringBuilder builder;
-            builder.append(node.data().substring_view(0, range.start().offset()));
-            builder.append(node.data().substring_view(range.end().offset()));
-            node.set_data(builder.to_string());
-
-            node.invalidate_style();
-        }
+        TODO();
     }
 
-    // FIXME: We need to remove stale layout nodes when nodes are removed from the DOM. Currently,
-    //        this is the only way to get these to disappear.
+    // FIXME: When nodes are removed from the DOM, the associated layout nodes become stale and still
+    //        remain in the layout tree. This has to be fixed, this just causes everything to be recomputed
+    //        which really hurts performance.
     m_frame.document()->force_layout();
 }
 
@@ -96,8 +93,9 @@ void EditEventHandler::handle_insert(DOM::Position position, u32 code_point)
         node.invalidate_style();
     }
 
-    // FIXME: We need to remove stale layout nodes when nodes are removed from the DOM. Currently,
-    //        this is the only way to get these to disappear.
+    // FIXME: When nodes are removed from the DOM, the associated layout nodes become stale and still
+    //        remain in the layout tree. This has to be fixed, this just causes everything to be recomputed
+    //        which really hurts performance.
     m_frame.document()->force_layout();
 }
 
