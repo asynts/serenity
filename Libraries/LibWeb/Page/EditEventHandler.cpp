@@ -43,34 +43,41 @@ void EditEventHandler::handle_delete(DOM::Range range)
     auto* start = downcast<DOM::Text>(range.start().node());
     auto* end = downcast<DOM::Text>(range.end().node());
 
-    if (start->is_before(*end)) {
-        // First we remove all the nodes in the "middle" which are entriely covered by the selection.
-        DOM::Node* next_in_pre_order;
-        for (auto* node = start->next_sibling(); node != end; node = next_in_pre_order) {
-            next_in_pre_order = node->next_in_pre_order();
-            node->parent()->remove_child(node);
-        }
+    // Remove all the nodes that are fully enclosed in the range.
+    bool start_seen = false;
+    m_frame.document()->for_each_in_post_order([&](DOM::Node& node) {
+        if (&node == start)
+            start_seen = true;
 
-        if (start->next_sibling() == end) {
-            // If the start and end text nodes are now immediate siblings, merge the remainders into one.
+        if (&node == end)
+            return IterationDecision::Break;
 
-            StringBuilder builder;
-            builder.append(start->data().substring_view(0, range.start().offset()));
-            builder.append(end->data().substring_view(range.end().offset()));
+        if (start_seen)
+            node.parent()->remove_child(node);
 
-            start->set_data(builder.to_string());
-            start->parent()->remove_child(end);
-        } else {
-            // Otherwise, remove parts from both nodes.
+        return IterationDecision::Continue;
+    });
 
-            start->set_data(start->data().substring_view(0, range.start().offset()));
-            end->set_data(end->data().substring_view(range.end().offset()));
-        }
+    if (start == end || start->next_sibling() == end) {
+        // If the start and end text nodes are now immediate siblings, merge the remainders into one.
 
+        StringBuilder builder;
+        builder.append(start->data().substring_view(0, range.start().offset()));
+        builder.append(end->data().substring_view(range.end().offset()));
+
+        start->set_data(builder.to_string());
         start->invalidate_style();
-        end->invalidate_style();
+
+        if (start != end)
+            start->parent()->remove_child(*end);
     } else {
-        TODO();
+        // Otherwise, remove parts from both nodes.
+
+        start->set_data(start->data().substring_view(0, range.start().offset()));
+        start->invalidate_style();
+
+        end->set_data(end->data().substring_view(range.end().offset()));
+        end->invalidate_style();
     }
 
     // FIXME: When nodes are removed from the DOM, the associated layout nodes become stale and still
@@ -98,5 +105,4 @@ void EditEventHandler::handle_insert(DOM::Position position, u32 code_point)
     //        which really hurts performance.
     m_frame.document()->force_layout();
 }
-
 }
