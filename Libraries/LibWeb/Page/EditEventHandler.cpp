@@ -46,14 +46,13 @@ void EditEventHandler::handle_delete(DOM::Range range)
     // Remove all the nodes that are fully enclosed in the range.
     bool start_seen = false;
     m_frame.document()->for_each_in_post_order([&](DOM::Node& node) {
-        if (&node == start)
-            start_seen = true;
-
         if (&node == end)
             return IterationDecision::Break;
 
         if (start_seen)
             node.parent()->remove_child(node);
+        else if (&node == start)
+            start_seen = true;
 
         return IterationDecision::Continue;
     });

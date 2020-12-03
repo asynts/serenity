@@ -140,9 +140,14 @@ public:
     template<typename Callback>
     IterationDecision for_each_in_post_order(Callback callback)
     {
-        for (auto* child = first_child(); child; child = child->next_sibling()) {
+        auto* child = first_child();
+        while (child) {
+            auto* next_sibling = child->next_sibling();
+
             if (child->for_each_in_post_order(callback) == IterationDecision::Break)
                 return IterationDecision::Break;
+
+            child = next_sibling;
         }
 
         return callback(static_cast<T&>(*this));
