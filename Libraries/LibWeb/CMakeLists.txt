@@ -27,6 +27,7 @@ set(SOURCES
     CSS/StyleSheetList.cpp
     CSS/StyleValue.cpp
     DOM/AbstractRange.idl
+    DOM/Range.idl
     DOM/CharacterData.cpp
     DOM/CharacterData.idl
     DOM/Comment.cpp
@@ -236,6 +237,7 @@ function(libweb_js_wrapper class)
 endfunction()
 
 libweb_js_wrapper(DOM/AbstractRange)
+libweb_js_wrapper(DOM/Range)
 libweb_js_wrapper(DOM/CharacterData)
 libweb_js_wrapper(DOM/Comment)
 libweb_js_wrapper(DOM/Document)
