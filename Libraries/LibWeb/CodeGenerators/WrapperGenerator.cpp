@@ -108,6 +108,7 @@ namespace IDL {
 struct Type {
     String name;
     bool nullable { false };
+    bool unsigned_ { false };
 };
 
 struct Parameter {
@@ -167,6 +168,9 @@ static OwnPtr<Interface> parse_interface(const StringView& input)
     GenericLexer lexer(input);
 
     auto assert_specific = [&](char ch) {
+        if (lexer.is_eof())
+            report_parsing_error(String::formatted("expected '{}' but got EOF", ch), input, lexer.tell());
+
         auto consumed = lexer.consume();
         if (consumed != ch)
             report_parsing_error(String::formatted("expected '{}' but got '{}'", ch, consumed), input, lexer.tell() - 1);
@@ -201,9 +205,15 @@ static OwnPtr<Interface> parse_interface(const StringView& input)
     assert_specific('{');
 
     auto parse_type = [&] {
+        bool unsigned_ = false;
+        if (lexer.consume_specific("unsigned"))
+            unsigned_ = true;
+
+        consume_whitespace();
+
         auto name = lexer.consume_until([](auto ch) { return isspace(ch) || ch == '?'; });
         auto nullable = lexer.consume_specific('?');
-        return Type { name, nullable };
+        return Type { name, nullable, unsigned_ };
     };
 
     auto parse_attribute = [&](HashMap<String, String>& extended_attributes) {
