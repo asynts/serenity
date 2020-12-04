@@ -68,7 +68,7 @@ public:
 
     LayoutRange normalized() const;
 
-    DOM::Range to_dom_range() const;
+    NonnullRefPtr<DOM::Range> to_dom_range(DOM::Document&) const;
 
 private:
     LayoutPosition m_start;

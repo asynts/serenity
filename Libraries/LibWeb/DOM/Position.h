@@ -62,38 +62,47 @@ private:
     unsigned m_offset { 0 };
 };
 
-class Range {
+class Range : public RefCounted<Range> {
 public:
-    Range() = default;
-    Range(const Position& start, const Position& end)
+    Range(Document&);
+    Range(Node& start, size_t start_offset, Node& end, size_t end_offset)
         : m_start(start)
         , m_end(end)
+        , m_start_offset(start_offset)
+        , m_end_offset(end_offset)
     {
     }
 
-    bool is_valid() const { return m_start.is_valid() && m_end.is_valid(); }
-
-    void set(const Position& start, const Position& end)
+    NonnullRefPtr<Node> start() const { return m_start; }
+    void set_start(Node& node, size_t offset)
     {
-        m_start = start;
-        m_end = end;
+        m_start = node;
+        m_start_offset = offset;
     }
 
-    void set_start(const Position& start) { m_start = start; }
-    void set_end(const Position& end) { m_end = end; }
+    NonnullRefPtr<Node> end() const { return m_end; }
+    void set_end(Node& node, size_t offset)
+    {
+        m_end = node;
+        m_end_offset = offset;
+    }
 
-    const Position& start() const { return m_start; }
-    Position& start() { return m_start; }
+    size_t start_offset() const { return m_start_offset; }
+    size_t end_offset() const { return m_end_offset; }
 
-    const Position& end() const { return m_end; }
-    Position& end() { return m_end; }
+    bool collapsed() const { return m_start.ptr() == m_end.ptr() && m_start_offset == m_end_offset; }
 
-    Range normalized() const;
+    NonnullRefPtr<Range> normalized() const;
 
 private:
-    Position m_start, m_end;
+    NonnullRefPtr<Node> m_start;
+    NonnullRefPtr<Node> m_end;
+
+    size_t m_start_offset;
+    size_t m_end_offset;
 };
 
-const LogStream& operator<<(const LogStream&, const Position&);
+const LogStream&
+operator<<(const LogStream&, const Position&);
 
 }

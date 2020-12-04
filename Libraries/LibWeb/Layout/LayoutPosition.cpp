@@ -53,12 +53,15 @@ LayoutRange LayoutRange::normalized() const
     return { m_end, m_start };
 }
 
-DOM::Range LayoutRange::to_dom_range() const
+NonnullRefPtr<DOM::Range> LayoutRange::to_dom_range(DOM::Document& document) const
 {
     if (!is_valid())
-        return {};
+        return adopt(*new DOM::Range(document));
 
-    return { m_start.to_dom_position(), m_end.to_dom_position() };
+    auto start = m_start.to_dom_position();
+    auto end = m_end.to_dom_position();
+
+    return adopt(*new DOM::Range(*start.node(), start.offset(), *end.node(), end.offset()));
 }
 
 }

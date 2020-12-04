@@ -24,6 +24,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <LibWeb/DOM/Document.h>
 #include <LibWeb/DOM/Node.h>
 #include <LibWeb/DOM/Position.h>
 
@@ -39,22 +40,27 @@ Position::~Position()
 {
 }
 
-Range Range::normalized() const
+Range::Range(Document& document)
+    : m_start(document)
+    , m_end(document)
+    , m_start_offset(0)
+    , m_end_offset(0)
 {
-    if (!is_valid())
-        return {};
+}
 
-    if (m_start.node() == m_end.node()) {
-        if (m_start.offset() <= m_end.offset())
+NonnullRefPtr<Range> Range::normalized() const
+{
+    if (m_start.ptr() == m_end.ptr()) {
+        if (m_start_offset <= m_end_offset)
             return *this;
 
-        return { m_end, m_start };
+        return adopt(*new Range(const_cast<Node&>(*m_end), m_end_offset, const_cast<Node&>(*m_start), m_start_offset));
     }
 
-    if (m_start.node()->is_before(*m_end.node()))
-        return *this;
+    if (m_start->is_before(m_end))
+        return adopt(*new Range(const_cast<Node&>(*m_start), m_end_offset, const_cast<Node&>(*m_end), m_start_offset));
 
-    return { m_end, m_start };
+    return adopt(*new Range(const_cast<Node&>(*m_end), m_end_offset, const_cast<Node&>(*m_start), m_start_offset));
 }
 
 const LogStream& operator<<(const LogStream& stream, const Position& position)
