@@ -50,10 +50,11 @@ class MouseEvent;
 class Node;
 class ParentNode;
 class Position;
-class Range;
 class Text;
 class Timer;
 class Window;
+class AbstractRange;
+class Range;
 enum class QuirksMode;
 }
 
@@ -196,6 +197,8 @@ class ElementWrapper;
 class EventListenerWrapper;
 class EventTargetWrapper;
 class EventWrapper;
+class AbstractRangeWrapper;
+class RangeWrapper;
 class HTMLAnchorElementWrapper;
 class HTMLAreaElementWrapper;
 class HTMLAudioElementWrapper;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Andreas Kling <kling@serenityos.org>
+ * Copyright (c) 2020, the SerenityOS developers.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -24,44 +24,29 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <LibWeb/DOM/Position.h>
-#include <LibWeb/DOM/Range.h>
-#include <LibWeb/Layout/LayoutPosition.h>
-#include <LibWeb/Layout/Node.h>
+#pragma once
 
-namespace Web::Layout {
+#include <AK/RefCounted.h>
+#include <LibWeb/Bindings/Wrappable.h>
 
-DOM::Position LayoutPosition::to_dom_position() const
-{
-    if (!layout_node)
-        return {};
+namespace Web::DOM {
 
-    // FIXME: Verify that there are no shenanigans going on.
-    return { const_cast<DOM::Node&>(*layout_node->dom_node()), (unsigned)index_in_node };
-}
+class AbstractRange
+    : public RefCounted<AbstractRange>
+    , public Bindings::Wrappable {
+public:
+    using WrapperType = Bindings::AbstractRangeWrapper;
 
-LayoutRange LayoutRange::normalized() const
-{
-    if (!is_valid())
-        return {};
-    if (m_start.layout_node == m_end.layout_node) {
-        if (m_start.index_in_node < m_end.index_in_node)
-            return *this;
-        return { m_end, m_start };
+    virtual Node* start_container() = 0;
+    virtual unsigned start_offset() = 0;
+
+    virtual Node* end_container() = 0;
+    virtual unsigned end_offset() = 0;
+
+    bool collapsed()
+    {
+        return start_container() == end_container() && start_offset() == end_offset();
     }
-    if (m_start.layout_node->is_before(*m_end.layout_node))
-        return *this;
-    return { m_end, m_start };
-}
-
-NonnullRefPtr<DOM::Range> LayoutRange::to_dom_range() const
-{
-    ASSERT(is_valid());
-
-    auto start = m_start.to_dom_position();
-    auto end = m_end.to_dom_position();
-
-    return adopt(*new DOM::Range(*start.node(), start.offset(), *end.node(), end.offset()));
-}
+};
 
 }
