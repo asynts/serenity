@@ -68,6 +68,41 @@ static String make_input_acceptable_cpp(const String& input)
     return input_without_dashes;
 }
 
+static void report_parsing_error(StringView message, StringView input, size_t offset)
+{
+    // FIXME: Spaghetti code ahead.
+
+    size_t lineno = 1;
+    size_t colno = 1;
+    size_t start_line = 0;
+    size_t line_length = 0;
+    for (size_t index = 0; index < input.length(); ++index) {
+        if (offset == index)
+            colno = index - start_line + 1;
+
+        if (input[index] == '\n') {
+            if (index >= offset)
+                break;
+
+            start_line = index + 1;
+            line_length = 0;
+            ++lineno;
+        } else {
+            ++line_length;
+        }
+    }
+
+    StringBuilder error_message;
+    error_message.appendff("{}\n", input.substring_view(start_line, line_length));
+    for (size_t i = 0; i < colno - 1; ++i)
+        error_message.append(' ');
+    error_message.append("^\n");
+    error_message.appendff("parsing error in line {}: {}\n", lineno, message);
+
+    warnln("{}", error_message.string_view());
+    exit(EXIT_FAILURE);
+}
+
 namespace IDL {
 
 struct Type {
@@ -133,14 +168,20 @@ static OwnPtr<Interface> parse_interface(const StringView& input)
 
     auto assert_specific = [&](char ch) {
         auto consumed = lexer.consume();
-        if (consumed != ch) {
-            dbg() << "Expected '" << ch << "' at offset " << lexer.tell() << " but got '" << consumed << "'";
-            ASSERT_NOT_REACHED();
-        }
+        if (consumed != ch)
+            report_parsing_error(String::formatted("expected '{}' but got '{}'", ch, consumed), input, lexer.tell() - 1);
     };
 
     auto consume_whitespace = [&] {
-        lexer.consume_while([](char ch) { return isspace(ch); });
+        bool consumed = true;
+        while (consumed) {
+            consumed = lexer.consume_while([](char ch) { return isspace(ch); }).length() > 0;
+
+            if (lexer.consume_specific("//")) {
+                lexer.consume_until('\n');
+                consumed = true;
+            }
+        }
     };
 
     auto assert_string = [&](const StringView& expected) {
