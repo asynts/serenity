@@ -196,6 +196,7 @@ class ElementWrapper;
 class EventListenerWrapper;
 class EventTargetWrapper;
 class EventWrapper;
+class AbstractRangeWrapper;
 class HTMLAnchorElementWrapper;
 class HTMLAreaElementWrapper;
 class HTMLAudioElementWrapper;
