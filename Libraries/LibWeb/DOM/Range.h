@@ -27,13 +27,19 @@
 #pragma once
 
 #include <LibWeb/DOM/AbstractRange.h>
+#include <LibWeb/DOM/Node.h>
 
 namespace Web::DOM {
 
 class Range final : public AbstractRange {
 public:
-    explicit Range(Document&);
+    explicit Range(Window&);
     Range(Node& start_container, size_t start_offset, Node& end_container, size_t end_offset);
+
+    static NonnullRefPtr<Range> create(DOM::Window& window)
+    {
+        return adopt(*new Range(window));
+    }
 
     Node* start_container() override { return m_start_container; }
     unsigned start_offset() override { return m_start_offset; }

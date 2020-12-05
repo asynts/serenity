@@ -11,6 +11,7 @@ set(SOURCES
     Bindings/XMLHttpRequestConstructor.cpp
     Bindings/XMLHttpRequestPrototype.cpp
     Bindings/XMLHttpRequestWrapper.cpp
+    Bindings/RangeConstructor.cpp
     CSS/DefaultStyleSheetSource.cpp
     CSS/Length.cpp
     CSS/Parser/CSSParser.cpp
