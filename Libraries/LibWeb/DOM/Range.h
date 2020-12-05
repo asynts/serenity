@@ -38,42 +38,44 @@ public:
     Node* end_container() override { return m_end_container; }
     unsigned end_offset() override { return m_end_offset; }
 
-    void set_start(Node* container, unsigned offset)
+    void set_start(Node& container, JS::Value& offset)
     {
         m_start_container = container;
-        m_start_offset = offset;
+        m_start_offset = (unsigned)offset.as_i32();
     }
 
-    void set_end(Node* container, unsigned offset)
+    void set_end(Node& container, JS::Value& offset)
     {
         m_end_container = container;
-        m_end_offset = offset;
+        m_end_offset = (unsigned)offset.as_i32();
     }
 
-    void set_start_before(Node* node) { TODO(); }
-    void set_start_after(Node* node) { TODO(); }
-    void set_end_before(Node* node) { TODO(); }
-    void set_end_after(Node* node) { TODO(); }
-    void collapse(bool to_start = false) { TODO(); }
-    void select_node(Node* node) { TODO(); }
-    void select_node_contents(Node* node) { TODO(); }
-    short compare_boundary_points(unsigned short how, Range sourceRange) { TODO(); }
+    Node* common_ancestor_container() { TODO(); }
+    void set_common_ancestor_container(Node*) { TODO(); }
+    void set_start_before(Node&) { TODO(); }
+    void set_start_after(Node&) { TODO(); }
+    void set_end_before(Node&) { TODO(); }
+    void set_end_after(Node&) { TODO(); }
+    void collapse(bool = false) { TODO(); }
+    void select_node(Node&) { TODO(); }
+    void select_node_contents(Node&) { TODO(); }
+    short compare_boundary_points(unsigned short, Range) { TODO(); }
     void delete_contents() { TODO(); }
     DocumentFragment* extract_contents() { TODO(); }
     DocumentFragment* clone_contents() { TODO(); }
-    void insert_node(Node* node) { TODO(); }
-    void surround_contents(Node* newParent) { TODO(); }
+    void insert_node(Node&) { TODO(); }
+    void surround_contents(Node&) { TODO(); }
     Range* clone_range() { TODO(); }
     void detach() { TODO(); }
-    bool is_point_in_range(Node* node, unsigned long offset) { TODO(); }
-    short compare_point(Node* node, unsigned long offset) { TODO(); }
-    bool intersects_node(Node* node);
+    bool is_point_in_range(Node&, JS::Value&) { TODO(); }
+    short compare_point(Node&, JS::Value&) { TODO(); }
+    bool intersects_node(Node&);
 
 private:
-    Node* m_start_container;
+    RefPtr<Node> m_start_container;
     unsigned m_start_offset;
 
-    Node* m_end_container;
+    RefPtr<Node> m_end_container;
     unsigned m_end_offset;
 };
 

@@ -720,6 +720,10 @@ static @fully_qualified_name@* impl_from(JS::VM& vm, JS::GlobalObject& global_ob
             scoped_generator.append(R"~~~(
     auto @cpp_name@ = @js_name@@js_suffix@.to_boolean();
 )~~~");
+        } else if (parameter.type.name == "long" || parameter.type.name == "short") {
+            scoped_generator.append(R"~~~(
+    auto @cpp_name@ = @js_name@@js_suffix@.to_number(global_object);
+)~~~");
         } else {
             dbgln("Unimplemented JS-to-C++ conversion: {}", parameter.type.name);
             ASSERT_NOT_REACHED();
