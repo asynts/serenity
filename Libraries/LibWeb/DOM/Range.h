@@ -32,6 +32,9 @@ namespace Web::DOM {
 
 class Range final : public AbstractRange {
 public:
+    explicit Range(Document&);
+    Range(Node& start_container, size_t start_offset, Node& end_container, size_t end_offset);
+
     Node* start_container() override { return m_start_container; }
     unsigned start_offset() override { return m_start_offset; }
 
@@ -50,6 +53,10 @@ public:
         m_end_offset = (unsigned)offset.as_i32();
     }
 
+    NonnullRefPtr<Range> inverted() const;
+    NonnullRefPtr<Range> normalized() const;
+    NonnullRefPtr<Range> clone_range() const;
+
     Node* common_ancestor_container() { TODO(); }
     void set_common_ancestor_container(Node*) { TODO(); }
     void set_start_before(Node&) { TODO(); }
@@ -65,17 +72,16 @@ public:
     DocumentFragment* clone_contents() { TODO(); }
     void insert_node(Node&) { TODO(); }
     void surround_contents(Node&) { TODO(); }
-    Range* clone_range() { TODO(); }
     void detach() { TODO(); }
     bool is_point_in_range(Node&, JS::Value&) { TODO(); }
     short compare_point(Node&, JS::Value&) { TODO(); }
     bool intersects_node(Node&);
 
 private:
-    RefPtr<Node> m_start_container;
+    NonnullRefPtr<Node> m_start_container;
     unsigned m_start_offset;
 
-    RefPtr<Node> m_end_container;
+    NonnullRefPtr<Node> m_end_container;
     unsigned m_end_offset;
 };
 
