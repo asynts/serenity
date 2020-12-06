@@ -152,6 +152,8 @@ struct Interface {
     String name;
     String parent_name;
 
+    bool has_constructor = false;
+
     Vector<Attribute> attributes;
     Vector<Function> functions;
 
@@ -298,6 +300,12 @@ static OwnPtr<Interface> parse_interface(StringView filename, const StringView& 
         if (lexer.consume_specific('}'))
             break;
 
+        // FIXME: Hack.
+        if (lexer.consume_specific("constructor();")) {
+            interface->has_constructor = true;
+            continue;
+        }
+
         if (lexer.consume_specific('[')) {
             extended_attributes = parse_extended_attributes();
         }
@@ -432,7 +440,14 @@ static void generate_header(const IDL::Interface& interface)
     generator.set("fully_qualified_name", interface.fully_qualified_name);
     generator.set("wrapper_base_class", interface.wrapper_base_class);
     generator.set("wrapper_class", interface.wrapper_class);
+    generator.set("constructor_class", String::format("{}Constructor", interface.wrapper_class));
+    generator.set("prototype_class", String::format("{}Prototype", interface.wrapper_class));
     generator.set("wrapper_class:snakecase", snake_name(interface.wrapper_class));
+
+    if (interface.has_constructor)
+        generator.set("class", generator.get("prototype_class"));
+    else
+        generator.set("class", generator.get("wrapper_class"));
 
     generator.append(R"~~~(
 #pragma once
@@ -462,12 +477,12 @@ static void generate_header(const IDL::Interface& interface)
     generator.append(R"~~~(
 namespace Web::Bindings {
 
-class @wrapper_class@ : public @wrapper_base_class@ {
-    JS_OBJECT(@wrapper_class@, @wrapper_base_class@);
+class @class@ : public @wrapper_base_class@ {
+    JS_OBJECT(@class@, @wrapper_base_class@);
 public:
-    @wrapper_class@(JS::GlobalObject&, @fully_qualified_name@&);
+    @class@(JS::GlobalObject&, @fully_qualified_name@&);
     virtual void initialize(JS::GlobalObject&) override;
-    virtual ~@wrapper_class@() override;
+    virtual ~@class@() override;
 )~~~");
 
     if (interface.wrapper_base_class == "Wrapper") {
@@ -520,6 +535,36 @@ private:
 };
 )~~~");
 
+    if (interface.has_constructor) {
+        generator.append(R"~~~(
+class @constructor_class@ final : public JS::NativeFunction {
+public:
+    explicit @constructor_class@(JS::GlobalObject&);
+    virtual void initialize(JS::GlobalObject&) override;
+    virtual ~@constructor_class@() override;
+
+    virtual JS::Value call() override;
+    virtual JS::Value construct(JS::Function& new_target) override;
+
+private:
+    virtual bool has_constructor() const override { return true; }
+    virtual const char* class_name() const override { return "@constructor_class@"; }
+};
+
+class @wrapper_class@ final : public EventTargetWrapper {
+public:
+    @wrapper_class@(JS::GlobalObject&, XMLHttpRequest&);
+    virtual ~@wrapper_class@() override;
+
+    XMLHttpRequest& impl();
+    const XMLHttpRequest& impl() const;
+
+private:
+    virtual const char* class_name() const override { return "@wrapper_class@"; }
+};
+)~~~");
+    }
+
     if (should_emit_wrapper_factory(interface)) {
         generator.append(R"~~~(
 @wrapper_class@* wrap(JS::GlobalObject&, @fully_qualified_name@&);
@@ -539,8 +584,15 @@ void generate_implementation(const IDL::Interface& interface)
     SourceGenerator generator { builder };
 
     generator.set("wrapper_class", interface.wrapper_class);
+    generator.set("constructor_class", String::format("{}Constructor", interface.wrapper_class));
+    generator.set("prototype_class", String::format("{}Prototype", interface.wrapper_class));
     generator.set("wrapper_base_class", interface.wrapper_base_class);
     generator.set("fully_qualified_name", interface.fully_qualified_name);
+
+    if (interface.has_constructor)
+        generator.set("class", generator.get("prototype_class"));
+    else
+        generator.set("class", generator.get("wrapper_class"));
 
     generator.append(R"~~~(
 #include <AK/FlyString.h>
@@ -580,7 +632,7 @@ namespace Web::Bindings {
 
     if (interface.wrapper_base_class == "Wrapper") {
         generator.append(R"~~~(
-@wrapper_class@::@wrapper_class@(JS::GlobalObject& global_object, @fully_qualified_name@& impl)
+@class@::@class@(JS::GlobalObject& global_object, @fully_qualified_name@& impl)
 : Wrapper(*global_object.object_prototype())
 , m_impl(impl)
 {
@@ -588,7 +640,7 @@ namespace Web::Bindings {
 )~~~");
     } else {
         generator.append(R"~~~(
-@wrapper_class@::@wrapper_class@(JS::GlobalObject& global_object, @fully_qualified_name@& impl)
+@class@::@class@(JS::GlobalObject& global_object, @fully_qualified_name@& impl)
 : @wrapper_base_class@(global_object, impl)
 {
 }
@@ -596,7 +648,7 @@ namespace Web::Bindings {
     }
 
     generator.append(R"~~~(
-void @wrapper_class@::initialize(JS::GlobalObject& global_object)
+void @class@::initialize(JS::GlobalObject& global_object)
 {
     [[maybe_unused]] u8 default_attributes = JS::Attribute::Enumerable | JS::Attribute::Configurable;
 
@@ -632,7 +684,7 @@ void @wrapper_class@::initialize(JS::GlobalObject& global_object)
     generator.append(R"~~~(
 }
 
-@wrapper_class@::~@wrapper_class@()
+@class@::~@class@()
 {
 }
 )~~~");
@@ -818,7 +870,7 @@ static @fully_qualified_name@* impl_from(JS::VM& vm, JS::GlobalObject& global_ob
         }
 
         attribute_generator.append(R"~~~(
-JS_DEFINE_NATIVE_GETTER(@wrapper_class@::@attribute.getter_callback@)
+JS_DEFINE_NATIVE_GETTER(@class@::@attribute.getter_callback@)
 {
     auto* impl = impl_from(vm, global_object);
     if (!impl)
@@ -856,7 +908,7 @@ JS_DEFINE_NATIVE_GETTER(@wrapper_class@::@attribute.getter_callback@)
 
         if (!attribute.readonly) {
             attribute_generator.append(R"~~~(
-JS_DEFINE_NATIVE_SETTER(@wrapper_class@::@attribute.setter_callback@)
+JS_DEFINE_NATIVE_SETTER(@class@::@attribute.setter_callback@)
 {
     auto* impl = impl_from(vm, global_object);
     if (!impl)
@@ -898,7 +950,7 @@ JS_DEFINE_NATIVE_SETTER(@wrapper_class@::@attribute.setter_callback@)
         function_generator.set("function.nargs", String::number(function.length()));
 
         function_generator.append(R"~~~(\
-JS_DEFINE_NATIVE_FUNCTION(@wrapper_class@::@function.name:snakecase@)
+JS_DEFINE_NATIVE_FUNCTION(@class@::@function.name:snakecase@)
 {
     auto* impl = impl_from(vm, global_object);
     if (!impl)
