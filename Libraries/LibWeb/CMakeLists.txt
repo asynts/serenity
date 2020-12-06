@@ -37,6 +37,7 @@ set(SOURCES
     DOM/ElementFactory.cpp
     DOM/Event.cpp
     DOM/Range.cpp
+    DOM/Range.idl
     DOM/EventDispatcher.cpp
     DOM/EventListener.cpp
     DOM/EventTarget.cpp
@@ -236,6 +237,7 @@ function(libweb_js_wrapper class)
     add_custom_target(generate_${basename}Wrapper.cpp DEPENDS Bindings/${class}Wrapper.cpp)
 endfunction()
 
+libweb_js_wrapper(DOM/Range)
 libweb_js_wrapper(DOM/CharacterData)
 libweb_js_wrapper(DOM/Comment)
 libweb_js_wrapper(DOM/Document)

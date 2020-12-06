@@ -32,10 +32,10 @@
 namespace Web::DOM {
 
 class Range final
-    : public RefCounted<AbstractRange>
+    : public RefCounted<Range>
     , public Bindings::Wrappable {
 public:
-    // using WrapperType = Bindings::RangeWrapper;
+    using WrapperType = Bindings::RangeWrapper;
 
     static NonnullRefPtr<Range> create(Document& document)
     {
