@@ -41,6 +41,8 @@
 #include <LibWeb/Bindings/NavigatorObject.h>
 #include <LibWeb/Bindings/NodeWrapperFactory.h>
 #include <LibWeb/Bindings/PerformanceWrapper.h>
+#include <LibWeb/Bindings/RangeConstructor.h>
+#include <LibWeb/Bindings/RangePrototype.h>
 #include <LibWeb/Bindings/WindowObject.h>
 #include <LibWeb/Bindings/XMLHttpRequestConstructor.h>
 #include <LibWeb/Bindings/XMLHttpRequestPrototype.h>
@@ -88,6 +90,11 @@ void WindowObject::initialize()
     m_xhr_constructor = heap().allocate<XMLHttpRequestConstructor>(*this, *this);
     m_xhr_constructor->define_property("prototype", m_xhr_prototype, 0);
     add_constructor("XMLHttpRequest", m_xhr_constructor, m_xhr_prototype);
+
+    m_range_prototype = heap().allocate<RangePrototype>(*this, *this);
+    m_range_constructor = heap().allocate<RangeConstructor>(*this, *this);
+    m_range_constructor->define_property("prototype", m_range_prototype);
+    add_constructor("Range", m_range_constructor, m_range_prototype);
 }
 
 WindowObject::~WindowObject()
