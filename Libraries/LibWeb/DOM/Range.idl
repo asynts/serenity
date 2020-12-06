@@ -1,4 +1,7 @@
 interface Range : AbstractRange {
+    // FIXME: Implement constructors.
+    // constructor();
+
     readonly attribute Node commonAncestorContainer;
 
     void setStart(Node node, unsigned long offset);

@@ -76,6 +76,9 @@ private:
 
     XMLHttpRequestConstructor* m_xhr_constructor { nullptr };
     XMLHttpRequestPrototype* m_xhr_prototype { nullptr };
+
+    RangeConstructor* m_range_constructor { nullptr };
+    RangeWrapper* m_range_prototype { nullptr };
 };
 
 }

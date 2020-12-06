@@ -199,6 +199,7 @@ class EventTargetWrapper;
 class EventWrapper;
 class AbstractRangeWrapper;
 class RangeWrapper;
+class RangeConstructor;
 class HTMLAnchorElementWrapper;
 class HTMLAreaElementWrapper;
 class HTMLAudioElementWrapper;
