@@ -72,6 +72,7 @@ Document::Document(const URL& url)
     , m_style_sheets(CSS::StyleSheetList::create(*this))
     , m_url(url)
     , m_window(Window::create_with_document(*this))
+    , m_selection(Selection::create())
     , m_implementation(DOMImplementation::create(*this))
 {
     m_style_update_timer = Core::Timer::create_single_shot(0, [this] {
@@ -157,12 +158,7 @@ void Document::schedule_style_update()
 
 Selection* Document::get_selection()
 {
-    return m_selection;
-}
-
-void Document::set_selection(Selection& value)
-{
-    m_selection = value;
+    return m_selection.ptr();
 }
 
 bool Document::is_child_allowed(const Node& node) const
