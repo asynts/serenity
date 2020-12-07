@@ -130,6 +130,9 @@ public:
 
     void schedule_style_update();
 
+    Selection* get_selection();
+    void set_selection(Selection&);
+
     NonnullRefPtrVector<Element> get_elements_by_name(const String&) const;
     NonnullRefPtrVector<Element> get_elements_by_tag_name(const FlyString&) const;
     NonnullRefPtrVector<Element> get_elements_by_class_name(const FlyString&) const;
@@ -253,6 +256,8 @@ private:
     RefPtr<Window> m_window;
 
     RefPtr<Layout::InitialContainingBlockBox> m_layout_root;
+
+    RefPtr<Selection> m_selection;
 
     Optional<Color> m_link_color;
     Optional<Color> m_active_link_color;

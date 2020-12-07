@@ -422,6 +422,8 @@ static bool is_wrappable_type(const IDL::Type& type)
         return true;
     if (type.name == "Range")
         return true;
+    if (type.name == "Selection")
+        return true;
     return false;
 }
 
@@ -566,6 +568,7 @@ void generate_implementation(const IDL::Interface& interface)
 #include <LibWeb/Bindings/ImageDataWrapper.h>
 #include <LibWeb/Bindings/NodeWrapperFactory.h>
 #include <LibWeb/Bindings/RangeWrapper.h>
+#include <LibWeb/Bindings/SelectionWrapper.h>
 #include <LibWeb/Bindings/TextWrapper.h>
 #include <LibWeb/Bindings/WindowObject.h>
 #include <LibWeb/DOM/Element.h>

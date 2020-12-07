@@ -42,6 +42,7 @@
 #include <LibWeb/DOM/Element.h>
 #include <LibWeb/DOM/ElementFactory.h>
 #include <LibWeb/DOM/Event.h>
+#include <LibWeb/DOM/Selection.h>
 #include <LibWeb/DOM/Text.h>
 #include <LibWeb/DOM/Window.h>
 #include <LibWeb/Dump.h>
@@ -152,6 +153,16 @@ void Document::schedule_style_update()
     if (m_style_update_timer->is_active())
         return;
     m_style_update_timer->start();
+}
+
+Selection* Document::get_selection()
+{
+    return m_selection;
+}
+
+void Document::set_selection(Selection& value)
+{
+    m_selection = value;
 }
 
 bool Document::is_child_allowed(const Node& node) const
