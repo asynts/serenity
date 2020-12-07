@@ -71,6 +71,8 @@ public:
     Bindings::WindowObject* wrapper() { return m_wrapper; }
     const Bindings::WindowObject* wrapper() const { return m_wrapper; }
 
+    Selection* get_selection();
+
     void set_wrapper(Badge<Bindings::WindowObject>, Bindings::WindowObject&);
 
     i32 allocate_timer_id(Badge<Timer>);

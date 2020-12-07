@@ -164,6 +164,11 @@ void Window::did_call_location_reload(Badge<Bindings::LocationObject>)
     frame->loader().load(document().url(), FrameLoader::Type::Reload);
 }
 
+Selection* Window::get_selection()
+{
+    return m_document.get_selection();
+}
+
 bool Window::dispatch_event(NonnullRefPtr<Event> event)
 {
     return EventDispatcher::dispatch(*this, event, true);

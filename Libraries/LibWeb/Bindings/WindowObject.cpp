@@ -43,6 +43,7 @@
 #include <LibWeb/Bindings/PerformanceWrapper.h>
 #include <LibWeb/Bindings/RangeConstructor.h>
 #include <LibWeb/Bindings/RangePrototype.h>
+#include <LibWeb/Bindings/SelectionWrapper.h>
 #include <LibWeb/Bindings/WindowObject.h>
 #include <LibWeb/Bindings/XMLHttpRequestConstructor.h>
 #include <LibWeb/Bindings/XMLHttpRequestPrototype.h>
@@ -79,6 +80,7 @@ void WindowObject::initialize()
     define_native_function("cancelAnimationFrame", cancel_animation_frame, 1);
     define_native_function("atob", atob, 1);
     define_native_function("btoa", btoa, 1);
+    define_native_function("getSelection", get_selection);
 
     // Legacy
     define_native_property("event", event_getter, nullptr, JS::Attribute::Enumerable);
@@ -140,6 +142,20 @@ JS_DEFINE_NATIVE_FUNCTION(WindowObject::alert)
     }
     impl->alert(message);
     return JS::js_undefined();
+}
+
+JS_DEFINE_NATIVE_FUNCTION(WindowObject::get_selection)
+{
+    auto* impl = impl_from(vm, global_object);
+    if (!impl)
+        return {};
+
+    auto selection = impl->get_selection();
+
+    if (selection)
+        return wrap(global_object, *selection);
+
+    return JS::js_null();
 }
 
 JS_DEFINE_NATIVE_FUNCTION(WindowObject::confirm)
