@@ -108,6 +108,7 @@ namespace IDL {
 struct Type {
     String name;
     bool nullable { false };
+    bool unsigned_ { false };
 };
 
 struct Parameter {
@@ -200,9 +201,15 @@ static OwnPtr<Interface> parse_interface(StringView filename, const StringView& 
     assert_specific('{');
 
     auto parse_type = [&] {
+        bool unsigned_ = false;
+        if (lexer.consume_specific("unsigned")) {
+            unsigned_ = true;
+            consume_whitespace();
+        }
+
         auto name = lexer.consume_until([](auto ch) { return isspace(ch) || ch == '?'; });
         auto nullable = lexer.consume_specific('?');
-        return Type { name, nullable };
+        return Type { name, nullable, unsigned_ };
     };
 
     auto parse_attribute = [&](HashMap<String, String>& extended_attributes) {
@@ -413,6 +420,8 @@ static bool is_wrappable_type(const IDL::Type& type)
         return true;
     if (type.name == "ImageData")
         return true;
+    if (type.name == "Range")
+        return true;
     return false;
 }
 
@@ -556,6 +565,7 @@ void generate_implementation(const IDL::Interface& interface)
 #include <LibWeb/Bindings/HTMLImageElementWrapper.h>
 #include <LibWeb/Bindings/ImageDataWrapper.h>
 #include <LibWeb/Bindings/NodeWrapperFactory.h>
+#include <LibWeb/Bindings/RangeWrapper.h>
 #include <LibWeb/Bindings/TextWrapper.h>
 #include <LibWeb/Bindings/WindowObject.h>
 #include <LibWeb/DOM/Element.h>
@@ -708,6 +718,10 @@ static @fully_qualified_name@* impl_from(JS::VM& vm, JS::GlobalObject& global_ob
         } else if (parameter.type.name == "boolean") {
             scoped_generator.append(R"~~~(
     auto @cpp_name@ = @js_name@@js_suffix@.to_boolean();
+)~~~");
+        } else if (parameter.type.name == "long") {
+            scoped_generator.append(R"~~~(
+    auto @cpp_name@ = @js_name@@js_suffix@.to_i32(global_object);
 )~~~");
         } else {
             dbgln("Unimplemented JS-to-C++ conversion: {}", parameter.type.name);

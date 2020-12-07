@@ -54,6 +54,7 @@ class Text;
 class Timer;
 class Window;
 class Range;
+class Selection;
 enum class QuirksMode;
 }
 
@@ -290,5 +291,6 @@ class XMLHttpRequestWrapper;
 class RangeConstructor;
 class RangePrototype;
 class RangeWrapper;
+class SelectionWrapper;
 
 }

@@ -37,7 +37,7 @@ class Selection
     : public RefCounted<Selection>
     , public Bindings::Wrappable {
 public:
-    // using WrapperType = Bindings::SelectionWrapper;
+    using WrapperType = Bindings::SelectionWrapper;
 
     static NonnullRefPtr<Selection> create()
     {
