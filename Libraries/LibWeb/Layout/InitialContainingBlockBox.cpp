@@ -123,15 +123,14 @@ void InitialContainingBlockBox::set_selection(const LayoutRange& selection)
 {
     m_selection = selection;
 
-    auto sel = document().get_selection();
-    auto range = DOM::Range::create(document().window());
-    sel->add_range(range);
-
-    document().get_selection()->add_range(DOM::Range::create(document().window()));
-    document().get_selection()->get_range_at(0)->set_start(const_cast<DOM::Node&>(*selection.start().layout_node->dom_node()), selection.start().index_in_node);
-    document().get_selection()->get_range_at(0)->set_end(const_cast<DOM::Node&>(*selection.end().layout_node->dom_node()), selection.end().index_in_node);
-
     recompute_selection_states();
+
+    // FIXME: It would be better if LayoutRange were removed, but that doesn't seem trivial.
+    if (selection.is_valid()) {
+        document().get_selection()->add_range(DOM::Range::create(document().window()));
+        document().get_selection()->get_range_at(0)->set_start(const_cast<DOM::Node&>(*selection.start().layout_node->dom_node()), selection.start().index_in_node);
+        document().get_selection()->get_range_at(0)->set_end(const_cast<DOM::Node&>(*selection.end().layout_node->dom_node()), selection.end().index_in_node);
+    }
 }
 
 void InitialContainingBlockBox::set_selection_end(const LayoutPosition& position)
