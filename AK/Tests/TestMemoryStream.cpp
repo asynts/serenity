@@ -208,4 +208,18 @@ TEST_CASE(offset_of_out_of_bounds)
     EXPECT(!stream.offset_of(target).has_value());
 }
 
+TEST_CASE(offset_calculation_error_regression)
+{
+    [[maybe_unused]] Array<u8, DuplexMemoryStream::chunk_size> input, output;
+    input.span().fill(0);
+
+    DuplexMemoryStream stream;
+    stream << 1 << input << 1;
+
+    // stream.discard_or_error(4);
+    // stream.read(output);
+
+    // EXPECT(compare(input, output));
+}
+
 TEST_MAIN(MemoryStream)
