@@ -24,17 +24,14 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#pragma once
-
-#include <LibGUI/Widget.h>
+#include <Applications/Writer/WriterWidget.h>
+#include <Applications/Writer/WriterWidgetUI.h>
 
 namespace Writer {
 
-class WriterWidget : public GUI::Widget {
-    C_OBJECT(WriterWidget);
-
-public:
-    WriterWidget();
-};
+WriterWidget::WriterWidget()
+{
+    load_from_json(writer_widget_ui_json);
+}
 
 }

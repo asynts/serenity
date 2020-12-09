@@ -35,6 +35,7 @@ int main(int argc, char** argv)
 
     auto window = GUI::Window::construct();
     window->set_title("Writer");
+    window->resize(600, 500);
 
     [[maybe_unused]] auto& writer = window->set_main_widget<Writer::WriterWidget>();
 
