@@ -208,6 +208,14 @@ TEST_CASE(offset_of_out_of_bounds)
     EXPECT(!stream.offset_of(target).has_value());
 }
 
+TEST_CASE(unsigned_integer_underflow_regression)
+{
+    Array<u8, DuplexMemoryStream::chunk_size + 1> buffer;
+
+    DuplexMemoryStream stream;
+    stream << buffer;
+}
+
 TEST_CASE(offset_calculation_error_regression)
 {
     [[maybe_unused]] Array<u8, DuplexMemoryStream::chunk_size> input, output;
