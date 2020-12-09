@@ -25,19 +25,56 @@
  */
 
 #include <LibWeb/DOM/Document.h>
+#include <LibWeb/DOM/Element.h>
+#include <LibWeb/HTML/HTMLElement.h>
 
 #include <Applications/Writer/Model/Node.h>
 
 namespace Writer {
 
+void Node::replace_element_with(Web::DOM::Element& new_element)
+{
+    if (element())
+        element()->replace_with(new_element);
+    else
+        parent()->element()->append_child(new_element);
+
+    m_element = new_element;
+}
+
+DocumentNode::DocumentNode(Web::DOM::Document& document)
+    : Node(document)
+{
+    set_element(const_cast<Web::HTML::HTMLElement&>(*document.body()));
+}
+
+void DocumentNode::render()
+{
+    for_each_child([&](Node& node) {
+        node.render();
+    });
+}
+
 void ParagraphNode::render()
 {
-    TODO();
+    auto new_element = document().create_element("p");
+
+    replace_element_with(new_element);
+
+    for_each_child([&](Node& node) {
+        node.render();
+    });
 }
 
 void FragmentNode::render()
 {
-    TODO();
+    auto new_element = document().create_element("span");
+
+    new_element->set_text_content(m_content);
+
+    // FIXME: Add 'bold' if needed.
+
+    replace_element_with(new_element);
 }
 
 }

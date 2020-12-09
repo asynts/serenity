@@ -35,7 +35,10 @@ namespace Writer {
 
 class Node : public Web::TreeNode<Node> {
 public:
-    explicit Node(Web::DOM::Document& document);
+    explicit Node(Web::DOM::Document& document)
+        : m_document(document)
+    {
+    }
 
     const Web::DOM::Document& document() const { return m_document; }
     Web::DOM::Document& document() { return m_document; }
@@ -43,11 +46,23 @@ public:
     const Web::DOM::Element* element() const { return m_element; }
     Web::DOM::Element* element() { return m_element; }
 
+    void set_element(Web::DOM::Element& value) { m_element = &value; }
+
     virtual void render() = 0;
+
+protected:
+    void replace_element_with(Web::DOM::Element& new_element);
 
 private:
     Web::DOM::Document& m_document;
     RefPtr<Web::DOM::Element> m_element;
+};
+
+class DocumentNode final : public Node {
+public:
+    explicit DocumentNode(Web::DOM::Document&);
+
+    void render() override;
 };
 
 class ParagraphNode final : public Node {
