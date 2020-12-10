@@ -89,6 +89,8 @@ public:
     void load_from_json(const JsonObject&) override;
     JsonValue export_to_json() const override;
 
+    void write_to_file(StringView path);
+
 private:
     explicit DocumentNode(Web::DOM::Document&);
 };
