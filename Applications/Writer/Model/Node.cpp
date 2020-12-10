@@ -81,6 +81,21 @@ void DocumentNode::load_from_json(const JsonObject& json)
     });
 }
 
+JsonValue DocumentNode::export_to_json() const
+{
+    JsonObject json;
+
+    json.set("class", "DocumentNode");
+
+    JsonArray children;
+    for_each_child([&](const Node& child) {
+        children.append(child.export_to_json());
+    });
+    json.set("children", children);
+
+    return json;
+}
+
 void ParagraphNode::render()
 {
     auto new_element = document().create_element("p");
@@ -102,6 +117,21 @@ void ParagraphNode::load_from_json(const JsonObject& json)
     });
 }
 
+JsonValue ParagraphNode::export_to_json() const
+{
+    JsonObject json;
+
+    json.set("class", "ParagraphNode");
+
+    JsonArray children;
+    for_each_child([&](const Node& child) {
+        children.append(child.export_to_json());
+    });
+    json.set("children", children);
+
+    return json;
+}
+
 void FragmentNode::render()
 {
     auto new_element = document().create_element("span");
@@ -120,6 +150,17 @@ void FragmentNode::load_from_json(const JsonObject& json)
     set_bold(json.get("bold").as_bool());
 
     ASSERT(json.get("children").is_null());
+}
+
+JsonValue FragmentNode::export_to_json() const
+{
+    JsonObject json;
+
+    json.set("class", "FragmentNode");
+    json.set("content", m_content);
+    json.set("bold", m_bold);
+
+    return json;
 }
 
 }
