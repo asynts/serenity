@@ -74,7 +74,10 @@ public:
     }
 
     bool has_class(const FlyString&) const;
+
+    // FIXME: Add a ClassList class and expose this as classList to JavaScript.
     const Vector<FlyString>& class_names() const { return m_classes; }
+    Vector<FlyString>& class_names() { return m_classes; }
 
     virtual void apply_presentational_hints(CSS::StyleProperties&) const { }
     virtual void parse_attribute(const FlyString& name, const String& value);

@@ -72,7 +72,8 @@ void FragmentNode::render()
 
     new_element->set_text_content(m_content);
 
-    // FIXME: Add 'bold' if needed.
+    if (m_bold)
+        new_element->class_names().append("bold");
 
     replace_element_with(new_element);
 }
