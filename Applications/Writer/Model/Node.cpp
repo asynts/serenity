@@ -24,6 +24,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <AK/JsonObject.h>
+#include <AK/JsonValue.h>
 #include <LibWeb/DOM/Document.h>
 #include <LibWeb/DOM/Element.h>
 #include <LibWeb/HTML/HTMLElement.h>
@@ -55,6 +57,38 @@ void DocumentNode::render()
     });
 }
 
+NonnullRefPtr<DocumentNode> DocumentNode::create_from_json(Web::DOM::Document& document, StringView json)
+{
+    dbgln("{}:{}: {}", __FILE__, __LINE__, __PRETTY_FUNCTION__);
+
+    return create_from_json(document, JsonValue::from_string(json).value().as_object());
+}
+
+NonnullRefPtr<DocumentNode> DocumentNode::create_from_json(Web::DOM::Document& document, const JsonObject& json)
+{
+    dbgln("{}:{}: {}", __FILE__, __LINE__, __PRETTY_FUNCTION__);
+
+    ASSERT(json.get("class").as_string() == "DocumentNode");
+
+    auto node = DocumentNode::create(document);
+    node->load_from_json(json);
+    return node;
+}
+
+void DocumentNode::load_from_json(const JsonObject& json)
+{
+    dbgln("{}:{}: {}", __FILE__, __LINE__, __PRETTY_FUNCTION__);
+
+    for (auto& child_json : json.get("children").as_array().values()) { // FIXME: Somehow this is a use after free?
+        dbgln("child: {}", child_json.to_string());
+
+        ASSERT(child_json.as_object().get("class").as_string() == "ParagraphNode");
+
+        auto child = create_child<ParagraphNode>();
+        child->load_from_json(child_json.as_object());
+    }
+}
+
 void ParagraphNode::render()
 {
     auto new_element = document().create_element("p");
@@ -64,6 +98,18 @@ void ParagraphNode::render()
     for_each_child([&](Node& node) {
         node.render();
     });
+}
+
+void ParagraphNode::load_from_json(const JsonObject& json)
+{
+    dbgln("{}:{}: {}", __FILE__, __LINE__, __PRETTY_FUNCTION__);
+
+    for (auto& child_json : json.get("children").as_array().values()) {
+        ASSERT(child_json.as_object().get("class").as_string() == "FragmentNode");
+
+        auto child = create_child<FragmentNode>();
+        child->load_from_json(child_json.as_object());
+    }
 }
 
 void FragmentNode::render()
@@ -76,6 +122,16 @@ void FragmentNode::render()
         new_element->class_names().append("bold");
 
     replace_element_with(new_element);
+}
+
+void FragmentNode::load_from_json(const JsonObject& json)
+{
+    dbgln("{}:{}: {}", __FILE__, __LINE__, __PRETTY_FUNCTION__);
+
+    set_content(json.get("content").as_string());
+    set_bold(json.get("bold").as_bool());
+
+    ASSERT(json.get("children").is_null());
 }
 
 }
