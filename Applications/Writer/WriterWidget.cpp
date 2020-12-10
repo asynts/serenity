@@ -24,14 +24,46 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <LibWeb/InProcessWebView.h>
+
 #include <Applications/Writer/WriterWidget.h>
 #include <Applications/Writer/WriterWidgetUI.h>
 
 namespace Writer {
 
+constexpr const char* html_template = R"~~~(
+<html>
+    <head>
+        <style>
+            .bold { font-weight: bold; }
+        </style>
+    </head>
+    <body></body>
+</html>
+)~~~";
+
 WriterWidget::WriterWidget()
 {
     load_from_json(writer_widget_ui_json);
+
+    m_webview = static_cast<Web::InProcessWebView*>(find_descendant_by_name("webview"));
+    m_webview->load_html(html_template, "memory://writer");
+
+    m_document = DocumentNode::create(*m_webview->document());
+
+    auto paragraph = m_document->create_child<ParagraphNode>();
+
+    auto fragment1 = paragraph->create_child<FragmentNode>();
+    fragment1->set_content("Hello, ");
+
+    auto fragment2 = paragraph->create_child<FragmentNode>();
+    fragment2->set_content("world");
+    fragment2->set_bold(true);
+
+    auto fragment3 = paragraph->create_child<FragmentNode>();
+    fragment3->set_content("!");
+
+    m_document->render();
 }
 
 }
