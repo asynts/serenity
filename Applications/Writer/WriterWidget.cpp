@@ -24,6 +24,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <LibWeb/HTML/HTMLElement.h>
 #include <LibWeb/InProcessWebView.h>
 
 #include <Applications/Writer/WriterWidget.h>
@@ -87,8 +88,18 @@ WriterWidget::WriterWidget()
     m_webview = static_cast<Web::InProcessWebView*>(find_descendant_by_name("webview"));
     m_webview->load_html(html_template, "memory://writer");
 
-    m_document = DocumentNode::create_from_json(*m_webview->document(), example_writer_document);
-    m_document->render();
+    replace_document(DocumentNode::create_from_json(*m_webview->document(), example_writer_document));
+}
+
+void WriterWidget::replace_document(DocumentNode& document)
+{
+    auto new_body = m_webview->document()->create_element("body");
+    m_webview->document()->body()->replace_with(new_body);
+
+    document.set_element(new_body);
+    document.render();
+
+    m_document = document;
 }
 
 }
