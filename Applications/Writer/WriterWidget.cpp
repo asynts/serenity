@@ -42,6 +42,44 @@ constexpr const char* html_template = R"~~~(
 </html>
 )~~~";
 
+constexpr const char* example_writer_document = R"~~~(
+{
+    "class": "DocumentNode",
+    "children": [
+        {
+            "class": "ParagraphNode",
+            "children": [
+                {
+                    "class": "FragmentNode",
+                    "content": "Hello, ",
+                    "bold": false
+                },
+                {
+                    "class": "FragmentNode",
+                    "content": "world",
+                    "bold": true
+                },
+                {
+                    "class": "FragmentNode",
+                    "content": "!",
+                    "bold": false
+                }
+            ]
+        },
+        {
+            "class": "ParagraphNode",
+            "children": [
+                {
+                    "class": "FragmentNode",
+                    "content": "Here is another paragraph.",
+                    "bold": false
+                }
+            ]
+        }
+    ]
+}
+)~~~";
+
 WriterWidget::WriterWidget()
 {
     load_from_json(writer_widget_ui_json);
@@ -49,20 +87,7 @@ WriterWidget::WriterWidget()
     m_webview = static_cast<Web::InProcessWebView*>(find_descendant_by_name("webview"));
     m_webview->load_html(html_template, "memory://writer");
 
-    m_document = DocumentNode::create(*m_webview->document());
-
-    auto paragraph = m_document->create_child<ParagraphNode>();
-
-    auto fragment1 = paragraph->create_child<FragmentNode>();
-    fragment1->set_content("Hello, ");
-
-    auto fragment2 = paragraph->create_child<FragmentNode>();
-    fragment2->set_content("world");
-    fragment2->set_bold(true);
-
-    auto fragment3 = paragraph->create_child<FragmentNode>();
-    fragment3->set_content("!");
-
+    m_document = DocumentNode::create_from_json(*m_webview->document(), example_writer_document);
     m_document->render();
 }
 
