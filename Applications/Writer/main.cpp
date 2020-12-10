@@ -25,6 +25,9 @@
  */
 
 #include <LibGUI/Application.h>
+#include <LibGUI/FilePicker.h>
+#include <LibGUI/Menu.h>
+#include <LibGUI/MenuBar.h>
 #include <LibGUI/Window.h>
 
 #include <Applications/Writer/WriterWidget.h>
@@ -37,8 +40,24 @@ int main(int argc, char** argv)
     window->set_title("Writer");
     window->resize(600, 500);
 
-    [[maybe_unused]] auto& writer = window->set_main_widget<Writer::WriterWidget>();
+    auto& writer = window->set_main_widget<Writer::WriterWidget>();
 
+    auto app_save_as_action = GUI::CommonActions::make_save_as_action([&](auto&) {
+        Optional<String> save_path = GUI::FilePicker::get_save_filepath(window, "Untitled", "writer");
+        if (!save_path.has_value())
+            return;
+
+        ASSERT(writer.document());
+        writer.document()->write_to_file(save_path.value());
+
+        dbgln("Wrote document to {}", save_path.value());
+    });
+
+    auto menubar = GUI::MenuBar::construct();
+    auto& app_menu = menubar->add_menu("Writer");
+    app_menu.add_action(app_save_as_action);
+
+    app->set_menubar(menubar);
     window->show();
 
     return app->exec();
