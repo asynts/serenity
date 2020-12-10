@@ -60,6 +60,7 @@ public:
 
     virtual void render() = 0;
     virtual void load_from_json(const JsonObject&) = 0;
+    virtual JsonValue export_to_json() const = 0;
 
 protected:
     void replace_element_with(Web::DOM::Element& new_element);
@@ -86,6 +87,7 @@ public:
 
     void render() override;
     void load_from_json(const JsonObject&) override;
+    JsonValue export_to_json() const override;
 
 private:
     explicit DocumentNode(Web::DOM::Document&);
@@ -100,6 +102,7 @@ public:
 
     void render() override;
     void load_from_json(const JsonObject&) override;
+    JsonValue export_to_json() const override;
 
 private:
     using Node::Node;
@@ -114,6 +117,7 @@ public:
 
     void render() override;
     void load_from_json(const JsonObject&) override;
+    JsonValue export_to_json() const override;
 
     String content() const { return m_content; }
     void set_content(String value) { m_content = value; }
