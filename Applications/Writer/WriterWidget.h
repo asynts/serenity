@@ -27,6 +27,7 @@
 #pragma once
 
 #include <LibGUI/Widget.h>
+#include <LibWeb/Dump.h>
 
 #include <Applications/Writer/Model/Node.h>
 
@@ -41,7 +42,7 @@ public:
     const DocumentNode* document() const { return m_document; }
     DocumentNode* document() { return m_document; }
 
-    void set_document(DocumentNode& document) { m_document = document; }
+    void replace_document(DocumentNode& document);
 
     const Web::InProcessWebView& webview() const { return *m_webview; }
     Web::InProcessWebView& webview() { return *m_webview; }
