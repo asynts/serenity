@@ -38,6 +38,14 @@ class WriterWidget : public GUI::Widget {
 public:
     WriterWidget();
 
+    const DocumentNode* document() const { return m_document; }
+    DocumentNode* document() { return m_document; }
+
+    void set_document(DocumentNode& document) { m_document = document; }
+
+    const Web::InProcessWebView& webview() const { return *m_webview; }
+    Web::InProcessWebView& webview() { return *m_webview; }
+
 private:
     Web::InProcessWebView* m_webview;
 
