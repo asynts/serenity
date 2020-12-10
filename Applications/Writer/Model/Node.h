@@ -59,6 +59,7 @@ public:
     void children_changed() { }
 
     virtual void render() = 0;
+    virtual void load_from_json(const JsonObject&) = 0;
 
 protected:
     void replace_element_with(Web::DOM::Element& new_element);
@@ -80,7 +81,11 @@ public:
         return adopt(*new DocumentNode { document });
     }
 
+    static NonnullRefPtr<DocumentNode> create_from_json(Web::DOM::Document&, StringView json);
+    static NonnullRefPtr<DocumentNode> create_from_json(Web::DOM::Document&, const JsonObject&);
+
     void render() override;
+    void load_from_json(const JsonObject&) override;
 
 private:
     explicit DocumentNode(Web::DOM::Document&);
@@ -94,6 +99,7 @@ public:
     }
 
     void render() override;
+    void load_from_json(const JsonObject&) override;
 
 private:
     using Node::Node;
@@ -107,6 +113,7 @@ public:
     }
 
     void render() override;
+    void load_from_json(const JsonObject&) override;
 
     String content() const { return m_content; }
     void set_content(String value) { m_content = value; }
