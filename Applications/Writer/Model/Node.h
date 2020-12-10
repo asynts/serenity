@@ -38,6 +38,15 @@ class Node : public Web::TreeNode<Node> {
 public:
     virtual ~Node() = default;
 
+    // void will_be_destroyed()
+    // {
+    //     // These children were added using append_child which deliberately leaked a reference.
+    //     for_each_child([](Node& child) {
+    //         dbgln("calling unref on child {} ({})", &child, child.class_name());
+    //         child.unref();
+    //     });
+    // }
+
     const Web::DOM::Document& document() const { return m_document; }
     Web::DOM::Document& document() { return m_document; }
 
@@ -55,12 +64,19 @@ public:
     }
 
     // FIXME: Can we leverage this?
-    void inserted_into(Node&) { }
+    void inserted_into(Node&)
+    {
+        // FIXME: Render!
+    }
+
     void children_changed() { }
+
+    void removed_from(Node&);
 
     virtual void render() = 0;
     virtual void load_from_json(const JsonObject&) = 0;
     virtual JsonValue export_to_json() const = 0;
+    virtual StringView class_name() const = 0;
 
 protected:
     void replace_element_with(Web::DOM::Element& new_element);
@@ -84,15 +100,17 @@ public:
 
     static NonnullRefPtr<DocumentNode> create_from_json(Web::DOM::Document&, StringView json);
     static NonnullRefPtr<DocumentNode> create_from_json(Web::DOM::Document&, const JsonObject&);
+    static NonnullRefPtr<DocumentNode> create_from_file(Web::DOM::Document&, StringView path);
 
     void render() override;
     void load_from_json(const JsonObject&) override;
     JsonValue export_to_json() const override;
+    StringView class_name() const override { return "DocumentNode"; }
 
     void write_to_file(StringView path);
 
 private:
-    explicit DocumentNode(Web::DOM::Document&);
+    using Node::Node;
 };
 
 class ParagraphNode final : public Node {
@@ -105,6 +123,7 @@ public:
     void render() override;
     void load_from_json(const JsonObject&) override;
     JsonValue export_to_json() const override;
+    StringView class_name() const override { return "ParagraphNode"; }
 
 private:
     using Node::Node;
@@ -120,6 +139,7 @@ public:
     void render() override;
     void load_from_json(const JsonObject&) override;
     JsonValue export_to_json() const override;
+    StringView class_name() const override { return "FragmentNode"; }
 
     String content() const { return m_content; }
     void set_content(String value) { m_content = value; }
