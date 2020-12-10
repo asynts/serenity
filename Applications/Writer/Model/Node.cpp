@@ -26,6 +26,7 @@
 
 #include <AK/JsonObject.h>
 #include <AK/JsonValue.h>
+#include <LibCore/File.h>
 #include <LibCore/FileStream.h>
 #include <LibWeb/DOM/Document.h>
 #include <LibWeb/DOM/Element.h>
@@ -102,6 +103,16 @@ void DocumentNode::write_to_file(StringView path)
     // FIXME: Error handling.
     auto stream = Core::OutputFileStream::open(path).value();
     stream.write_or_error(export_to_json().to_string().bytes());
+}
+
+NonnullRefPtr<DocumentNode> DocumentNode::create_from_file(Web::DOM::Document& document, StringView path)
+{
+    // FIXME: Error handling.
+
+    auto file = Core::File::open(path, Core::IODevice::OpenMode::ReadOnly).value();
+    auto json_string = String { file->read_all().bytes(), AK::ShouldChomp::NoChomp };
+
+    return DocumentNode::create_from_json(document, json_string);
 }
 
 void ParagraphNode::render()

@@ -84,6 +84,7 @@ public:
 
     static NonnullRefPtr<DocumentNode> create_from_json(Web::DOM::Document&, StringView json);
     static NonnullRefPtr<DocumentNode> create_from_json(Web::DOM::Document&, const JsonObject&);
+    static NonnullRefPtr<DocumentNode> create_from_file(Web::DOM::Document&, StringView path);
 
     void render() override;
     void load_from_json(const JsonObject&) override;
