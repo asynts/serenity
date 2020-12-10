@@ -53,6 +53,7 @@ public:
                 m_in_removed_last_ref = true;
                 static_cast<T*>(this)->removed_last_ref();
             } else {
+                AK::call_will_be_destroyed_if_present(static_cast<T*>(this));
                 delete static_cast<T*>(this);
             }
             return;

@@ -26,6 +26,7 @@
 
 #include <AK/JsonObject.h>
 #include <AK/JsonValue.h>
+#include <LibCore/File.h>
 #include <LibCore/FileStream.h>
 #include <LibWeb/DOM/Document.h>
 #include <LibWeb/DOM/Element.h>
@@ -35,20 +36,24 @@
 
 namespace Writer {
 
+void Node::removed_from(Node& node)
+{
+    if (m_element) {
+        node.element()->remove_child(*m_element);
+        m_element.clear();
+    }
+}
+
 void Node::replace_element_with(Web::DOM::Element& new_element)
 {
+    dbgln("inserting {} into {}", &new_element, parent()->element());
+
     if (element())
         element()->replace_with(new_element);
     else
         parent()->element()->append_child(new_element);
 
     m_element = new_element;
-}
-
-DocumentNode::DocumentNode(Web::DOM::Document& document)
-    : Node(document)
-{
-    set_element(const_cast<Web::HTML::HTMLElement&>(*document.body()));
 }
 
 void DocumentNode::render()
@@ -102,6 +107,16 @@ void DocumentNode::write_to_file(StringView path)
     // FIXME: Error handling.
     auto stream = Core::OutputFileStream::open(path).value();
     stream.write_or_error(export_to_json().to_string().bytes());
+}
+
+NonnullRefPtr<DocumentNode> DocumentNode::create_from_file(Web::DOM::Document& document, StringView path)
+{
+    // FIXME: Error handling.
+
+    auto file = Core::File::open(path, Core::IODevice::OpenMode::ReadOnly).value();
+    auto json_string = String { file->read_all().bytes(), AK::ShouldChomp::NoChomp };
+
+    return DocumentNode::create_from_json(document, json_string);
 }
 
 void ParagraphNode::render()
