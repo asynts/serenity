@@ -29,6 +29,7 @@
 #include <LibGUI/Menu.h>
 #include <LibGUI/MenuBar.h>
 #include <LibGUI/Window.h>
+#include <LibWeb/InProcessWebView.h>
 
 #include <Applications/Writer/WriterWidget.h>
 
@@ -53,9 +54,22 @@ int main(int argc, char** argv)
         dbgln("Wrote document to {}", save_path.value());
     });
 
+    auto app_open_action = GUI::CommonActions::make_open_action([&](auto&) {
+        Optional<String> open_path = GUI::FilePicker::get_open_filepath(window);
+
+        if (!open_path.has_value())
+            return;
+
+        auto new_document = Writer::DocumentNode::create_from_file(*writer.webview().document(), open_path.value());
+        writer.replace_document(new_document);
+
+        dbgln("Read document from {}", open_path.value());
+    });
+
     auto menubar = GUI::MenuBar::construct();
     auto& app_menu = menubar->add_menu("Writer");
     app_menu.add_action(app_save_as_action);
+    app_menu.add_action(app_open_action);
 
     app->set_menubar(menubar);
     window->show();
