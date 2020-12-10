@@ -26,6 +26,7 @@
 
 #include <AK/JsonObject.h>
 #include <AK/JsonValue.h>
+#include <LibCore/FileStream.h>
 #include <LibWeb/DOM/Document.h>
 #include <LibWeb/DOM/Element.h>
 #include <LibWeb/HTML/HTMLElement.h>
@@ -94,6 +95,13 @@ JsonValue DocumentNode::export_to_json() const
     json.set("children", children);
 
     return json;
+}
+
+void DocumentNode::write_to_file(StringView path)
+{
+    // FIXME: Error handling.
+    auto stream = Core::OutputFileStream::open(path).value();
+    stream.write_or_error(export_to_json().to_string().bytes());
 }
 
 void ParagraphNode::render()
