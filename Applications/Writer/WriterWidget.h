@@ -28,6 +28,8 @@
 
 #include <LibGUI/Widget.h>
 
+#include <Applications/Writer/Model/Node.h>
+
 namespace Writer {
 
 class WriterWidget : public GUI::Widget {
@@ -35,6 +37,11 @@ class WriterWidget : public GUI::Widget {
 
 public:
     WriterWidget();
+
+private:
+    Web::InProcessWebView* m_webview;
+
+    RefPtr<DocumentNode> m_document;
 };
 
 }
