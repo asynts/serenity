@@ -91,6 +91,7 @@ public:
     const HTML::HTMLHtmlElement* html_element() const;
     const HTML::HTMLHeadElement* head() const;
     const HTML::HTMLElement* body() const;
+    HTML::HTMLElement* body();
     void set_body(HTML::HTMLElement& new_body);
 
     String title() const;
