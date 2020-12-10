@@ -36,7 +36,7 @@ namespace Writer {
 
 class Node : public Web::TreeNode<Node> {
 public:
-    virtual ~Node() = default;
+    virtual ~Node();
 
     const Web::DOM::Document& document() const { return m_document; }
     Web::DOM::Document& document() { return m_document; }

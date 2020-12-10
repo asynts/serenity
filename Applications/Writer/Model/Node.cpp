@@ -36,8 +36,28 @@
 
 namespace Writer {
 
+Node::~Node()
+{
+    // FIXME: This destructor is only called on the DocumentNode? -> memory leak?
+
+    if (m_element) {
+        // FIXME: Hack, do this properly with a rendering pipeline. -> dirty flag, etc.
+        if (m_element.ptr() == m_document.body()) {
+            dbgln("skipping {} because body={}", m_element.ptr(), m_document.body());
+            return;
+        }
+
+        if (m_element->parent()) {
+            dbgln("removing {} from {}", m_element.ptr(), m_element->parent());
+            m_element->parent()->remove_child(*m_element);
+        }
+    }
+}
+
 void Node::replace_element_with(Web::DOM::Element& new_element)
 {
+    dbgln("inserting {} into {}", &new_element, parent()->element());
+
     if (element())
         element()->replace_with(new_element);
     else
