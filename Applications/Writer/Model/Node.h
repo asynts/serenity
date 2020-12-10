@@ -27,6 +27,7 @@
 #pragma once
 
 #include <AK/String.h>
+#include <LibWeb/DOM/Element.h>
 
 // FIXME: Move this into AK.
 #include <LibWeb/TreeNode.h>
@@ -35,10 +36,7 @@ namespace Writer {
 
 class Node : public Web::TreeNode<Node> {
 public:
-    explicit Node(Web::DOM::Document& document)
-        : m_document(document)
-    {
-    }
+    virtual ~Node() = default;
 
     const Web::DOM::Document& document() const { return m_document; }
     Web::DOM::Document& document() { return m_document; }
@@ -48,10 +46,27 @@ public:
 
     void set_element(Web::DOM::Element& value) { m_element = &value; }
 
+    template<typename T, typename... Parameters>
+    NonnullRefPtr<T> create_child(Parameters&&... parameters)
+    {
+        auto node = T::create(m_document, forward<Parameters>(parameters)...);
+        append_child(node);
+        return node;
+    }
+
+    // FIXME: Can we leverage this?
+    void inserted_into(Node&) { }
+    void children_changed() { }
+
     virtual void render() = 0;
 
 protected:
     void replace_element_with(Web::DOM::Element& new_element);
+
+    explicit Node(Web::DOM::Document& document)
+        : m_document(document)
+    {
+    }
 
 private:
     Web::DOM::Document& m_document;
@@ -60,18 +75,37 @@ private:
 
 class DocumentNode final : public Node {
 public:
-    explicit DocumentNode(Web::DOM::Document&);
+    static NonnullRefPtr<DocumentNode> create(Web::DOM::Document& document)
+    {
+        return adopt(*new DocumentNode { document });
+    }
 
     void render() override;
+
+private:
+    explicit DocumentNode(Web::DOM::Document&);
 };
 
 class ParagraphNode final : public Node {
 public:
+    static NonnullRefPtr<ParagraphNode> create(Web::DOM::Document& document)
+    {
+        return adopt(*new ParagraphNode { document });
+    }
+
     void render() override;
+
+private:
+    using Node::Node;
 };
 
 class FragmentNode final : public Node {
 public:
+    static NonnullRefPtr<FragmentNode> create(Web::DOM::Document& document)
+    {
+        return adopt(*new FragmentNode { document });
+    }
+
     void render() override;
 
     String content() const { return m_content; }
@@ -81,6 +115,8 @@ public:
     void set_bold(bool value) { m_bold = value; }
 
 private:
+    using Node::Node;
+
     String m_content = "";
     bool m_bold = false;
 };
