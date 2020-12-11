@@ -38,6 +38,14 @@ class Node : public Web::TreeNode<Node> {
 public:
     virtual ~Node();
 
+    void will_be_destroyed()
+    {
+        // These children were added using append_child which deliberately leaked a reference.
+        for_each_child([](Node& child) {
+            child.unref();
+        });
+    }
+
     const Web::DOM::Document& document() const { return m_document; }
     Web::DOM::Document& document() { return m_document; }
 

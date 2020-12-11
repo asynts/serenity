@@ -38,8 +38,6 @@ namespace Writer {
 
 Node::~Node()
 {
-    // FIXME: This destructor is only called on the DocumentNode? -> memory leak?
-
     if (m_element) {
         // FIXME: Hack, do this properly with a rendering pipeline. -> dirty flag, etc.
         if (m_element.ptr() == m_document.body()) {
