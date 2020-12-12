@@ -33,7 +33,7 @@
 
 namespace Writer {
 
-class WriterWidget : public GUI::Widget {
+class WriterWidget final : public GUI::Widget {
     C_OBJECT(WriterWidget);
 
 public:
