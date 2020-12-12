@@ -104,6 +104,12 @@ public:
     void append_child(NonnullRefPtr<T> node, bool notify = true);
     NonnullRefPtr<T> remove_child(NonnullRefPtr<T> node, bool notify = true);
 
+    void remove_all_children()
+    {
+        while (T* node = first_child())
+            remove_child(*node);
+    }
+
     // FIXME: The order of parameters for both of these methods is really unintuitive.
     void replace_child(NonnullRefPtr<T> node, T& child, bool notify = true);
     void insert_before(NonnullRefPtr<T> node, RefPtr<T> child, bool notify = true);
