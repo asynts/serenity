@@ -36,16 +36,16 @@ namespace Writer {
 
 class Node : public Web::TreeNode<Node> {
 public:
-    virtual ~Node();
+    virtual ~Node() = default;
 
-    void will_be_destroyed()
-    {
-        // These children were added using append_child which deliberately leaked a reference.
-        for_each_child([](Node& child) {
-            dbgln("calling unref on child {} ({})", &child, child.class_name());
-            child.unref();
-        });
-    }
+    // void will_be_destroyed()
+    // {
+    //     // These children were added using append_child which deliberately leaked a reference.
+    //     for_each_child([](Node& child) {
+    //         dbgln("calling unref on child {} ({})", &child, child.class_name());
+    //         child.unref();
+    //     });
+    // }
 
     const Web::DOM::Document& document() const { return m_document; }
     Web::DOM::Document& document() { return m_document; }
@@ -64,8 +64,14 @@ public:
     }
 
     // FIXME: Can we leverage this?
-    void inserted_into(Node&) { }
+    void inserted_into(Node&)
+    {
+        // FIXME: Render!
+    }
+
     void children_changed() { }
+
+    void removed_from(Node&);
 
     virtual void render() = 0;
     virtual void load_from_json(const JsonObject&) = 0;
@@ -87,7 +93,6 @@ private:
 
 class DocumentNode final : public Node {
 public:
-    ~DocumentNode();
     static NonnullRefPtr<DocumentNode> create(Web::DOM::Document& document)
     {
         return adopt(*new DocumentNode { document });
@@ -105,12 +110,11 @@ public:
     void write_to_file(StringView path);
 
 private:
-    explicit DocumentNode(Web::DOM::Document&);
+    using Node::Node;
 };
 
 class ParagraphNode final : public Node {
 public:
-    ~ParagraphNode();
     static NonnullRefPtr<ParagraphNode> create(Web::DOM::Document& document)
     {
         return adopt(*new ParagraphNode { document });
@@ -127,7 +131,6 @@ private:
 
 class FragmentNode final : public Node {
 public:
-    ~FragmentNode();
     static NonnullRefPtr<FragmentNode> create(Web::DOM::Document& document)
     {
         return adopt(*new FragmentNode { document });

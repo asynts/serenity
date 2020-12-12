@@ -60,8 +60,8 @@ int main(int argc, char** argv)
         if (!open_path.has_value())
             return;
 
-        writer.set_document(Writer::DocumentNode::create_from_file(*writer.webview().document(), open_path.value()));
-        // writer.document()->render();
+        auto new_document = Writer::DocumentNode::create_from_file(*writer.webview().document(), open_path.value());
+        writer.replace_document(new_document);
 
         dbgln("Read document from {}", open_path.value());
     });

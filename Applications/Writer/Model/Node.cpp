@@ -36,36 +36,12 @@
 
 namespace Writer {
 
-Node::~Node()
+void Node::removed_from(Node& node)
 {
-    dbgln("{}", __PRETTY_FUNCTION__);
-
-    // FIXME: I think this is a false positive, because it was filled with some 0xedededed pattern?
     if (m_element) {
-        // FIXME: Hack, do this properly with a rendering pipeline. -> dirty flag, etc.
-        if (m_element.ptr() == m_document.body()) {
-            dbgln("skipping {} because body={}", m_element.ptr(), m_document.body());
-            return;
-        }
-
-        if (m_element->parent()) {
-            dbgln("removing {} from {}", m_element.ptr(), m_element->parent());
-            m_element->parent()->remove_child(*m_element);
-        }
+        node.element()->remove_child(*m_element);
+        m_element.clear();
     }
-}
-
-DocumentNode::~DocumentNode()
-{
-    dbgln("{}", __PRETTY_FUNCTION__);
-}
-FragmentNode::~FragmentNode()
-{
-    dbgln("{}", __PRETTY_FUNCTION__);
-}
-ParagraphNode::~ParagraphNode()
-{
-    dbgln("{}", __PRETTY_FUNCTION__);
 }
 
 void Node::replace_element_with(Web::DOM::Element& new_element)
@@ -78,12 +54,6 @@ void Node::replace_element_with(Web::DOM::Element& new_element)
         parent()->element()->append_child(new_element);
 
     m_element = new_element;
-}
-
-DocumentNode::DocumentNode(Web::DOM::Document& document)
-    : Node(document)
-{
-    set_element(const_cast<Web::HTML::HTMLElement&>(*document.body()));
 }
 
 void DocumentNode::render()
