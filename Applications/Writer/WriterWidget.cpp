@@ -26,7 +26,10 @@
 
 #include <LibWeb/HTML/HTMLElement.h>
 #include <LibWeb/InProcessWebView.h>
+#include <LibWeb/Page/EventHandler.h>
+#include <LibWeb/Page/Frame.h>
 
+#include <Applications/Writer/EditEventHandler.h>
 #include <Applications/Writer/WriterWidget.h>
 #include <Applications/Writer/WriterWidgetUI.h>
 
@@ -39,7 +42,7 @@ constexpr const char* html_template = R"~~~(
             .bold { font-weight: bold; }
         </style>
     </head>
-    <body></body>
+    <body contenteditable></body>
 </html>
 )~~~";
 
@@ -93,6 +96,9 @@ WriterWidget::WriterWidget()
 
 void WriterWidget::replace_document(DocumentNode& document)
 {
+    auto new_edit_event_handler = make<EditEventHandler>(document);
+    m_webview->document()->frame()->event_handler().set_edit_event_handler(move(new_edit_event_handler));
+
     m_document.clear();
 
     // FIXME: Rename to attach_to_dom?

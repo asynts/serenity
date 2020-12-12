@@ -24,27 +24,26 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#pragma once
+#include <LibWeb/DOM/Document.h>
+#include <LibWeb/DOM/Position.h>
 
-#include <AK/Types.h>
-#include <LibWeb/Forward.h>
+#include <Applications/Writer/EditEventHandler.h>
 
-namespace Web {
+namespace Writer {
 
-class EditEventHandler {
-public:
-    explicit EditEventHandler(Frame& frame)
-        : m_frame(frame)
-    {
-    }
+EditEventHandler::EditEventHandler(Writer::DocumentNode& document)
+    : Web::EditEventHandler(*document.document().frame())
+{
+}
 
-    virtual ~EditEventHandler() = default;
+void EditEventHandler::handle_delete(Web::DOM::Range&)
+{
+    dbgln("{}", __PRETTY_FUNCTION__);
+}
 
-    virtual void handle_delete(DOM::Range&);
-    virtual void handle_insert(DOM::Position, u32 code_point);
-
-private:
-    Frame& m_frame;
-};
+void EditEventHandler::handle_insert(Web::DOM::Position, u32)
+{
+    dbgln("{}", __PRETTY_FUNCTION__);
+}
 
 }
