@@ -61,7 +61,7 @@ int main(int argc, char** argv)
             return;
 
         writer.set_document(Writer::DocumentNode::create_from_file(*writer.webview().document(), open_path.value()));
-        writer.document()->render();
+        // writer.document()->render();
 
         dbgln("Read document from {}", open_path.value());
     });

@@ -38,6 +38,9 @@ namespace Writer {
 
 Node::~Node()
 {
+    dbgln("{}", __PRETTY_FUNCTION__);
+
+    // FIXME: I think this is a false positive, because it was filled with some 0xedededed pattern?
     if (m_element) {
         // FIXME: Hack, do this properly with a rendering pipeline. -> dirty flag, etc.
         if (m_element.ptr() == m_document.body()) {
@@ -50,6 +53,19 @@ Node::~Node()
             m_element->parent()->remove_child(*m_element);
         }
     }
+}
+
+DocumentNode::~DocumentNode()
+{
+    dbgln("{}", __PRETTY_FUNCTION__);
+}
+FragmentNode::~FragmentNode()
+{
+    dbgln("{}", __PRETTY_FUNCTION__);
+}
+ParagraphNode::~ParagraphNode()
+{
+    dbgln("{}", __PRETTY_FUNCTION__);
 }
 
 void Node::replace_element_with(Web::DOM::Element& new_element)

@@ -88,7 +88,8 @@ WriterWidget::WriterWidget()
     m_webview->load_html(html_template, "memory://writer");
 
     m_document = DocumentNode::create_from_json(*m_webview->document(), example_writer_document);
-    m_document->render();
+    m_document = DocumentNode::create_from_json(*m_webview->document(), example_writer_document);
+    // m_document->render();
 }
 
 }

@@ -27,6 +27,7 @@
 #pragma once
 
 #include <LibGUI/Widget.h>
+#include <LibWeb/Dump.h>
 
 #include <Applications/Writer/Model/Node.h>
 

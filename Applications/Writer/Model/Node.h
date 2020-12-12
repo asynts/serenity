@@ -42,6 +42,7 @@ public:
     {
         // These children were added using append_child which deliberately leaked a reference.
         for_each_child([](Node& child) {
+            dbgln("calling unref on child {} ({})", &child, child.class_name());
             child.unref();
         });
     }
@@ -69,6 +70,7 @@ public:
     virtual void render() = 0;
     virtual void load_from_json(const JsonObject&) = 0;
     virtual JsonValue export_to_json() const = 0;
+    virtual StringView class_name() const = 0;
 
 protected:
     void replace_element_with(Web::DOM::Element& new_element);
@@ -85,6 +87,7 @@ private:
 
 class DocumentNode final : public Node {
 public:
+    ~DocumentNode();
     static NonnullRefPtr<DocumentNode> create(Web::DOM::Document& document)
     {
         return adopt(*new DocumentNode { document });
@@ -97,6 +100,7 @@ public:
     void render() override;
     void load_from_json(const JsonObject&) override;
     JsonValue export_to_json() const override;
+    StringView class_name() const override { return "DocumentNode"; }
 
     void write_to_file(StringView path);
 
@@ -106,6 +110,7 @@ private:
 
 class ParagraphNode final : public Node {
 public:
+    ~ParagraphNode();
     static NonnullRefPtr<ParagraphNode> create(Web::DOM::Document& document)
     {
         return adopt(*new ParagraphNode { document });
@@ -114,6 +119,7 @@ public:
     void render() override;
     void load_from_json(const JsonObject&) override;
     JsonValue export_to_json() const override;
+    StringView class_name() const override { return "ParagraphNode"; }
 
 private:
     using Node::Node;
@@ -121,6 +127,7 @@ private:
 
 class FragmentNode final : public Node {
 public:
+    ~FragmentNode();
     static NonnullRefPtr<FragmentNode> create(Web::DOM::Document& document)
     {
         return adopt(*new FragmentNode { document });
@@ -129,6 +136,7 @@ public:
     void render() override;
     void load_from_json(const JsonObject&) override;
     JsonValue export_to_json() const override;
+    StringView class_name() const override { return "FragmentNode"; }
 
     String content() const { return m_content; }
     void set_content(String value) { m_content = value; }
