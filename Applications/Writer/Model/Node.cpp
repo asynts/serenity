@@ -36,18 +36,16 @@
 
 namespace Writer {
 
-void Node::removed_from(Node& node)
+void Node::removed_from(Node&)
 {
     if (m_element) {
-        node.element()->remove_child(*m_element);
+        m_element->parent()->remove_child(*m_element);
         m_element.clear();
     }
 }
 
 void Node::replace_element_with(Web::DOM::Element& new_element)
 {
-    dbgln("inserting {} into {}", &new_element, parent()->element());
-
     if (element())
         element()->replace_with(new_element);
     else
@@ -112,7 +110,6 @@ void DocumentNode::write_to_file(StringView path)
 NonnullRefPtr<DocumentNode> DocumentNode::create_from_file(Web::DOM::Document& document, StringView path)
 {
     // FIXME: Error handling.
-
     auto file = Core::File::open(path, Core::IODevice::OpenMode::ReadOnly).value();
     auto json_string = String { file->read_all().bytes(), AK::ShouldChomp::NoChomp };
 
