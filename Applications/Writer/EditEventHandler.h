@@ -26,25 +26,18 @@
 
 #pragma once
 
-#include <AK/Types.h>
-#include <LibWeb/Forward.h>
+#include <LibWeb/Page/EditEventHandler.h>
 
-namespace Web {
+#include <Applications/Writer/Model/Node.h>
 
-class EditEventHandler {
+namespace Writer {
+
+class EditEventHandler final : public Web::EditEventHandler {
 public:
-    explicit EditEventHandler(Frame& frame)
-        : m_frame(frame)
-    {
-    }
+    EditEventHandler(Writer::DocumentNode&);
 
-    virtual ~EditEventHandler() = default;
-
-    virtual void handle_delete(DOM::Range&);
-    virtual void handle_insert(DOM::Position, u32 code_point);
-
-private:
-    Frame& m_frame;
+    void handle_delete(Web::DOM::Range&) override;
+    void handle_insert(Web::DOM::Position, u32 code_point) override;
 };
 
 }
