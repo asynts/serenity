@@ -93,10 +93,10 @@ WriterWidget::WriterWidget()
 
 void WriterWidget::replace_document(DocumentNode& document)
 {
-    auto new_body = m_webview->document()->create_element("body");
-    m_webview->document()->body()->replace_with(new_body);
+    m_document.clear();
 
-    document.set_element(new_body);
+    // FIXME: Rename to attach_to_dom?
+    document.set_element(*m_webview->document()->body());
     document.render();
 
     m_document = document;
