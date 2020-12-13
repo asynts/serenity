@@ -40,13 +40,35 @@ EditEventHandler::EditEventHandler(Writer::DocumentNode& document)
 
 void EditEventHandler::handle_delete(Web::DOM::Range& range)
 {
-    dbgln("{}", __PRETTY_FUNCTION__);
+    auto* start = downcast<FragmentNode>(m_document.lookup(*range.start_container()));
+    auto* end = downcast<FragmentNode>(m_document.lookup(*range.end_container()));
 
-    auto* start_node = m_document.lookup(*range.start_container());
-    dbgln("deletion starts in {}+{} ({})", start_node, range.start_offset(), start_node->class_name());
+    if (end->is_before(*start))
+        swap(start, end);
 
-    auto* end_node = m_document.lookup(*range.start_container());
-    dbgln("deletion ends in {}+{} ({})", end_node, range.end_offset(), end_node->class_name());
+    if (start == end) {
+        start->remove_content(range.start_offset(), range.end_offset() - range.start_offset());
+    } else {
+        // Remove all the nodes that are fully enclosed in the range.
+        HashTable<Node*> queued_for_deletion;
+        for (auto* node = start->next_in_pre_order(); node; node = node->next_in_pre_order()) {
+            if (node == end)
+                break;
+
+            queued_for_deletion.set(node);
+        }
+        for (auto* parent = start->parent(); parent; parent = parent->parent())
+            queued_for_deletion.remove(parent);
+        for (auto* parent = end->parent(); parent; parent = parent->parent())
+            queued_for_deletion.remove(parent);
+        for (auto* node : queued_for_deletion)
+            node->parent()->remove_child(*node);
+
+        start->remove_content(range.start_offset());
+        end->remove_content(0, range.end_offset());
+        // FIXME:
+        // start->merge_node(end);
+    }
 }
 
 void EditEventHandler::handle_insert(Web::DOM::Position, u32)
