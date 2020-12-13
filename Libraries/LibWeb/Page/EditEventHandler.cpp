@@ -42,6 +42,8 @@ namespace Web {
 // This method is quite convoluted but this is necessary to make editing feel intuitive.
 void EditEventHandler::handle_delete(DOM::Range& range)
 {
+    dbgln("{}", __PRETTY_FUNCTION__);
+
     auto* start = downcast<DOM::Text>(range.start_container());
     auto* end = downcast<DOM::Text>(range.end_container());
 
@@ -100,6 +102,8 @@ void EditEventHandler::handle_delete(DOM::Range& range)
 
 void EditEventHandler::handle_insert(DOM::Position position, u32 code_point)
 {
+    dbgln("{}", __PRETTY_FUNCTION__);
+
     if (is<DOM::Text>(*position.node())) {
         auto& node = downcast<DOM::Text>(*position.node());
 
