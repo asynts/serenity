@@ -55,17 +55,17 @@ constexpr const char* example_writer_document = R"~~~(
             "children": [
                 {
                     "class": "FragmentNode",
-                    "content": "Hello, ",
+                    "content": "abc ",
                     "bold": false
                 },
                 {
                     "class": "FragmentNode",
-                    "content": "world",
+                    "content": "def",
                     "bold": true
                 },
                 {
                     "class": "FragmentNode",
-                    "content": "!",
+                    "content": " ghi",
                     "bold": false
                 }
             ]
@@ -75,7 +75,17 @@ constexpr const char* example_writer_document = R"~~~(
             "children": [
                 {
                     "class": "FragmentNode",
-                    "content": "Here is another paragraph.",
+                    "content": "jkl",
+                    "bold": false
+                }
+            ]
+        },
+        {
+            "class": "ParagraphNode",
+            "children": [
+                {
+                    "class": "FragmentNode",
+                    "content": "mno",
                     "bold": false
                 }
             ]
@@ -99,13 +109,11 @@ void WriterWidget::replace_document(DocumentNode& document)
     auto new_edit_event_handler = make<EditEventHandler>(document);
     m_webview->document()->frame()->event_handler().set_edit_event_handler(move(new_edit_event_handler));
 
-    m_document.clear();
+    m_document = document;
 
     // FIXME: Rename to attach_to_dom?
     document.set_element(*m_webview->document()->body());
     document.render();
-
-    m_document = document;
 }
 
 }
