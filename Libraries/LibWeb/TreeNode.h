@@ -119,6 +119,11 @@ public:
         parent()->replace_child(node, static_cast<T&>(*this));
     }
 
+    void remove_from_parent()
+    {
+        parent()->remove_child(static_cast<T&>(*this));
+    }
+
     bool is_child_allowed(const T&) const { return true; }
 
     T* next_in_pre_order()
