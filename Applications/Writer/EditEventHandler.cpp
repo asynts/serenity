@@ -26,19 +26,27 @@
 
 #include <LibWeb/DOM/Document.h>
 #include <LibWeb/DOM/Position.h>
+#include <LibWeb/DOM/Range.h>
 
 #include <Applications/Writer/EditEventHandler.h>
 
 namespace Writer {
 
 EditEventHandler::EditEventHandler(Writer::DocumentNode& document)
-    : Web::EditEventHandler(*document.document().frame())
+    : Web::EditEventHandler(*document.dom().frame())
+    , m_document(document)
 {
 }
 
-void EditEventHandler::handle_delete(Web::DOM::Range&)
+void EditEventHandler::handle_delete(Web::DOM::Range& range)
 {
     dbgln("{}", __PRETTY_FUNCTION__);
+
+    auto* start_node = m_document.lookup(*range.start_container());
+    dbgln("deletion starts in {}+{} ({})", start_node, range.start_offset(), start_node->class_name());
+
+    auto* end_node = m_document.lookup(*range.start_container());
+    dbgln("deletion ends in {}+{} ({})", end_node, range.end_offset(), end_node->class_name());
 }
 
 void EditEventHandler::handle_insert(Web::DOM::Position, u32)
