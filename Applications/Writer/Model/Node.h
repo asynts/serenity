@@ -159,12 +159,22 @@ public:
     void load_from_json(const JsonObject&) override;
     JsonValue export_to_json() const override;
     StringView class_name() const override { return "FragmentNode"; }
+    void remove_content(size_t offset, size_t length);
+    void remove_content(size_t offset);
 
     String content() const { return m_content; }
-    void set_content(String value) { m_content = value; }
+    void set_content(String value)
+    {
+        m_content = value;
+        // FIXME: We want to call render() here.
+    }
 
     bool bold() const { return m_bold; }
-    void set_bold(bool value) { m_bold = value; }
+    void set_bold(bool value)
+    {
+        m_bold = value;
+        // FIXME: We want to call render() here.
+    }
 
 private:
     using Node::Node;
@@ -174,3 +184,15 @@ private:
 };
 
 }
+
+AK_BEGIN_TYPE_TRAITS(Writer::DocumentNode)
+static bool is_type(const Writer::Node& node) { return node.class_name() == "DocumentNode"; }
+AK_END_TYPE_TRAITS()
+
+AK_BEGIN_TYPE_TRAITS(Writer::ParagraphNode)
+static bool is_type(const Writer::Node& node) { return node.class_name() == "ParagraphNode"; }
+AK_END_TYPE_TRAITS()
+
+AK_BEGIN_TYPE_TRAITS(Writer::FragmentNode)
+static bool is_type(const Writer::Node& node) { return node.class_name() == "FragmentNode"; }
+AK_END_TYPE_TRAITS()
