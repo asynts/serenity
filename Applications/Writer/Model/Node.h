@@ -26,6 +26,7 @@
 
 #pragma once
 
+#include <AK/HashMap.h>
 #include <AK/String.h>
 #include <LibWeb/DOM/Element.h>
 
@@ -33,6 +34,8 @@
 #include <LibWeb/TreeNode.h>
 
 namespace Writer {
+
+class DocumentNode;
 
 class Node : public Web::TreeNode<Node> {
 public:
@@ -43,8 +46,8 @@ public:
         remove_all_children();
     }
 
-    const Web::DOM::Document& document() const { return m_document; }
-    Web::DOM::Document& document() { return m_document; }
+    DocumentNode& root() { return m_root; }
+    const DocumentNode& root() const { return m_root; }
 
     const Web::DOM::Element* element() const { return m_element; }
     Web::DOM::Element* element() { return m_element; }
@@ -54,7 +57,7 @@ public:
     template<typename T, typename... Parameters>
     NonnullRefPtr<T> create_child(Parameters&&... parameters)
     {
-        auto node = T::create(m_document, forward<Parameters>(parameters)...);
+        auto node = T::create(root(), forward<Parameters>(parameters)...);
         append_child(node);
         return node;
     }
@@ -77,14 +80,14 @@ public:
 protected:
     void replace_element_with(Web::DOM::Element& new_element);
 
-    explicit Node(Web::DOM::Document& document)
-        : m_document(document)
+    explicit Node(DocumentNode& root)
+        : m_root(root)
     {
     }
 
 private:
-    Web::DOM::Document& m_document;
     RefPtr<Web::DOM::Element> m_element;
+    DocumentNode& m_root;
 };
 
 class DocumentNode final : public Node {
@@ -98,6 +101,9 @@ public:
     static NonnullRefPtr<DocumentNode> create_from_json(Web::DOM::Document&, const JsonObject&);
     static NonnullRefPtr<DocumentNode> create_from_file(Web::DOM::Document&, StringView path);
 
+    const Web::DOM::Document& dom() const { return m_dom; }
+    Web::DOM::Document& dom() { return m_dom; }
+
     void render() override;
     void load_from_json(const JsonObject&) override;
     JsonValue export_to_json() const override;
@@ -105,13 +111,30 @@ public:
 
     void write_to_file(StringView path);
 
+    Node* lookup(Web::DOM::Node& node) const
+    {
+        return m_lookup.get(&node).value_or(nullptr);
+    }
+
+    void add_lookup(Web::DOM::Node& web_node, Node& writer_node)
+    {
+        m_lookup.set(&web_node, &writer_node);
+    }
+
 private:
-    using Node::Node;
+    explicit DocumentNode(Web::DOM::Document& dom)
+        : Node(*this)
+        , m_dom(dom)
+    {
+    }
+
+    HashMap<Web::DOM::Node*, Node*> m_lookup;
+    NonnullRefPtr<Web::DOM::Document> m_dom;
 };
 
 class ParagraphNode final : public Node {
 public:
-    static NonnullRefPtr<ParagraphNode> create(Web::DOM::Document& document)
+    static NonnullRefPtr<ParagraphNode> create(DocumentNode& document)
     {
         return adopt(*new ParagraphNode { document });
     }
@@ -127,7 +150,7 @@ private:
 
 class FragmentNode final : public Node {
 public:
-    static NonnullRefPtr<FragmentNode> create(Web::DOM::Document& document)
+    static NonnullRefPtr<FragmentNode> create(DocumentNode& document)
     {
         return adopt(*new FragmentNode { document });
     }
