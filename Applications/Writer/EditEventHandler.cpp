@@ -52,7 +52,7 @@ void EditEventHandler::handle_delete(Web::DOM::Range& range)
     } else {
         // Remove all the nodes that are fully enclosed in the range.
         HashTable<Node*> queued_for_deletion;
-        for (auto* node = start; node; node->next_in_pre_order()) { // FIXME: We get stuck in this loop
+        for (auto* node = start; node; node = node->next_in_pre_order()) {
             if (node == end)
                 break;
 
@@ -62,10 +62,8 @@ void EditEventHandler::handle_delete(Web::DOM::Range& range)
             queued_for_deletion.remove(parent);
         for (auto* parent = end->parent(); parent; parent = parent->parent())
             queued_for_deletion.remove(parent);
-        for (auto* node : queued_for_deletion) {
-            dbgln("calling remove_from_parent on {}", node);
-            node->remove_from_parent();
-        }
+        for (auto* node : queued_for_deletion)
+            node->parent()->remove_child(*node);
 
         // FIXME:
         // start->remove_content(range.start_offset());
