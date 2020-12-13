@@ -51,6 +51,7 @@ void Node::replace_element_with(Web::DOM::Element& new_element)
     else
         parent()->element()->append_child(new_element);
 
+    root().add_lookup(new_element, *this);
     m_element = new_element;
 }
 
@@ -118,7 +119,7 @@ NonnullRefPtr<DocumentNode> DocumentNode::create_from_file(Web::DOM::Document& d
 
 void ParagraphNode::render()
 {
-    auto new_element = document().create_element("p");
+    auto new_element = root().dom().create_element("p");
 
     replace_element_with(new_element);
 
@@ -154,12 +155,18 @@ JsonValue ParagraphNode::export_to_json() const
 
 void FragmentNode::render()
 {
-    auto new_element = document().create_element("span");
+    auto new_element = root().dom().create_element("span");
 
     new_element->set_text_content(m_content);
 
     if (m_bold)
         new_element->class_names().append("bold");
+
+    // There are text nodes created automatically, these also belong to this node.
+    new_element->for_each_in_subtree([&](Web::DOM::Node& node) {
+        root().add_lookup(node, *this);
+        return IterationDecision::Continue;
+    });
 
     replace_element_with(new_element);
 }
