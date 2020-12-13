@@ -55,17 +55,17 @@ constexpr const char* example_writer_document = R"~~~(
             "children": [
                 {
                     "class": "FragmentNode",
-                    "content": "Hello, ",
+                    "content": "abc ",
                     "bold": false
                 },
                 {
                     "class": "FragmentNode",
-                    "content": "world",
+                    "content": "def",
                     "bold": true
                 },
                 {
                     "class": "FragmentNode",
-                    "content": "!",
+                    "content": " ghi",
                     "bold": false
                 }
             ]
@@ -75,7 +75,17 @@ constexpr const char* example_writer_document = R"~~~(
             "children": [
                 {
                     "class": "FragmentNode",
-                    "content": "Here is another paragraph.",
+                    "content": "jkl",
+                    "bold": false
+                }
+            ]
+        },
+        {
+            "class": "ParagraphNode",
+            "children": [
+                {
+                    "class": "FragmentNode",
+                    "content": "mno",
                     "bold": false
                 }
             ]
