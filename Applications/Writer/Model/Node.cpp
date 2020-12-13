@@ -42,6 +42,9 @@ void Node::removed_from(Node&)
         m_element->parent()->remove_child(*m_element);
         m_element.clear();
     }
+
+    // FIXME: Finally deal with the stale layout node issue.
+    root().dom().force_layout();
 }
 
 void Node::replace_element_with(Web::DOM::Element& new_element)
