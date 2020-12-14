@@ -111,7 +111,7 @@ private:
     };
 
     InputBitStream m_input_stream;
-    CircularDuplexStream<32 * 1024> m_output_stream;
+    CircularDuplexStream<32 * KiB> m_output_stream;
 };
 
 }
