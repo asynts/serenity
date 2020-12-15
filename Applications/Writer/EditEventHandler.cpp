@@ -42,8 +42,8 @@ void EditEventHandler::handle_delete(Web::DOM::Range& range)
 {
     dbgln("{}", __PRETTY_FUNCTION__);
 
-    auto* start = m_document.lookup(*range.start_container());
-    auto* end = m_document.lookup(*range.end_container());
+    auto* start = downcast<FragmentNode>(m_document.lookup(*range.start_container()));
+    auto* end = downcast<FragmentNode>(m_document.lookup(*range.end_container()));
 
     if (end->is_before(*start))
         swap(start, end);
@@ -71,8 +71,8 @@ void EditEventHandler::handle_delete(Web::DOM::Range& range)
         }
 
         // FIXME:
-        // start->remove_content(range.start_offset());
-        // end->remove_content(0, range.end_offset());
+        start->remove_content(range.start_offset());
+        end->remove_content(0, range.end_offset());
         // start->merge_node(end);
     }
 }

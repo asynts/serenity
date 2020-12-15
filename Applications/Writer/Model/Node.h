@@ -76,7 +76,6 @@ public:
     virtual void load_from_json(const JsonObject&) = 0;
     virtual JsonValue export_to_json() const = 0;
     virtual StringView class_name() const = 0;
-    virtual void remove_content(size_t offset, size_t length) = 0;
 
 protected:
     void replace_element_with(Web::DOM::Element& new_element);
@@ -109,7 +108,6 @@ public:
     void load_from_json(const JsonObject&) override;
     JsonValue export_to_json() const override;
     StringView class_name() const override { return "DocumentNode"; }
-    void remove_content(size_t, size_t) { ASSERT_NOT_REACHED(); }
 
     void write_to_file(StringView path);
 
@@ -145,7 +143,6 @@ public:
     void load_from_json(const JsonObject&) override;
     JsonValue export_to_json() const override;
     StringView class_name() const override { return "ParagraphNode"; }
-    void remove_content(size_t, size_t) { ASSERT_NOT_REACHED(); }
 
 private:
     using Node::Node;
@@ -163,6 +160,7 @@ public:
     JsonValue export_to_json() const override;
     StringView class_name() const override { return "FragmentNode"; }
     void remove_content(size_t offset, size_t length);
+    void remove_content(size_t offset);
 
     String content() const { return m_content; }
     void set_content(String value)
@@ -186,3 +184,15 @@ private:
 };
 
 }
+
+AK_BEGIN_TYPE_TRAITS(Writer::DocumentNode)
+static bool is_type(const Writer::Node& node) { return node.class_name() == "DocumentNode"; }
+AK_END_TYPE_TRAITS()
+
+AK_BEGIN_TYPE_TRAITS(Writer::ParagraphNode)
+static bool is_type(const Writer::Node& node) { return node.class_name() == "ParagraphNode"; }
+AK_END_TYPE_TRAITS()
+
+AK_BEGIN_TYPE_TRAITS(Writer::FragmentNode)
+static bool is_type(const Writer::Node& node) { return node.class_name() == "FragmentNode"; }
+AK_END_TYPE_TRAITS()

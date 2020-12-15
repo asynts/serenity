@@ -214,4 +214,9 @@ void FragmentNode::remove_content(size_t offset, size_t length)
     render();
 }
 
+void FragmentNode::remove_content(size_t offset)
+{
+    remove_content(offset, m_content.length() - offset);
+}
+
 }
