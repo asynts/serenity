@@ -51,8 +51,7 @@ void EditEventHandler::handle_delete(Web::DOM::Range& range)
     dbgln("start={}, end={}", start, end);
 
     if (start == end) {
-        // FIXME:
-        // start->remove_content(range.start_offset, range.end_offset());
+        start->remove_content(range.start_offset(), range.end_offset() - range.start_offset());
     } else {
         // Remove all the nodes that are fully enclosed in the range.
         HashTable<Node*> queued_for_deletion;
@@ -68,7 +67,6 @@ void EditEventHandler::handle_delete(Web::DOM::Range& range)
             queued_for_deletion.remove(parent);
         for (auto* node : queued_for_deletion) {
             dbgln("removing queued element {}", node);
-            // FIXME We are referencing the element here even though the parent might already be gone.
             node->parent()->remove_child(*node);
         }
 
