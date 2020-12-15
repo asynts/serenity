@@ -139,6 +139,8 @@ public:
         return adopt(*new ParagraphNode { document });
     }
 
+    void merge(ParagraphNode&);
+
     void render() override;
     void load_from_json(const JsonObject&) override;
     JsonValue export_to_json() const override;
