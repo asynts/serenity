@@ -103,6 +103,7 @@ public:
     void prepend_child(NonnullRefPtr<T> node);
     void append_child(NonnullRefPtr<T> node, bool notify = true);
     NonnullRefPtr<T> remove_child(NonnullRefPtr<T> node, bool notify = true);
+    void adopt_child(NonnullRefPtr<T> node);
 
     void remove_all_children()
     {
@@ -356,6 +357,15 @@ inline NonnullRefPtr<T> TreeNode<T>::remove_child(NonnullRefPtr<T> node, bool no
         static_cast<T*>(this)->children_changed();
 
     return node;
+}
+
+template<typename T>
+void TreeNode<T>::adopt_child(NonnullRefPtr<T> node)
+{
+    ASSERT(node->parent() != this);
+
+    node->parent()->remove_child(node);
+    append_child(node);
 }
 
 template<typename T>
