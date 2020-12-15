@@ -39,7 +39,10 @@ namespace Writer {
 void Node::removed_from(Node&)
 {
     if (m_element) {
-        m_element->parent()->remove_child(*m_element);
+        if (m_element->parent())
+            m_element->parent()->remove_child(*m_element);
+
+        m_element->remove_all_children();
         m_element.clear();
     }
 

@@ -68,6 +68,7 @@ void EditEventHandler::handle_delete(Web::DOM::Range& range)
             queued_for_deletion.remove(parent);
         for (auto* node : queued_for_deletion) {
             dbgln("removing queued element {}", node);
+            // FIXME We are referencing the element here even though the parent might already be gone.
             node->parent()->remove_child(*node);
         }
 
