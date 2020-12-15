@@ -40,11 +40,15 @@ EditEventHandler::EditEventHandler(Writer::DocumentNode& document)
 
 void EditEventHandler::handle_delete(Web::DOM::Range& range)
 {
+    dbgln("{}", __PRETTY_FUNCTION__);
+
     auto* start = m_document.lookup(*range.start_container());
     auto* end = m_document.lookup(*range.end_container());
 
     if (end->is_before(*start))
         swap(start, end);
+
+    dbgln("start={}, end={}", start, end);
 
     if (start == end) {
         // FIXME:
@@ -52,7 +56,7 @@ void EditEventHandler::handle_delete(Web::DOM::Range& range)
     } else {
         // Remove all the nodes that are fully enclosed in the range.
         HashTable<Node*> queued_for_deletion;
-        for (auto* node = start; node; node = node->next_in_pre_order()) {
+        for (auto* node = start->next_in_pre_order(); node; node = node->next_in_pre_order()) {
             if (node == end)
                 break;
 
@@ -62,8 +66,10 @@ void EditEventHandler::handle_delete(Web::DOM::Range& range)
             queued_for_deletion.remove(parent);
         for (auto* parent = end->parent(); parent; parent = parent->parent())
             queued_for_deletion.remove(parent);
-        for (auto* node : queued_for_deletion)
+        for (auto* node : queued_for_deletion) {
+            dbgln("removing queued element {}", node);
             node->parent()->remove_child(*node);
+        }
 
         // FIXME:
         // start->remove_content(range.start_offset());
