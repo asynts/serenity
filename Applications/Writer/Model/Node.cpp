@@ -162,6 +162,18 @@ JsonValue ParagraphNode::export_to_json() const
     return json;
 }
 
+void ParagraphNode::merge(ParagraphNode& other)
+{
+    if (this == &other)
+        return;
+
+    other.for_each_child([&](Node& child) {
+        adopt_child(child);
+    });
+
+    other.parent()->remove_child(other);
+}
+
 void FragmentNode::render()
 {
     auto new_element = root().dom().create_element("span");
