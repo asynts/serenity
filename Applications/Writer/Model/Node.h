@@ -76,6 +76,7 @@ public:
     virtual void load_from_json(const JsonObject&) = 0;
     virtual JsonValue export_to_json() const = 0;
     virtual StringView class_name() const = 0;
+    virtual void remove_content(size_t offset, size_t length) = 0;
 
 protected:
     void replace_element_with(Web::DOM::Element& new_element);
@@ -108,6 +109,7 @@ public:
     void load_from_json(const JsonObject&) override;
     JsonValue export_to_json() const override;
     StringView class_name() const override { return "DocumentNode"; }
+    void remove_content(size_t, size_t) { ASSERT_NOT_REACHED(); }
 
     void write_to_file(StringView path);
 
@@ -143,6 +145,7 @@ public:
     void load_from_json(const JsonObject&) override;
     JsonValue export_to_json() const override;
     StringView class_name() const override { return "ParagraphNode"; }
+    void remove_content(size_t, size_t) { ASSERT_NOT_REACHED(); }
 
 private:
     using Node::Node;
@@ -159,12 +162,21 @@ public:
     void load_from_json(const JsonObject&) override;
     JsonValue export_to_json() const override;
     StringView class_name() const override { return "FragmentNode"; }
+    void remove_content(size_t offset, size_t length);
 
     String content() const { return m_content; }
-    void set_content(String value) { m_content = value; }
+    void set_content(String value)
+    {
+        m_content = value;
+        // FIXME: We want to call render() here.
+    }
 
     bool bold() const { return m_bold; }
-    void set_bold(bool value) { m_bold = value; }
+    void set_bold(bool value)
+    {
+        m_bold = value;
+        // FIXME: We want to call render() here.
+    }
 
 private:
     using Node::Node;

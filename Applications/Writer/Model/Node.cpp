@@ -30,6 +30,7 @@
 #include <LibCore/FileStream.h>
 #include <LibWeb/DOM/Document.h>
 #include <LibWeb/DOM/Element.h>
+#include <LibWeb/Dump.h>
 #include <LibWeb/HTML/HTMLElement.h>
 
 #include <Applications/Writer/Model/Node.h>
@@ -52,6 +53,8 @@ void Node::removed_from(Node&)
 
 void Node::replace_element_with(Web::DOM::Element& new_element)
 {
+    // FIXME: There appears to be a race condition with the rendering pipeline of the browser.
+
     if (element())
         element()->replace_with(new_element);
     else
@@ -194,6 +197,21 @@ JsonValue FragmentNode::export_to_json() const
     json.set("bold", m_bold);
 
     return json;
+}
+
+void FragmentNode::remove_content(size_t offset, size_t length)
+{
+    if (length == 0)
+        return;
+
+    StringBuilder builder;
+    builder.append(m_content.substring(0, offset));
+    builder.append(m_content.substring(offset + length, m_content.length() - offset - length));
+
+    set_content(builder.build());
+
+    // FIXME: This should happen in set_content.
+    render();
 }
 
 }
