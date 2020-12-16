@@ -234,4 +234,17 @@ void FragmentNode::remove_content(size_t offset)
     remove_content(offset, m_content.length() - offset);
 }
 
+void FragmentNode::insert_content(size_t offset, StringView snippet)
+{
+    StringBuilder builder;
+    builder.append(m_content.substring(0, offset));
+    builder.append(snippet);
+    builder.append(m_content.substring(offset));
+
+    set_content(builder.build());
+
+    // FIXME: This should happen in set_content.
+    render();
+}
+
 }
