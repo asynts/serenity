@@ -32,6 +32,7 @@
 #include <LibWeb/DOM/Element.h>
 #include <LibWeb/Dump.h>
 #include <LibWeb/HTML/HTMLElement.h>
+#include <LibWeb/Page/Frame.h>
 
 #include <Applications/Writer/Model/Node.h>
 
@@ -53,8 +54,6 @@ void Node::removed_from(Node&)
 
 void Node::replace_element_with(Web::DOM::Element& new_element)
 {
-    // FIXME: There appears to be a race condition with the rendering pipeline of the browser.
-
     if (element())
         element()->replace_with(new_element);
     else
@@ -192,6 +191,15 @@ void FragmentNode::render()
         return IterationDecision::Continue;
     });
 
+    // FIXME: Hack. When we replace a node we have to ensure that the cursor isn't
+    //        "lost" in the old object.
+    auto& cursor_position = root().dom().frame()->cursor_position();
+    if (cursor_position.node() && cursor_position.node()->parent() == element()) {
+        ASSERT(element() && element()->child_count() == 1);
+        ASSERT(new_element->child_count() == 1);
+        root().dom().frame()->set_cursor_position(Web::DOM::Position { *new_element->first_child(), cursor_position.offset() });
+    }
+
     replace_element_with(new_element);
 }
 
@@ -232,6 +240,19 @@ void FragmentNode::remove_content(size_t offset, size_t length)
 void FragmentNode::remove_content(size_t offset)
 {
     remove_content(offset, m_content.length() - offset);
+}
+
+void FragmentNode::insert_content(size_t offset, StringView snippet)
+{
+    StringBuilder builder;
+    builder.append(m_content.substring(0, offset));
+    builder.append(snippet);
+    builder.append(m_content.substring(offset));
+
+    set_content(builder.build());
+
+    // FIXME: This should happen in set_content.
+    render();
 }
 
 }
