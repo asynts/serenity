@@ -378,6 +378,7 @@ bool EventHandler::handle_keydown(KeyCode key, unsigned modifiers, u32 code_poin
 
             m_frame.cursor_position().set_offset(position.offset() - 1);
             m_edit_event_handler->handle_delete(DOM::Range::create(*position.node(), position.offset() - 1, *position.node(), position.offset()));
+            m_frame.blink_cursor();
 
             return true;
         } else if (key == KeyCode::Key_Delete) {
@@ -396,6 +397,7 @@ bool EventHandler::handle_keydown(KeyCode key, unsigned modifiers, u32 code_poin
                 TODO();
 
             m_frame.cursor_position().set_offset(position.offset() + 1);
+            m_frame.blink_cursor();
 
             return true;
         } else if (key == KeyCode::Key_Left) {
@@ -405,11 +407,13 @@ bool EventHandler::handle_keydown(KeyCode key, unsigned modifiers, u32 code_poin
                 TODO();
 
             m_frame.cursor_position().set_offset(position.offset() - 1);
+            m_frame.blink_cursor();
 
             return true;
         } else {
             m_edit_event_handler->handle_insert(m_frame.cursor_position(), code_point);
             m_frame.cursor_position().set_offset(m_frame.cursor_position().offset() + 1);
+            m_frame.blink_cursor();
             return true;
         }
     }
