@@ -161,8 +161,11 @@ public:
     void load_from_json(const JsonObject&) override;
     JsonValue export_to_json() const override;
     StringView class_name() const override { return "FragmentNode"; }
+
     void remove_content(size_t offset, size_t length);
     void remove_content(size_t offset);
+
+    void insert_content(size_t offset, StringView);
 
     String content() const { return m_content; }
     void set_content(String value)
