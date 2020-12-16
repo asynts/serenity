@@ -94,6 +94,8 @@ public:
 
     String selected_text() const;
 
+    void blink_cursor();
+
 private:
     explicit Frame(DOM::Element& host_element, Frame& main_frame);
     explicit Frame(Page&);
