@@ -71,9 +71,13 @@ void EditEventHandler::handle_delete(Web::DOM::Range& range)
     }
 }
 
-void EditEventHandler::handle_insert(Web::DOM::Position, u32)
+void EditEventHandler::handle_insert(Web::DOM::Position position, u32 code_point)
 {
-    dbgln("{}", __PRETTY_FUNCTION__);
+    auto node = downcast<FragmentNode>(m_document.lookup(*position.node()));
+
+    // FIXME: We should verify that this is a printable character, otherwise things will go wrong.
+    char character = static_cast<char>(code_point);
+    node->insert_content(position.offset(), StringView { &character, 1 });
 }
 
 }
