@@ -6,5 +6,8 @@
     "files.exclude": {
         ".git/": true,
         "build/": true
+    },
+    "files.associations": {
+        "*.idl": "cpp"
     }
 }

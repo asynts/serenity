@@ -43,6 +43,7 @@ public:
 
     Node* node() { return m_node; }
     const Node* node() const { return m_node; }
+    void set_node(Node& node) { m_node = node; }
 
     unsigned offset() const { return m_offset; }
     void set_offset(unsigned value) { m_offset = value; }
