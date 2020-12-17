@@ -95,12 +95,16 @@ public:
     String selected_text() const;
 
     void blink_cursor();
+    void move_cursor_by(ssize_t delta);
 
 private:
     explicit Frame(DOM::Element& host_element, Frame& main_frame);
     explicit Frame(Page&);
 
     void setup();
+
+    bool move_cursor_left();
+    bool move_cursor_right();
 
     WeakPtr<Page> m_page;
     Frame& m_main_frame;
