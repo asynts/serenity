@@ -32,6 +32,7 @@
 #include <LibWeb/DOM/Element.h>
 #include <LibWeb/Dump.h>
 #include <LibWeb/HTML/HTMLElement.h>
+#include <LibWeb/Page/Frame.h>
 
 #include <Applications/Writer/Model/Node.h>
 
@@ -53,8 +54,6 @@ void Node::removed_from(Node&)
 
 void Node::replace_element_with(Web::DOM::Element& new_element)
 {
-    // FIXME: There appears to be a race condition with the rendering pipeline of the browser.
-
     if (element())
         element()->replace_with(new_element);
     else
@@ -191,6 +190,13 @@ void FragmentNode::render()
         root().add_lookup(node, *this);
         return IterationDecision::Continue;
     });
+
+    // FIXME: I feel like this is not the correct place of doing this.
+    auto& cursor_position = root().dom().frame()->cursor_position();
+    if (element() && cursor_position.node() == element()) {
+        // FIXME: This is not working?
+        root().dom().frame()->set_cursor_position(Web::DOM::Position { new_element, cursor_position.offset() });
+    }
 
     replace_element_with(new_element);
 }
