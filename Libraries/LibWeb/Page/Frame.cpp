@@ -268,53 +268,55 @@ String Frame::selected_text() const
     return builder.to_string();
 }
 
+bool Frame::move_cursor_left()
+{
+    if (m_cursor_position.offset() > 0) {
+        set_cursor_position(DOM::Position { *m_cursor_position.node(), m_cursor_position.offset() - 1 });
+        return true;
+    }
+
+    for (auto* next = m_cursor_position.node()->previous_in_pre_order(); next; next = next->previous_in_pre_order()) {
+        // FIXME: This check is not sufficent because this returns the cumulative content length.
+        if (next->text_content().length() > 0) {
+            dbgln("found suitable node with content={}", next->text_content());
+
+            set_cursor_position(DOM::Position { *next, next->text_content().length() - 1 });
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool Frame::move_cursor_right()
+{
+    if (m_cursor_position.node()->text_content().length() > m_cursor_position.offset()) {
+        set_cursor_position(DOM::Position { *m_cursor_position.node(), m_cursor_position.offset() + 1 });
+        return true;
+    }
+
+    for (auto* next = m_cursor_position.node()->next_in_pre_order(); next; next = next->next_in_pre_order()) {
+        // FIXME: This check is not sufficent because this returns the cumulative content length.
+        if (next->text_content().length() > 0) {
+            set_cursor_position(DOM::Position { *next, 1 });
+            return true;
+        }
+    }
+
+    return false;
+}
+
 void Frame::move_cursor_by(ssize_t delta)
 {
     ASSERT(m_cursor_position.node());
 
-    if (delta < 0) {
-        if (m_cursor_position.offset() >= static_cast<size_t>(-delta)) {
-            dbgln("trivial (negative) case: {}", delta);
-
-            m_cursor_position.set_offset(m_cursor_position.offset() + delta);
-            blink_cursor();
-        } else {
-            auto* previous_node = m_cursor_position.node()->previous_in_pre_order();
-
-            dbgln("non-trivial (negative) case: {} -> {}", delta, previous_node);
-
-            if (!previous_node) {
-                m_cursor_position.set_offset(0);
-                blink_cursor();
+    for (size_t i = 0; i < abs(delta); ++i) {
+        if (delta < 0) {
+            if (!move_cursor_left())
                 return;
-            }
-
-            delta += m_cursor_position.offset();
-            set_cursor_position(DOM::Position { *previous_node, previous_node->text_content().length() });
-
-            move_cursor_by(delta);
-        }
-    } else {
-        if (m_cursor_position.offset() + delta <= m_cursor_position.node()->text_content().length()) {
-            dbgln("trivial (positive) case: {}", delta);
-
-            m_cursor_position.set_offset(m_cursor_position.offset() + delta);
-            blink_cursor();
         } else {
-            auto* next_node = m_cursor_position.node()->next_in_pre_order();
-
-            dbgln("non-trivial (positive) case: {} -> {}", delta, next_node);
-
-            if (!next_node) {
-                m_cursor_position.set_offset(m_cursor_position.node()->text_content().length());
-                blink_cursor();
+            if (!move_cursor_right())
                 return;
-            }
-
-            delta -= m_cursor_position.node()->text_content().length() - m_cursor_position.offset();
-            set_cursor_position(DOM::Position { *next_node, 0 });
-
-            move_cursor_by(delta);
         }
     }
 }

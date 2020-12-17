@@ -103,6 +103,9 @@ private:
 
     void setup();
 
+    bool move_cursor_left();
+    bool move_cursor_right();
+
     WeakPtr<Page> m_page;
     Frame& m_main_frame;
 
