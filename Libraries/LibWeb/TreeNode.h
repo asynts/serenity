@@ -122,6 +122,19 @@ public:
 
     bool is_child_allowed(const T&) const { return true; }
 
+    T* previous_in_pre_order()
+    {
+        if (previous_sibling())
+            return previous_sibling();
+
+        return parent();
+    }
+
+    const T* previous_in_pre_order() const
+    {
+        const_cast<TreeNode*>(this)->previous_in_pre_order();
+    }
+
     T* next_in_pre_order()
     {
         if (first_child())

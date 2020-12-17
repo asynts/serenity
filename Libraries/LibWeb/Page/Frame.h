@@ -95,6 +95,7 @@ public:
     String selected_text() const;
 
     void blink_cursor();
+    void move_cursor_by(ssize_t delta);
 
 private:
     explicit Frame(DOM::Element& host_element, Frame& main_frame);
