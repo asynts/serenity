@@ -298,13 +298,15 @@ bool Frame::move_cursor_left()
 
 bool Frame::move_cursor_right()
 {
-    // FIXME: If we are moving into a "new" line, then we have to use m_cursor.position.offset() instead.
-
     if (m_cursor_position.node()->text_content().length() > m_cursor_position.offset() + 1) {
         m_cursor_position.set_offset(m_cursor_position.offset() + 1);
         blink_cursor();
         return true;
     }
+
+    // FIXME: When the next text node is on the next line, we want to allow the cursor to go after
+    //        the last character at the end of the line. This however, depends on how the text is rendered
+    //        and isn't known here.
 
     for (auto* next = m_cursor_position.node()->next_in_pre_order(); next; next = next->next_in_pre_order()) {
         if (!is<DOM::Text>(next))
