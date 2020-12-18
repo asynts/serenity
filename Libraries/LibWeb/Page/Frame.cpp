@@ -271,38 +271,51 @@ String Frame::selected_text() const
 bool Frame::move_cursor_left()
 {
     if (m_cursor_position.offset() > 0) {
-        set_cursor_position(DOM::Position { *m_cursor_position.node(), m_cursor_position.offset() - 1 });
+        m_cursor_position.set_offset(m_cursor_position.offset() - 1);
+        blink_cursor();
         return true;
     }
 
+    // FIXME: previous_in_pre_order doesn't seem to work.
     for (auto* next = m_cursor_position.node()->previous_in_pre_order(); next; next = next->previous_in_pre_order()) {
-        // FIXME: This check is not sufficent because this returns the cumulative content length.
-        if (next->text_content().length() > 0) {
+        if (!is<DOM::Text>(next))
+            continue;
+
+        if (next->text_content().trim_whitespace().length() > 0) {
             dbgln("found suitable node with content={}", next->text_content());
 
             set_cursor_position(DOM::Position { *next, next->text_content().length() - 1 });
+            blink_cursor();
             return true;
         }
     }
 
+    blink_cursor();
     return false;
 }
 
 bool Frame::move_cursor_right()
 {
     if (m_cursor_position.node()->text_content().length() > m_cursor_position.offset()) {
-        set_cursor_position(DOM::Position { *m_cursor_position.node(), m_cursor_position.offset() + 1 });
+        m_cursor_position.set_offset(m_cursor_position.offset() + 1);
+        blink_cursor();
         return true;
     }
 
     for (auto* next = m_cursor_position.node()->next_in_pre_order(); next; next = next->next_in_pre_order()) {
-        // FIXME: This check is not sufficent because this returns the cumulative content length.
-        if (next->text_content().length() > 0) {
-            set_cursor_position(DOM::Position { *next, 1 });
+        if (!is<DOM::Text>(next))
+            continue;
+
+        if (next->text_content().trim_whitespace().length() > 0) {
+            dbgln("found suitable node with content={}", next->text_content());
+
+            set_cursor_position(DOM::Position { *next, 0 });
+            blink_cursor();
             return true;
         }
     }
 
+    blink_cursor();
     return false;
 }
 
