@@ -124,8 +124,14 @@ public:
 
     T* previous_in_pre_order()
     {
-        if (previous_sibling())
-            return previous_sibling();
+        if (previous_sibling()) {
+            auto* next = previous_sibling();
+
+            while (next->last_child())
+                next = next->last_child();
+
+            return next;
+        }
 
         return parent();
     }

@@ -26,6 +26,8 @@
 
 #include <LibWeb/DOM/Document.h>
 #include <LibWeb/HTML/HTMLAnchorElement.h>
+#include <LibWeb/HTML/HTMLScriptElement.h>
+#include <LibWeb/HTML/HTMLStyleElement.h>
 #include <LibWeb/InProcessWebView.h>
 #include <LibWeb/Layout/BreakNode.h>
 #include <LibWeb/Layout/InitialContainingBlockBox.h>
@@ -276,14 +278,14 @@ bool Frame::move_cursor_left()
         return true;
     }
 
-    // FIXME: previous_in_pre_order doesn't seem to work.
     for (auto* next = m_cursor_position.node()->previous_in_pre_order(); next; next = next->previous_in_pre_order()) {
         if (!is<DOM::Text>(next))
             continue;
 
-        if (next->text_content().trim_whitespace().length() > 0) {
-            dbgln("found suitable node with content={}", next->text_content());
+        if (is<HTML::HTMLStyleElement>(next->parent()) || is<HTML::HTMLScriptElement>(next->parent()))
+            continue;
 
+        if (next->text_content().trim_whitespace().length() > 0) {
             set_cursor_position(DOM::Position { *next, next->text_content().length() - 1 });
             blink_cursor();
             return true;
@@ -296,7 +298,9 @@ bool Frame::move_cursor_left()
 
 bool Frame::move_cursor_right()
 {
-    if (m_cursor_position.node()->text_content().length() > m_cursor_position.offset()) {
+    // FIXME: If we are moving into a "new" line, then we have to use m_cursor.position.offset() instead.
+
+    if (m_cursor_position.node()->text_content().length() > m_cursor_position.offset() + 1) {
         m_cursor_position.set_offset(m_cursor_position.offset() + 1);
         blink_cursor();
         return true;
@@ -306,13 +310,23 @@ bool Frame::move_cursor_right()
         if (!is<DOM::Text>(next))
             continue;
 
-        if (next->text_content().trim_whitespace().length() > 0) {
-            dbgln("found suitable node with content={}", next->text_content());
+        if (is<HTML::HTMLStyleElement>(next->parent()) || is<HTML::HTMLScriptElement>(next->parent()))
+            continue;
 
+        if (next->text_content().trim_whitespace().length() > 0) {
             set_cursor_position(DOM::Position { *next, 0 });
             blink_cursor();
             return true;
         }
+    }
+
+    // We want to allow the cursor to be moved past the last character but only if no other "valid"
+    // node follows. This edge case occurs because the position after the last character of a node is
+    // the same as the position before the first character of the next node.
+    if (m_cursor_position.node()->text_content().length() > m_cursor_position.offset()) {
+        m_cursor_position.set_offset(m_cursor_position.offset() + 1);
+        blink_cursor();
+        return true;
     }
 
     blink_cursor();
