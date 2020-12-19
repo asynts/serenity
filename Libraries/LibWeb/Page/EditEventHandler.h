@@ -42,6 +42,7 @@ public:
 
     virtual void handle_delete(DOM::Range&);
     virtual void handle_insert(DOM::Position, u32 code_point);
+    virtual void handle_newline(DOM::Position);
 
 private:
     Frame& m_frame;

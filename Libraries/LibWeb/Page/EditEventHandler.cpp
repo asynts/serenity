@@ -121,4 +121,10 @@ void EditEventHandler::handle_insert(DOM::Position position, u32 code_point)
     //        which really hurts performance.
     m_frame.document()->force_layout();
 }
+
+void EditEventHandler::handle_newline(DOM::Position)
+{
+    TODO();
+}
+
 }

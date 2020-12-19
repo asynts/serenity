@@ -27,6 +27,7 @@
 #include <LibWeb/DOM/Document.h>
 #include <LibWeb/DOM/Position.h>
 #include <LibWeb/DOM/Range.h>
+#include <LibWeb/Dump.h>
 
 #include <Applications/Writer/EditEventHandler.h>
 
@@ -77,6 +78,40 @@ void EditEventHandler::handle_insert(Web::DOM::Position position, u32 code_point
 
     char character = static_cast<char>(code_point);
     node->insert_content(position.offset(), StringView { &character, 1 });
+}
+
+void EditEventHandler::handle_newline(Web::DOM::Position position)
+{
+    auto* node = downcast<FragmentNode>(m_document.lookup(*position.node()));
+
+    // FIXME: Move this logic into a virtual method?
+    if (is<ParagraphNode>(node->parent())) {
+        dbgln("Splitting paragraph:");
+        Web::dump_tree(*node->element());
+
+        auto new_paragraph = ParagraphNode::create(m_document);
+
+        auto new_fragment = new_paragraph->create_child<FragmentNode>();
+        new_fragment->set_content(node->content().substring(position.offset()));
+
+        node->set_content(node->content().substring(0, position.offset()));
+
+        for (auto* next = node->next_sibling(); next; next = next->next_sibling())
+            new_paragraph->adopt_child(*next);
+
+        node->parent()->insert_after(new_paragraph, *node);
+
+        node->render();
+        new_paragraph->render();
+
+        dbgln("remaining:");
+        Web::dump_tree(*node->element());
+
+        dbgln("new:");
+        Web::dump_tree(*new_paragraph->element());
+    } else {
+        TODO();
+    }
 }
 
 }
