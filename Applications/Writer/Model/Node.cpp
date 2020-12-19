@@ -87,10 +87,17 @@ NonnullRefPtr<DocumentNode> DocumentNode::create_from_json(Web::DOM::Document& d
 void DocumentNode::load_from_json(const JsonObject& json)
 {
     json.get("children").as_array().for_each([&](const JsonValue& child_json) {
-        ASSERT(child_json.as_object().get("class").as_string() == "ParagraphNode");
+        const auto class_ = child_json.as_object().get("class").as_string();
 
-        auto child = create_child<ParagraphNode>();
-        child->load_from_json(child_json.as_object());
+        if (class_ == "ParagraphNode") {
+            auto child = create_child<ParagraphNode>();
+            child->load_from_json(child_json.as_object());
+        } else if (class_ == "HeadingNode") {
+            auto child = create_child<HeadingNode>();
+            child->load_from_json(child_json.as_object());
+        } else {
+            ASSERT_NOT_REACHED();
+        }
     });
 }
 
@@ -174,6 +181,42 @@ void ParagraphNode::merge(ParagraphNode& other)
     });
 
     other.parent()->remove_child(other);
+}
+
+void HeadingNode::render()
+{
+    auto new_element = root().dom().create_element("h3");
+
+    replace_element_with(new_element);
+
+    for_each_child([&](Node& node) {
+        node.render();
+    });
+}
+
+void HeadingNode::load_from_json(const JsonObject& json)
+{
+    json.get("children").as_array().for_each([&](const JsonValue& child_json) {
+        ASSERT(child_json.as_object().get("class").as_string() == "FragmentNode");
+
+        auto child = create_child<FragmentNode>();
+        child->load_from_json(child_json.as_object());
+    });
+}
+
+JsonValue HeadingNode::export_to_json() const
+{
+    JsonObject json;
+
+    json.set("class", "HeadingNode");
+
+    JsonArray children;
+    for_each_child([&](const Node& child) {
+        children.append(child.export_to_json());
+    });
+    json.set("children", children);
+
+    return json;
 }
 
 void FragmentNode::render()
