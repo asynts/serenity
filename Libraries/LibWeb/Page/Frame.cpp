@@ -56,10 +56,6 @@ Frame::Frame(Page& page)
     setup();
 }
 
-Frame::~Frame()
-{
-}
-
 void Frame::setup()
 {
     m_cursor_blink_timer = Core::Timer::construct(500, [this] {
@@ -69,10 +65,14 @@ void Frame::setup()
     });
 }
 
-void Frame::blink_cursor()
+void Frame::blink_cursor(bool toggle)
 {
     if (m_cursor_position.node() && m_cursor_position.node()->layout_node()) {
-        m_cursor_blink_state = !m_cursor_blink_state;
+        if (toggle)
+            m_cursor_blink_state = !m_cursor_blink_state;
+        else
+            m_cursor_blink_state = true;
+
         m_cursor_position.node()->layout_node()->set_needs_display();
     }
 }
@@ -274,7 +274,7 @@ bool Frame::move_cursor_left()
 {
     if (m_cursor_position.offset() > 0) {
         m_cursor_position.set_offset(m_cursor_position.offset() - 1);
-        blink_cursor();
+        blink_cursor(false);
         return true;
     }
 
@@ -287,12 +287,12 @@ bool Frame::move_cursor_left()
 
         if (next->text_content().trim_whitespace().length() > 0) {
             set_cursor_position(DOM::Position { *next, next->text_content().length() - 1 });
-            blink_cursor();
+            blink_cursor(false);
             return true;
         }
     }
 
-    blink_cursor();
+    blink_cursor(false);
     return false;
 }
 
@@ -300,7 +300,7 @@ bool Frame::move_cursor_right()
 {
     if (m_cursor_position.node()->text_content().length() > m_cursor_position.offset() + 1) {
         m_cursor_position.set_offset(m_cursor_position.offset() + 1);
-        blink_cursor();
+        blink_cursor(false);
         return true;
     }
 
@@ -317,7 +317,7 @@ bool Frame::move_cursor_right()
 
         if (next->text_content().trim_whitespace().length() > 0) {
             set_cursor_position(DOM::Position { *next, 0 });
-            blink_cursor();
+            blink_cursor(false);
             return true;
         }
     }
@@ -327,11 +327,11 @@ bool Frame::move_cursor_right()
     // the same as the position before the first character of the next node.
     if (m_cursor_position.node()->text_content().length() > m_cursor_position.offset()) {
         m_cursor_position.set_offset(m_cursor_position.offset() + 1);
-        blink_cursor();
+        blink_cursor(false);
         return true;
     }
 
-    blink_cursor();
+    blink_cursor(false);
     return false;
 }
 
