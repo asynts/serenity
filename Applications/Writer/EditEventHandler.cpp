@@ -27,6 +27,7 @@
 #include <LibWeb/DOM/Document.h>
 #include <LibWeb/DOM/Position.h>
 #include <LibWeb/DOM/Range.h>
+#include <LibWeb/Dump.h>
 
 #include <Applications/Writer/EditEventHandler.h>
 
@@ -69,6 +70,8 @@ void EditEventHandler::handle_delete(Web::DOM::Range& range)
 
         downcast<ParagraphNode>(start->parent())->merge(*downcast<ParagraphNode>(end->parent()));
     }
+
+    m_document.render();
 }
 
 void EditEventHandler::handle_insert(Web::DOM::Position position, u32 code_point)
@@ -77,6 +80,50 @@ void EditEventHandler::handle_insert(Web::DOM::Position position, u32 code_point
 
     char character = static_cast<char>(code_point);
     node->insert_content(position.offset(), StringView { &character, 1 });
+
+    m_document.render();
+}
+
+void EditEventHandler::handle_newline(Web::DOM::Position position)
+{
+    auto* fragment = downcast<FragmentNode>(m_document.lookup(*position.node()));
+
+    // FIXME: Move this logic into a virtual method?
+    if (is<ParagraphNode>(fragment->parent())) {
+        auto* paragraph = downcast<ParagraphNode>(fragment->parent());
+
+        dbgln("before:");
+        paragraph->parent()->dump();
+
+        auto new_paragraph = ParagraphNode::create(m_document);
+
+        auto new_fragment = new_paragraph->create_child<FragmentNode>();
+        new_fragment->set_content(fragment->content().substring(position.offset()));
+        new_fragment->set_bold(fragment->bold());
+
+        fragment->set_content(fragment->content().substring(0, position.offset()));
+
+        auto* current = fragment->next_sibling();
+        while (current) {
+            auto* next = current->next_sibling();
+            new_paragraph->adopt_child(*current);
+            current = next;
+        }
+
+        paragraph->parent()->insert_after(new_paragraph, *paragraph);
+
+        dbgln("after:");
+        paragraph->parent()->dump();
+    } else {
+        TODO();
+    }
+
+    m_document.render();
+}
+
+void EditEventHandler::move_cursor_by(ssize_t)
+{
+    dbgln("{}:{}: {} (FIXME)", __FILE__, __LINE__, __PRETTY_FUNCTION__);
 }
 
 }

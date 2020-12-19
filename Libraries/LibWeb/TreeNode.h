@@ -114,6 +114,7 @@ public:
     // FIXME: The order of parameters for both of these methods is really unintuitive.
     void replace_child(NonnullRefPtr<T> node, T& child, bool notify = true);
     void insert_before(NonnullRefPtr<T> node, RefPtr<T> child, bool notify = true);
+    void insert_after(NonnullRefPtr<T> node, RefPtr<T> child, bool notify = true);
 
     void replace_with(NonnullRefPtr<T> node)
     {
@@ -450,6 +451,38 @@ inline void TreeNode<T>::insert_before(NonnullRefPtr<T> node, RefPtr<T> child, b
     if (notify)
         node->inserted_into(static_cast<T&>(*this));
     [[maybe_unused]] auto& rc = node.leak_ref();
+
+    if (notify)
+        static_cast<T*>(this)->children_changed();
+}
+
+template<typename T>
+void TreeNode<T>::insert_after(NonnullRefPtr<T> node, RefPtr<T> child, bool notify)
+{
+    if (!child)
+        return append_child(move(node), notify);
+
+    ASSERT(!node->parent());
+    ASSERT(child->parent() == this);
+
+    if (!static_cast<T*>(this)->is_child_allowed(*node))
+        return;
+
+    node->m_previous_sibling = child;
+    node->m_next_sibling = child->next_sibling();
+
+    if (child->next_sibling())
+        child->next_sibling()->m_previous_sibling = node;
+
+    child->m_next_sibling = node;
+
+    if (m_last_child == child)
+        m_last_child = node;
+
+    node->m_parent = static_cast<T*>(this);
+    if (notify)
+        node->inserted_into(static_cast<T&>(*this));
+    (void)node.leak_ref();
 
     if (notify)
         static_cast<T*>(this)->children_changed();
