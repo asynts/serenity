@@ -24,6 +24,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <LibC/ctype.h>
 #include <LibGUI/Event.h>
 #include <LibGUI/Window.h>
 #include <LibJS/Runtime/Value.h>
@@ -347,7 +348,7 @@ bool EventHandler::handle_keydown(KeyCode key, unsigned modifiers, u32 code_poin
 
     if (layout_root()->selection().is_valid()) {
         auto range = layout_root()->selection().to_dom_range()->normalized();
-        if (range->start_container()->is_editable()) {
+        if (range->start_container()->is_editable() && code_point <= 127 && isprint(code_point)) {
             m_frame.document()->layout_node()->set_selection({});
 
             // FIXME: This doesn't work for some reason?
@@ -358,7 +359,6 @@ bool EventHandler::handle_keydown(KeyCode key, unsigned modifiers, u32 code_poin
                 m_edit_event_handler->handle_delete(range);
                 return true;
             } else {
-
                 m_edit_event_handler->handle_delete(range);
 
                 m_edit_event_handler->handle_insert(m_frame.cursor_position(), code_point);
@@ -400,7 +400,7 @@ bool EventHandler::handle_keydown(KeyCode key, unsigned modifiers, u32 code_poin
             m_frame.move_cursor_by(-1);
 
             return true;
-        } else {
+        } else if (code_point <= 127 && isprint((int)code_point)) {
             m_edit_event_handler->handle_insert(m_frame.cursor_position(), code_point);
             m_frame.move_cursor_by(1);
             return true;
