@@ -150,6 +150,22 @@ private:
     using Node::Node;
 };
 
+class HeadingNode final : public Node {
+public:
+    static NonnullRefPtr<HeadingNode> create(DocumentNode& document)
+    {
+        return adopt(*new HeadingNode { document });
+    }
+
+    void render() override;
+    void load_from_json(const JsonObject&) override;
+    JsonValue export_to_json() const override;
+    StringView class_name() const override { return "HeadingNode"; }
+
+private:
+    using Node::Node;
+};
+
 class FragmentNode final : public Node {
 public:
     static NonnullRefPtr<FragmentNode> create(DocumentNode& document)

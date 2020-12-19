@@ -89,6 +89,16 @@ constexpr const char* example_writer_document = R"~~~(
                     "bold": false
                 }
             ]
+        },
+        {
+            "class": "HeadingNode",
+            "children": [
+                {
+                    "class": "FragmentNode",
+                    "content": "This is a heading node!",
+                    "bold": false
+                }
+            ]
         }
     ]
 }
