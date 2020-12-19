@@ -38,6 +38,8 @@ public:
 
     void handle_delete(Web::DOM::Range&) override;
     void handle_insert(Web::DOM::Position, u32 code_point) override;
+    void handle_newline(Web::DOM::Position) override;
+    void move_cursor_by(ssize_t offset) override;
 
 private:
     Writer::DocumentNode& m_document;
