@@ -38,35 +38,33 @@
 
 namespace Writer {
 
-void Node::removed_from(Node&)
+void Node::dump(StringBuilder& builder, size_t indent)
 {
-    if (m_element) {
-        if (m_element->parent())
-            m_element->parent()->remove_child(*m_element);
+    builder.appendff("{:{}}[{}]\n", "", indent * 2, class_name());
 
-        m_element->remove_all_children();
-        m_element.clear();
-    }
-
-    // FIXME: Finally deal with the stale layout node issue.
-    root().dom().force_layout();
+    for_each_child([&](Node& child) {
+        child.dump(builder, indent + 1);
+    });
 }
 
-void Node::replace_element_with(Web::DOM::Element& new_element)
+void Node::dump()
 {
-    if (element())
-        element()->replace_with(new_element);
-    else
-        parent()->element()->append_child(new_element);
+    StringBuilder builder;
+    dump(builder);
+    dbgln("\n{}", builder.string_view());
+}
 
-    root().add_lookup(new_element, *this);
-    m_element = new_element;
+void DocumentNode::render(Badge<Node>)
+{
+    ASSERT_NOT_REACHED();
 }
 
 void DocumentNode::render()
 {
+    element()->remove_all_children();
+
     for_each_child([&](Node& node) {
-        node.render();
+        node.render(node_badge());
     });
 }
 
@@ -132,14 +130,17 @@ NonnullRefPtr<DocumentNode> DocumentNode::create_from_file(Web::DOM::Document& d
     return DocumentNode::create_from_json(document, json_string);
 }
 
-void ParagraphNode::render()
+void ParagraphNode::render(Badge<Node>)
 {
+    // FIXME: Make it possible to only re-render this element.
+
     auto new_element = root().dom().create_element("p");
 
-    replace_element_with(new_element);
+    set_element(new_element);
+    parent()->element()->append_child(new_element);
 
     for_each_child([&](Node& node) {
-        node.render();
+        node.render(node_badge());
     });
 }
 
@@ -175,22 +176,22 @@ void ParagraphNode::merge(ParagraphNode& other)
 
     other.for_each_child([&](Node& child) {
         adopt_child(child);
-
-        // FIXME: This should happen in inserted_into.
-        child.render();
     });
 
     other.parent()->remove_child(other);
 }
 
-void HeadingNode::render()
+void HeadingNode::render(Badge<Node>)
 {
+    // FIXME: Make it possible to only re-render this element.
+
     auto new_element = root().dom().create_element("h3");
 
-    replace_element_with(new_element);
+    set_element(new_element);
+    parent()->element()->append_child(new_element);
 
     for_each_child([&](Node& node) {
-        node.render();
+        node.render(node_badge());
     });
 }
 
@@ -219,7 +220,7 @@ JsonValue HeadingNode::export_to_json() const
     return json;
 }
 
-void FragmentNode::render()
+void FragmentNode::render(Badge<Node>)
 {
     auto new_element = root().dom().create_element("span");
 
@@ -234,16 +235,8 @@ void FragmentNode::render()
         return IterationDecision::Continue;
     });
 
-    // FIXME: Hack. When we replace a node we have to ensure that the cursor isn't
-    //        "lost" in the old object.
-    auto& cursor_position = root().dom().frame()->cursor_position();
-    if (cursor_position.node() && cursor_position.node()->parent() == element()) {
-        ASSERT(element() && element()->child_count() == 1);
-        ASSERT(new_element->child_count() == 1);
-        root().dom().frame()->set_cursor_position(Web::DOM::Position { *new_element->first_child(), cursor_position.offset() });
-    }
-
-    replace_element_with(new_element);
+    set_element(new_element);
+    parent()->element()->append_child(new_element);
 }
 
 void FragmentNode::load_from_json(const JsonObject& json)
@@ -275,9 +268,6 @@ void FragmentNode::remove_content(size_t offset, size_t length)
     builder.append(m_content.substring(offset + length, m_content.length() - offset - length));
 
     set_content(builder.build());
-
-    // FIXME: This should happen in set_content.
-    render();
 }
 
 void FragmentNode::remove_content(size_t offset)
@@ -293,9 +283,12 @@ void FragmentNode::insert_content(size_t offset, StringView snippet)
     builder.append(m_content.substring(offset));
 
     set_content(builder.build());
+}
 
-    // FIXME: This should happen in set_content.
-    render();
+void FragmentNode::dump(StringBuilder& builder, size_t indent)
+{
+    builder.appendff("{:{}}[{}] bold={}\n", "", indent * 2, class_name(), bold());
+    builder.appendff("{:{}}{}\n", "", (indent + 1) * 2, content());
 }
 
 }
