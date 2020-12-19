@@ -390,16 +390,15 @@ bool EventHandler::handle_keydown(KeyCode key, unsigned modifiers, u32 code_poin
 
             return true;
         } else if (key == KeyCode::Key_Right) {
-            auto position = m_frame.cursor_position();
-
             m_frame.move_cursor_by(1);
-
             return true;
         } else if (key == KeyCode::Key_Left) {
-            auto position = m_frame.cursor_position();
-
             m_frame.move_cursor_by(-1);
-
+            return true;
+        } else if (key == KeyCode::Key_Return) {
+            auto position = m_frame.cursor_position();
+            m_edit_event_handler->handle_newline(position);
+            m_frame.move_cursor_by(1);
             return true;
         } else if (code_point <= 127 && isprint((int)code_point)) {
             m_edit_event_handler->handle_insert(m_frame.cursor_position(), code_point);
