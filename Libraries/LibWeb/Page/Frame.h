@@ -34,6 +34,7 @@
 #include <LibGfx/Bitmap.h>
 #include <LibGfx/Rect.h>
 #include <LibGfx/Size.h>
+#include <LibWeb/DOM/Document.h>
 #include <LibWeb/DOM/Position.h>
 #include <LibWeb/Loader/FrameLoader.h>
 #include <LibWeb/Page/EventHandler.h>
@@ -45,7 +46,6 @@ class Frame : public TreeNode<Frame> {
 public:
     static NonnullRefPtr<Frame> create_subframe(DOM::Element& host_element, Frame& main_frame) { return adopt(*new Frame(host_element, main_frame)); }
     static NonnullRefPtr<Frame> create(Page& page) { return adopt(*new Frame(page)); }
-    ~Frame();
 
     bool is_main_frame() const { return this == &m_main_frame; }
     bool is_focused_frame() const;
@@ -94,7 +94,7 @@ public:
 
     String selected_text() const;
 
-    void blink_cursor();
+    void blink_cursor(bool toggle = true);
     void move_cursor_by(ssize_t delta);
 
 private:
