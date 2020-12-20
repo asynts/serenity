@@ -40,8 +40,7 @@ namespace Writer {
 
 void Node::dump(StringBuilder& builder, size_t indent)
 {
-    // FIXME: This won't compile.
-    // dbgln("{:{}}{}", "", indent * 2, class_name());
+    builder.appendff("{:{}}[{}]\n", "", indent * 2, class_name());
 
     for_each_child([&](Node& child) {
         child.dump(builder, indent + 1);
@@ -52,7 +51,7 @@ void Node::dump()
 {
     StringBuilder builder;
     dump(builder);
-    dbgln("{}", builder.string_view());
+    dbgln("\n{}", builder.string_view());
 }
 
 void Node::removed_from(Node&)
@@ -313,6 +312,12 @@ void FragmentNode::insert_content(size_t offset, StringView snippet)
 
     // FIXME: This should happen in set_content.
     render();
+}
+
+void FragmentNode::dump(StringBuilder& builder, size_t indent)
+{
+    builder.appendff("{:{}}[{}] bold={}\n", "", indent * 2, class_name(), bold());
+    builder.appendff("{:{}}{}\n", "", (indent + 1) * 2, content());
 }
 
 }
