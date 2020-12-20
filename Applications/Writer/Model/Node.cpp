@@ -38,6 +38,23 @@
 
 namespace Writer {
 
+void Node::dump(StringBuilder& builder, size_t indent)
+{
+    // FIXME: This won't compile.
+    // dbgln("{:{}}{}", "", indent * 2, class_name());
+
+    for_each_child([&](Node& child) {
+        child.dump(builder, indent + 1);
+    });
+}
+
+void Node::dump()
+{
+    StringBuilder builder;
+    dump(builder);
+    dbgln("{}", builder.string_view());
+}
+
 void Node::removed_from(Node&)
 {
     if (m_element) {
