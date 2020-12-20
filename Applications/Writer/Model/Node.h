@@ -77,6 +77,9 @@ public:
     virtual JsonValue export_to_json() const = 0;
     virtual StringView class_name() const = 0;
 
+    void dump(StringBuilder& builder, size_t indent = 0);
+    void dump();
+
 protected:
     void replace_element_with(Web::DOM::Element& new_element);
 

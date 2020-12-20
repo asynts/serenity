@@ -82,33 +82,32 @@ void EditEventHandler::handle_insert(Web::DOM::Position position, u32 code_point
 
 void EditEventHandler::handle_newline(Web::DOM::Position position)
 {
-    auto* node = downcast<FragmentNode>(m_document.lookup(*position.node()));
+    auto* fragment = downcast<FragmentNode>(m_document.lookup(*position.node()));
 
     // FIXME: Move this logic into a virtual method?
-    if (is<ParagraphNode>(node->parent())) {
-        dbgln("Splitting paragraph:");
-        Web::dump_tree(*node->element());
+    if (is<ParagraphNode>(fragment->parent())) {
+        auto* paragraph = downcast<ParagraphNode>(fragment->parent());
+
+        dbgln("before:");
+        paragraph->parent()->dump();
 
         auto new_paragraph = ParagraphNode::create(m_document);
 
         auto new_fragment = new_paragraph->create_child<FragmentNode>();
-        new_fragment->set_content(node->content().substring(position.offset()));
+        new_fragment->set_content(fragment->content().substring(position.offset()));
+        new_fragment->set_bold(fragment->bold());
 
-        node->set_content(node->content().substring(0, position.offset()));
+        fragment->set_content(fragment->content().substring(0, position.offset()));
 
-        for (auto* next = node->next_sibling(); next; next = next->next_sibling())
+        for (auto* next = fragment->next_sibling(); next; next = next->next_sibling())
             new_paragraph->adopt_child(*next);
 
-        node->parent()->insert_after(new_paragraph, *node);
+        paragraph->parent()->insert_after(new_paragraph, *paragraph);
 
-        node->render();
-        new_paragraph->render();
+        dbgln("after:");
+        paragraph->parent()->dump();
 
-        dbgln("remaining:");
-        Web::dump_tree(*node->element());
-
-        dbgln("new:");
-        Web::dump_tree(*new_paragraph->element());
+        paragraph->parent()->render();
     } else {
         TODO();
     }
