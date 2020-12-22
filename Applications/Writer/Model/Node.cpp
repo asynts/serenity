@@ -136,6 +136,7 @@ void ParagraphNode::render(Badge<Node>)
 
     auto new_element = root().dom().create_element("p");
 
+    set_element(new_element);
     parent()->element()->append_child(new_element);
 
     for_each_child([&](Node& node) {
@@ -186,6 +187,7 @@ void HeadingNode::render(Badge<Node>)
 
     auto new_element = root().dom().create_element("h3");
 
+    set_element(new_element);
     parent()->element()->append_child(new_element);
 
     for_each_child([&](Node& node) {
@@ -233,6 +235,7 @@ void FragmentNode::render(Badge<Node>)
         return IterationDecision::Continue;
     });
 
+    set_element(new_element);
     parent()->element()->append_child(new_element);
 }
 
