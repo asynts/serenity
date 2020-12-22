@@ -103,8 +103,12 @@ void EditEventHandler::handle_newline(Web::DOM::Position position)
 
         fragment->set_content(fragment->content().substring(0, position.offset()));
 
-        for (auto* next = fragment->next_sibling(); next; next = next->next_sibling())
-            new_paragraph->adopt_child(*next);
+        auto* current = fragment->next_sibling();
+        while (current) {
+            auto* next = current->next_sibling();
+            new_paragraph->adopt_child(*current);
+            current = next;
+        }
 
         paragraph->parent()->insert_after(new_paragraph, *paragraph);
 
