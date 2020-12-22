@@ -62,17 +62,11 @@ public:
         return node;
     }
 
-    // FIXME: Can we leverage this?
-    void inserted_into(Node&)
-    {
-        // FIXME: Render!
-    }
-
+    void inserted_into(Node&) { }
     void children_changed() { }
+    void removed_from(Node&) { }
 
-    void removed_from(Node&);
-
-    virtual void render() = 0;
+    virtual void render(Badge<Node>) = 0;
     virtual void load_from_json(const JsonObject&) = 0;
     virtual JsonValue export_to_json() const = 0;
     virtual StringView class_name() const = 0;
@@ -81,12 +75,12 @@ public:
     void dump();
 
 protected:
-    void replace_element_with(Web::DOM::Element& new_element);
-
     explicit Node(DocumentNode& root)
         : m_root(root)
     {
     }
+
+    Badge<Node> node_badge() const { return {}; }
 
 private:
     RefPtr<Web::DOM::Element> m_element;
@@ -107,7 +101,9 @@ public:
     const Web::DOM::Document& dom() const { return m_dom; }
     Web::DOM::Document& dom() { return m_dom; }
 
-    void render() override;
+    void render(Badge<Node>) override;
+    void render();
+
     void load_from_json(const JsonObject&) override;
     JsonValue export_to_json() const override;
     StringView class_name() const override { return "DocumentNode"; }
@@ -144,7 +140,7 @@ public:
 
     void merge(ParagraphNode&);
 
-    void render() override;
+    void render(Badge<Node>) override;
     void load_from_json(const JsonObject&) override;
     JsonValue export_to_json() const override;
     StringView class_name() const override { return "ParagraphNode"; }
@@ -160,7 +156,7 @@ public:
         return adopt(*new HeadingNode { document });
     }
 
-    void render() override;
+    void render(Badge<Node>) override;
     void load_from_json(const JsonObject&) override;
     JsonValue export_to_json() const override;
     StringView class_name() const override { return "HeadingNode"; }
@@ -176,7 +172,7 @@ public:
         return adopt(*new FragmentNode { document });
     }
 
-    void render() override;
+    void render(Badge<Node>) override;
     void load_from_json(const JsonObject&) override;
     JsonValue export_to_json() const override;
     StringView class_name() const override { return "FragmentNode"; }
@@ -220,4 +216,8 @@ AK_END_TYPE_TRAITS()
 
 AK_BEGIN_TYPE_TRAITS(Writer::FragmentNode)
 static bool is_type(const Writer::Node& node) { return node.class_name() == "FragmentNode"; }
+AK_END_TYPE_TRAITS()
+
+AK_BEGIN_TYPE_TRAITS(Writer::HeadingNode)
+static bool is_type(const Writer::Node& node) { return node.class_name() == "HeadingNode"; }
 AK_END_TYPE_TRAITS()

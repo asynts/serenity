@@ -70,6 +70,8 @@ void EditEventHandler::handle_delete(Web::DOM::Range& range)
 
         downcast<ParagraphNode>(start->parent())->merge(*downcast<ParagraphNode>(end->parent()));
     }
+
+    m_document.render();
 }
 
 void EditEventHandler::handle_insert(Web::DOM::Position position, u32 code_point)
@@ -78,6 +80,8 @@ void EditEventHandler::handle_insert(Web::DOM::Position position, u32 code_point
 
     char character = static_cast<char>(code_point);
     node->insert_content(position.offset(), StringView { &character, 1 });
+
+    m_document.render();
 }
 
 void EditEventHandler::handle_newline(Web::DOM::Position position)
@@ -106,11 +110,11 @@ void EditEventHandler::handle_newline(Web::DOM::Position position)
 
         dbgln("after:");
         paragraph->parent()->dump();
-
-        paragraph->parent()->render();
     } else {
         TODO();
     }
+
+    m_document.render();
 }
 
 }
