@@ -74,10 +74,22 @@ public:
         return nullptr;
     }
 
+    void set_selection(Range value)
+    {
+        m_selection = value;
+    }
+
     Position* cursor()
     {
         if (m_selection.has_value())
             return &m_selection.value().start();
+
+        return nullptr;
+    }
+
+    void set_cursor(Position value)
+    {
+        m_selection = Range { value };
     }
 
 private:

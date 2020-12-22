@@ -40,6 +40,7 @@ public:
 
     Node& node() { return m_node; }
     size_t offset() const { return m_offset; }
+    void set_offset(size_t value) { m_offset = value; }
 
 private:
     NonnullRefPtr<Node> m_node;
@@ -51,6 +52,12 @@ public:
     Range(Position start, Position end)
         : m_start(move(start))
         , m_end(move(end))
+    {
+    }
+
+    explicit Range(Position start)
+        : m_start(move(start))
+        , m_end(move(start))
     {
     }
 

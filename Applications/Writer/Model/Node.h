@@ -146,6 +146,8 @@ public:
         // FIXME: We want to call render() here.
     }
 
+    size_t length() const { return content().length(); }
+
     bool bold() const { return m_bold; }
     void set_bold(bool value)
     {
