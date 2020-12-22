@@ -40,11 +40,7 @@ public:
     void handle_insert(Web::DOM::Position, u32 code_point) override;
     void handle_newline(Web::DOM::Position) override;
 
-    // FIXME
-    void move_cursor_by(ssize_t offset) override;
-
-    void move_cursor_left();
-    void move_cursor_right();
+    void select(Web::DOM::Range&) override;
 
 private:
     Writer::DocumentNode& m_document;

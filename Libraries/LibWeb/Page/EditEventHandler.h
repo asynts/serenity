@@ -43,7 +43,8 @@ public:
     virtual void handle_delete(DOM::Range&);
     virtual void handle_insert(DOM::Position, u32 code_point);
     virtual void handle_newline(DOM::Position);
-    virtual void move_cursor_by(ssize_t offset);
+
+    virtual void select(Web::DOM::Range&);
 
 private:
     Frame& m_frame;

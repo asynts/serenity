@@ -40,7 +40,6 @@ public:
 
     Node& node() { return m_node; }
     size_t offset() const { return m_offset; }
-    void set_offset(size_t value) { m_offset = value; }
 
 private:
     NonnullRefPtr<Node> m_node;

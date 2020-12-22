@@ -352,7 +352,6 @@ bool EventHandler::handle_keydown(KeyCode key, unsigned modifiers, u32 code_poin
         if (range->start_container()->is_editable() && code_point <= 127 && isprint(code_point)) {
             m_frame.document()->layout_node()->set_selection({});
 
-            // FIXME: This doesn't work for some reason?
             m_frame.set_cursor_position({ *range->start_container(), range->start_offset() });
 
             if (key == KeyCode::Key_Backspace || key == KeyCode::Key_Delete) {
@@ -363,7 +362,7 @@ bool EventHandler::handle_keydown(KeyCode key, unsigned modifiers, u32 code_poin
                 m_edit_event_handler->handle_delete(range);
 
                 m_edit_event_handler->handle_insert(m_frame.cursor_position(), code_point);
-                m_edit_event_handler->move_cursor_by(1);
+                move_cursor_right();
                 return true;
             }
         }
@@ -376,7 +375,7 @@ bool EventHandler::handle_keydown(KeyCode key, unsigned modifiers, u32 code_poin
             if (position.offset() == 0)
                 TODO();
 
-            m_edit_event_handler->move_cursor_by(-1);
+            move_cursor_left();
             m_edit_event_handler->handle_delete(DOM::Range::create(*position.node(), position.offset() - 1, *position.node(), position.offset()));
 
             return true;
@@ -390,19 +389,19 @@ bool EventHandler::handle_keydown(KeyCode key, unsigned modifiers, u32 code_poin
 
             return true;
         } else if (key == KeyCode::Key_Right) {
-            m_edit_event_handler->move_cursor_by(1);
+            move_cursor_right();
             return true;
         } else if (key == KeyCode::Key_Left) {
-            m_edit_event_handler->move_cursor_by(-1);
+            move_cursor_left();
             return true;
         } else if (key == KeyCode::Key_Return) {
             auto position = m_frame.cursor_position();
             m_edit_event_handler->handle_newline(position);
-            m_edit_event_handler->move_cursor_by(1);
+            move_cursor_right();
             return true;
         } else if (code_point <= 127 && isprint((int)code_point)) {
             m_edit_event_handler->handle_insert(m_frame.cursor_position(), code_point);
-            m_edit_event_handler->move_cursor_by(1);
+            move_cursor_right();
             return true;
         }
     }
@@ -416,6 +415,65 @@ void EventHandler::set_mouse_event_tracking_layout_node(Layout::Node* layout_nod
         m_mouse_event_tracking_layout_node = layout_node->make_weak_ptr();
     else
         m_mouse_event_tracking_layout_node = nullptr;
+}
+
+void EventHandler::move_cursor_left()
+{
+    if (m_frame.cursor_position().offset() > 0) {
+        auto new_selection = DOM::Range::create(
+            *m_frame.cursor_position().node(),
+            m_frame.cursor_position().offset() - 1,
+            *m_frame.cursor_position().node(),
+            m_frame.cursor_position().offset() - 1);
+
+        m_edit_event_handler->select(new_selection);
+        m_frame.blink_cursor();
+    } else {
+        for (auto* node = m_frame.cursor_position().node()->previous_in_pre_order(); node; node = node->previous_in_pre_order()) {
+            if (!is<DOM::Text>(node))
+                continue;
+
+            auto* text_node = downcast<DOM::Text>(node);
+
+            dbgln("looking at node '{}'", text_node->data());
+
+            if (text_node->length() > 0) {
+                auto new_selection = DOM::Range::create(
+                    *text_node,
+                    text_node->length() - 1,
+                    *text_node,
+                    text_node->length() - 1);
+
+                m_edit_event_handler->select(new_selection);
+                m_frame.blink_cursor();
+
+                return;
+            }
+        }
+    }
+}
+
+void EventHandler::move_cursor_right()
+{
+    TODO();
+
+    // if (!m_document.cursor())
+    //     return;
+
+    // if (downcast<FragmentNode>(m_document.cursor()->node()).length() - m_document.cursor()->offset() > 1) {
+    //     auto new_position = Position { m_document.cursor()->node(), m_document.cursor()->offset() + 1 };
+    //     m_document.set_cursor(new_position);
+    // } else {
+    //     for (auto* node = m_document.cursor()->node().next_in_pre_order(); node; node = node->next_in_pre_order()) {
+    //         auto* new_fragment = downcast<FragmentNode>(node);
+
+    //         if (new_fragment->length() > 0) {
+    //             auto new_position = Position { *new_fragment, 0 };
+    //             m_document.set_cursor(new_position);
+    //             return;
+    //         }
+    //     }
+    // }
 }
 
 }

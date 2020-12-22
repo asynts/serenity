@@ -40,6 +40,8 @@ EditEventHandler::EditEventHandler(Writer::DocumentNode& document)
 {
 }
 
+// FIXME: Just let the dom do all the work!
+
 void EditEventHandler::handle_delete(Web::DOM::Range& range)
 {
     auto* start = downcast<FragmentNode>(m_document.lookup(*range.start_container()));
@@ -122,61 +124,14 @@ void EditEventHandler::handle_newline(Web::DOM::Position position)
     m_document.render();
 }
 
-// FIXME: Remove this wrapper method.
-void EditEventHandler::move_cursor_by(ssize_t offset)
+void EditEventHandler::select(Web::DOM::Range& range)
 {
-    for (size_t i = 0; i < abs(offset); ++i) {
-        if (offset > 0)
-            move_cursor_right();
-        else
-            move_cursor_left();
-    }
-}
+    Web::EditEventHandler::select(range);
 
-void EditEventHandler::move_cursor_left()
-{
-    dbgln("{}:{}: {}", __FILE__, __LINE__, __PRETTY_FUNCTION__);
+    auto start = Position { *m_document.lookup(*range.start_container()), range.start_offset() };
+    auto end = Position { *m_document.lookup(*range.end_container()), range.end_offset() };
 
-    if (!m_document.cursor())
-        return;
-
-    if (m_document.cursor()->offset() > 0) {
-        auto new_position = Position { m_document.cursor()->node(), m_document.cursor()->offset() - 1 };
-        m_document.set_cursor(new_position);
-    } else {
-        for (auto* node = m_document.cursor()->node().previous_in_pre_order(); node; node = node->previous_in_pre_order()) {
-            auto* new_fragment = downcast<FragmentNode>(node);
-
-            if (new_fragment->length() > 0) {
-                auto new_position = Position { *new_fragment, new_fragment->length() - 1 };
-                m_document.set_cursor(new_position);
-                return;
-            }
-        }
-    }
-}
-
-void EditEventHandler::move_cursor_right()
-{
-    dbgln("{}:{}: {}", __FILE__, __LINE__, __PRETTY_FUNCTION__);
-
-    if (!m_document.cursor())
-        return;
-
-    if (downcast<FragmentNode>(m_document.cursor()->node()).length() - m_document.cursor()->offset() > 1) {
-        auto new_position = Position { m_document.cursor()->node(), m_document.cursor()->offset() + 1 };
-        m_document.set_cursor(new_position);
-    } else {
-        for (auto* node = m_document.cursor()->node().next_in_pre_order(); node; node = node->next_in_pre_order()) {
-            auto* new_fragment = downcast<FragmentNode>(node);
-
-            if (new_fragment->length() > 0) {
-                auto new_position = Position { *new_fragment, 0 };
-                m_document.set_cursor(new_position);
-                return;
-            }
-        }
-    }
+    m_document.set_selection(Range { start, end });
 }
 
 }

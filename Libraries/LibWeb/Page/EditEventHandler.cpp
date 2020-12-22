@@ -123,10 +123,9 @@ void EditEventHandler::handle_newline(DOM::Position)
     TODO();
 }
 
-void EditEventHandler::move_cursor_by(ssize_t offset)
+void EditEventHandler::select(Web::DOM::Range& range)
 {
-    // FIXME: Move that method here.
-    m_frame.move_cursor_by(offset);
+    TODO();
 }
 
 }

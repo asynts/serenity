@@ -57,6 +57,9 @@ private:
     bool focus_next_element();
     bool focus_previous_element();
 
+    void move_cursor_left();
+    void move_cursor_right();
+
     Layout::InitialContainingBlockBox* layout_root();
     const Layout::InitialContainingBlockBox* layout_root() const;
 
