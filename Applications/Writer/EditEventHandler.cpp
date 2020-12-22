@@ -121,4 +121,9 @@ void EditEventHandler::handle_newline(Web::DOM::Position position)
     m_document.render();
 }
 
+void EditEventHandler::move_cursor_by(ssize_t)
+{
+    dbgln("{}:{}: {} (FIXME)", __FILE__, __LINE__, __PRETTY_FUNCTION__);
+}
+
 }

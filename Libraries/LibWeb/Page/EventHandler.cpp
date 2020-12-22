@@ -363,7 +363,7 @@ bool EventHandler::handle_keydown(KeyCode key, unsigned modifiers, u32 code_poin
                 m_edit_event_handler->handle_delete(range);
 
                 m_edit_event_handler->handle_insert(m_frame.cursor_position(), code_point);
-                m_frame.move_cursor_by(1);
+                m_edit_event_handler->move_cursor_by(1);
                 return true;
             }
         }
@@ -376,7 +376,7 @@ bool EventHandler::handle_keydown(KeyCode key, unsigned modifiers, u32 code_poin
             if (position.offset() == 0)
                 TODO();
 
-            m_frame.move_cursor_by(-1);
+            m_edit_event_handler->move_cursor_by(-1);
             m_edit_event_handler->handle_delete(DOM::Range::create(*position.node(), position.offset() - 1, *position.node(), position.offset()));
 
             return true;
@@ -390,19 +390,19 @@ bool EventHandler::handle_keydown(KeyCode key, unsigned modifiers, u32 code_poin
 
             return true;
         } else if (key == KeyCode::Key_Right) {
-            m_frame.move_cursor_by(1);
+            m_edit_event_handler->move_cursor_by(1);
             return true;
         } else if (key == KeyCode::Key_Left) {
-            m_frame.move_cursor_by(-1);
+            m_edit_event_handler->move_cursor_by(-1);
             return true;
         } else if (key == KeyCode::Key_Return) {
             auto position = m_frame.cursor_position();
             m_edit_event_handler->handle_newline(position);
-            m_frame.move_cursor_by(1);
+            m_edit_event_handler->move_cursor_by(1);
             return true;
         } else if (code_point <= 127 && isprint((int)code_point)) {
             m_edit_event_handler->handle_insert(m_frame.cursor_position(), code_point);
-            m_frame.move_cursor_by(1);
+            m_edit_event_handler->move_cursor_by(1);
             return true;
         }
     }
