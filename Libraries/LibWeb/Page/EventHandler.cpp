@@ -440,8 +440,6 @@ void EventHandler::move_cursor_left()
 
             auto* text_node = downcast<DOM::Text>(node);
 
-            dbgln("looking at node '{}'", text_node->data());
-
             if (text_node->data().trim_whitespace().length() > 0) {
                 auto new_selection = DOM::Range::create(
                     *text_node,
@@ -460,25 +458,41 @@ void EventHandler::move_cursor_left()
 
 void EventHandler::move_cursor_right()
 {
-    TODO();
+    auto& cursor = m_frame.cursor_position();
 
-    // if (!m_document.cursor())
-    //     return;
+    if (downcast<DOM::Text>(cursor.node())->length() - m_frame.cursor_position().offset() > 1) {
+        auto new_selection = DOM::Range::create(
+            *m_frame.cursor_position().node(),
+            m_frame.cursor_position().offset() + 1,
+            *m_frame.cursor_position().node(),
+            m_frame.cursor_position().offset() + 1);
 
-    // if (downcast<FragmentNode>(m_document.cursor()->node()).length() - m_document.cursor()->offset() > 1) {
-    //     auto new_position = Position { m_document.cursor()->node(), m_document.cursor()->offset() + 1 };
-    //     m_document.set_cursor(new_position);
-    // } else {
-    //     for (auto* node = m_document.cursor()->node().next_in_pre_order(); node; node = node->next_in_pre_order()) {
-    //         auto* new_fragment = downcast<FragmentNode>(node);
+        m_edit_event_handler->select(new_selection);
+        m_frame.blink_cursor(false);
+    } else {
+        for (auto* node = m_frame.cursor_position().node()->next_in_pre_order(); node; node = node->next_in_pre_order()) {
+            if (!is<DOM::Text>(node))
+                continue;
 
-    //         if (new_fragment->length() > 0) {
-    //             auto new_position = Position { *new_fragment, 0 };
-    //             m_document.set_cursor(new_position);
-    //             return;
-    //         }
-    //     }
-    // }
+            if (is<HTML::HTMLStyleElement>(node->parent()) || is<HTML::HTMLScriptElement>(node->parent()))
+                continue;
+
+            auto* text_node = downcast<DOM::Text>(node);
+
+            if (text_node->data().trim_whitespace().length() > 0) {
+                auto new_selection = DOM::Range::create(
+                    *text_node,
+                    0,
+                    *text_node,
+                    0);
+
+                m_edit_event_handler->select(new_selection);
+                m_frame.blink_cursor(false);
+
+                return;
+            }
+        }
+    }
 }
 
 }
