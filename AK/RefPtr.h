@@ -493,6 +493,10 @@ inline void swap(RefPtr<T, PtrTraitsT>& a, RefPtr<U, PtrTraitsU>& b)
     a.swap(b);
 }
 
+template<typename T>
+struct Formatter<RefPtr<T>> : Formatter<const T*> {
+};
+
 }
 
 using AK::RefPtr;
