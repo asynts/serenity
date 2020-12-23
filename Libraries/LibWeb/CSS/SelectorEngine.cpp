@@ -34,7 +34,12 @@ namespace Web::SelectorEngine {
 
 static bool matches_hover_pseudo_class(const DOM::Element& element)
 {
-    auto* hovered_node = element.document().hovered_node();
+    // FIXME: Hack. The layout engine generally doesn't take it well if nodes
+    //        are removed from the document.
+    RefPtr<DOM::Node> element_node = element;
+    RefPtr<DOM::Node> parent_node = element.parent();
+    RefPtr<DOM::Node> hovered_node = element.document().hovered_node();
+
     if (!hovered_node)
         return false;
     if (&element == hovered_node)
