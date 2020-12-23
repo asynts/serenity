@@ -34,6 +34,8 @@
 #include <LibWeb/HTML/HTMLAnchorElement.h>
 #include <LibWeb/HTML/HTMLIFrameElement.h>
 #include <LibWeb/HTML/HTMLImageElement.h>
+#include <LibWeb/HTML/HTMLScriptElement.h>
+#include <LibWeb/HTML/HTMLStyleElement.h>
 #include <LibWeb/InProcessWebView.h>
 #include <LibWeb/Layout/InitialContainingBlockBox.h>
 #include <LibWeb/Page/EventHandler.h>
@@ -427,17 +429,20 @@ void EventHandler::move_cursor_left()
             m_frame.cursor_position().offset() - 1);
 
         m_edit_event_handler->select(new_selection);
-        m_frame.blink_cursor();
+        m_frame.blink_cursor(false);
     } else {
         for (auto* node = m_frame.cursor_position().node()->previous_in_pre_order(); node; node = node->previous_in_pre_order()) {
             if (!is<DOM::Text>(node))
+                continue;
+
+            if (is<HTML::HTMLStyleElement>(node->parent()) || is<HTML::HTMLScriptElement>(node->parent()))
                 continue;
 
             auto* text_node = downcast<DOM::Text>(node);
 
             dbgln("looking at node '{}'", text_node->data());
 
-            if (text_node->length() > 0) {
+            if (text_node->data().trim_whitespace().length() > 0) {
                 auto new_selection = DOM::Range::create(
                     *text_node,
                     text_node->length() - 1,
@@ -445,7 +450,7 @@ void EventHandler::move_cursor_left()
                     text_node->length() - 1);
 
                 m_edit_event_handler->select(new_selection);
-                m_frame.blink_cursor();
+                m_frame.blink_cursor(false);
 
                 return;
             }

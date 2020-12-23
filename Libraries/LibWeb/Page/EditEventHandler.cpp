@@ -125,7 +125,9 @@ void EditEventHandler::handle_newline(DOM::Position)
 
 void EditEventHandler::select(DOM::Range& range)
 {
-    m_frame.document()->layout_node()->set_selection(range.to_layout_range());
+    if (!range.collapsed())
+        m_frame.document()->layout_node()->set_selection(range.to_layout_range());
+
     m_frame.set_cursor_position(DOM::Position { *range.start_container(), range.start_offset() });
 }
 
