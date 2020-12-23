@@ -76,6 +76,8 @@ public:
     NonnullRefPtr<Range> normalized() const;
     NonnullRefPtr<Range> clone_range() const;
 
+    Layout::LayoutRange to_layout_range();
+
 private:
     explicit Range(Window&);
     Range(Node& start_container, size_t start_offset, Node& end_container, size_t end_offset);

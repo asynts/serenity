@@ -123,9 +123,10 @@ void EditEventHandler::handle_newline(DOM::Position)
     TODO();
 }
 
-void EditEventHandler::select(Web::DOM::Range& range)
+void EditEventHandler::select(DOM::Range& range)
 {
-    TODO();
+    m_frame.document()->layout_node()->set_selection(range.to_layout_range());
+    m_frame.set_cursor_position(DOM::Position { *range.start_container(), range.start_offset() });
 }
 
 }

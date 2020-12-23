@@ -165,6 +165,8 @@ class LineBoxFragment;
 class Node;
 class NodeWithStyle;
 class ReplacedBox;
+class LayoutRange;
+class LayoutPosition;
 }
 
 namespace Web {

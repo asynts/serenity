@@ -28,6 +28,7 @@
 #include <LibWeb/DOM/Node.h>
 #include <LibWeb/DOM/Range.h>
 #include <LibWeb/DOM/Window.h>
+#include <LibWeb/Layout/LayoutPosition.h>
 
 namespace Web::DOM {
 
@@ -70,6 +71,14 @@ NonnullRefPtr<Range> Range::normalized() const
         return clone_range();
 
     return inverted();
+}
+
+Layout::LayoutRange Range::to_layout_range()
+{
+    auto start = Layout::LayoutPosition { .layout_node = m_start_container->layout_node(), .index_in_node = (int)m_start_offset };
+    auto end = Layout::LayoutPosition { .layout_node = m_end_container->layout_node(), .index_in_node = (int)m_end_offset };
+
+    return Layout::LayoutRange { start, end };
 }
 
 }
