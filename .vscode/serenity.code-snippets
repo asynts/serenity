@@ -29,5 +29,11 @@
 			" */",
 			"$0"
 		]
+	},
+	"Debug Line": {
+		"prefix": "DLINE",
+		"body": [
+			"dbgln(\"{}:{}: {}\", __FILE__, __LINE__, __PRETTY_FUNCTION__);$0",
+		]
 	}
 }
