@@ -82,7 +82,7 @@ public:
     Position* cursor()
     {
         if (m_selection.has_value())
-            return &m_selection.value().start();
+            return &m_selection.value().end();
 
         return nullptr;
     }

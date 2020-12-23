@@ -122,7 +122,6 @@ void WriterWidget::replace_document(DocumentNode& document)
 
     m_document = document;
 
-    // FIXME: Rename to attach_to_dom?
     document.set_element(*m_webview->document()->body());
     document.render();
 }

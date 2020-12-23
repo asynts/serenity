@@ -40,8 +40,6 @@ EditEventHandler::EditEventHandler(Writer::DocumentNode& document)
 {
 }
 
-// FIXME: Just let the dom do all the work!
-
 void EditEventHandler::handle_delete(Web::DOM::Range& range)
 {
     auto* start = downcast<FragmentNode>(m_document.lookup(*range.start_container()));

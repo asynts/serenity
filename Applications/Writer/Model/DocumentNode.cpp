@@ -28,6 +28,9 @@
 #include <AK/JsonValue.h>
 #include <LibCore/File.h>
 #include <LibCore/FileStream.h>
+#include <LibWeb/DOM/Range.h>
+#include <LibWeb/Layout/InitialContainingBlockBox.h>
+#include <LibWeb/Page/Frame.h>
 
 #include <Applications/Writer/Model/DocumentNode.h>
 
@@ -45,6 +48,19 @@ void DocumentNode::render()
     for_each_child([&](Node& node) {
         node.render(node_badge());
     });
+
+    if (m_selection.has_value()
+        && m_selection.value().start().node().element()->layout_node()
+        && m_selection.value().end().node().element()->layout_node()) {
+        auto range = Web::DOM::Range::create(
+            *m_selection.value().start().node().element(),
+            m_selection.value().start().offset(),
+            *m_selection.value().start().node().element(),
+            m_selection.value().start().offset());
+
+        m_dom->layout_node()->set_selection(range->to_layout_range());
+        m_dom->frame()->set_cursor_position(Web::DOM::Position { *range->end_container(), range->end_offset() });
+    }
 }
 
 NonnullRefPtr<DocumentNode> DocumentNode::create_from_json(Web::DOM::Document& document, StringView json)
