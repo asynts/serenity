@@ -206,7 +206,12 @@ bool EventHandler::handle_mousedown(const Gfx::IntPoint& position, unsigned butt
         if (button == GUI::MouseButton::Left) {
             auto result = layout_root()->hit_test(position, Layout::HitTestType::TextCursor);
             if (result.layout_node && result.layout_node->dom_node()) {
-                // FIXME: Update cursor position in EditEventHandler.
+                m_edit_event_handler->select(DOM::Range::create(
+                    *result.layout_node->dom_node(),
+                    result.index_in_node,
+                    *result.layout_node->dom_node(),
+                    result.index_in_node));
+
                 m_frame.set_cursor_position(DOM::Position(*node, result.index_in_node));
                 layout_root()->set_selection({ { result.layout_node, result.index_in_node }, {} });
                 dump_selection("MouseDown");
@@ -484,13 +489,9 @@ void EventHandler::move_cursor_right()
             auto* text_node = downcast<DOM::Text>(node);
 
             if (text_node->data().trim_whitespace().length() > 0) {
-                auto new_selection = DOM::Range::create(
-                    *text_node,
-                    0,
-                    *text_node,
-                    0);
-
+                auto new_selection = DOM::Range::create(*text_node, 0, *text_node, 0);
                 m_edit_event_handler->select(new_selection);
+
                 m_frame.blink_cursor(false);
 
                 return;
