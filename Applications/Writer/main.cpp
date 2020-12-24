@@ -24,6 +24,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <LibCore/ArgsParser.h>
 #include <LibGUI/Application.h>
 #include <LibGUI/FilePicker.h>
 #include <LibGUI/Menu.h>
@@ -37,11 +38,22 @@ int main(int argc, char** argv)
 {
     auto app = GUI::Application::construct(argc, argv);
 
+    const char* file_to_edit = nullptr;
+
+    Core::ArgsParser args_parser;
+    args_parser.add_positional_argument(file_to_edit, "File to edit", "file", Core::ArgsParser::Required::No);
+    args_parser.parse(argc, argv);
+
     auto window = GUI::Window::construct();
     window->set_title("Writer");
     window->resize(600, 500);
 
     auto& writer = window->set_main_widget<Writer::WriterWidget>();
+
+    if (file_to_edit) {
+        auto new_document = Writer::DocumentNode::create_from_file(*writer.webview().document(), file_to_edit);
+        writer.replace_document(new_document);
+    }
 
     auto app_save_as_action = GUI::CommonActions::make_save_as_action([&](auto&) {
         Optional<String> save_path = GUI::FilePicker::get_save_filepath(window, "Untitled", "writer");
