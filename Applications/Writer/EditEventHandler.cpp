@@ -87,36 +87,26 @@ void EditEventHandler::handle_insert(Web::DOM::Position position, u32 code_point
 void EditEventHandler::handle_newline(Web::DOM::Position position)
 {
     auto* fragment = downcast<FragmentNode>(m_document.lookup(*position.node()));
+    auto* parent_node = fragment->parent();
 
-    // FIXME: Move this logic into a virtual method?
-    if (is<ParagraphNode>(fragment->parent())) {
-        auto* paragraph = downcast<ParagraphNode>(fragment->parent());
+    ASSERT(is<ParagraphNode>(parent_node) || is<HeadingNode>(parent_node));
 
-        dbgln("before:");
-        paragraph->parent()->dump();
+    auto new_paragraph = ParagraphNode::create(m_document);
 
-        auto new_paragraph = ParagraphNode::create(m_document);
+    auto new_fragment = new_paragraph->create_child<FragmentNode>();
+    new_fragment->set_bold(fragment->bold());
 
-        auto new_fragment = new_paragraph->create_child<FragmentNode>();
-        new_fragment->set_content(fragment->content().substring(position.offset()));
-        new_fragment->set_bold(fragment->bold());
+    new_fragment->set_content(fragment->content().substring(position.offset()));
+    fragment->set_content(fragment->content().substring(0, position.offset()));
 
-        fragment->set_content(fragment->content().substring(0, position.offset()));
-
-        auto* current = fragment->next_sibling();
-        while (current) {
-            auto* next = current->next_sibling();
-            new_paragraph->adopt_child(*current);
-            current = next;
-        }
-
-        paragraph->parent()->insert_after(new_paragraph, *paragraph);
-
-        dbgln("after:");
-        paragraph->parent()->dump();
-    } else {
-        TODO();
+    auto* current = fragment->next_sibling();
+    while (current) {
+        auto* next = current->next_sibling();
+        new_paragraph->adopt_child(*current);
+        current = next;
     }
+
+    parent_node->parent()->insert_after(new_paragraph, *parent_node);
 
     m_document.render();
 }
