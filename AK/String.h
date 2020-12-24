@@ -245,7 +245,7 @@ public:
     static String vformatted(StringView fmtstr, TypeErasedFormatParams);
 
     template<typename... Parameters>
-    static String formatted(StringView fmtstr, const Parameters&... parameters)
+    static String formatted(StringView fmtstr, Parameters&&... parameters)
     {
         return vformatted(fmtstr, VariadicFormatParams { parameters... });
     }

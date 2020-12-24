@@ -31,7 +31,7 @@
 namespace AK {
 
 template<typename... Parameters>
-void warnln(const char* fmtstr, const Parameters&...);
+void warnln(const char* fmtstr, Parameters&&...);
 
 }
 

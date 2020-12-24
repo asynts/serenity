@@ -269,4 +269,17 @@ TEST_CASE(yay_this_implementation_sucks)
     EXPECT_EQ(String::formatted("{:.0}", .99999999999), "0.");
 }
 
+struct FormatWithMutableTypes {
+};
+template<>
+struct AK::Formatter<FormatWithMutableTypes> : StandardFormatter {
+    // Note that we take a 'FormatWithMutableTypes&' not a 'const FormatWithMutableTypes&' here
+    void format(TypeErasedFormatParams&, FormatBuilder&, FormatWithMutableTypes&) { }
+};
+
+TEST_CASE(format_with_mutable_types)
+{
+    EXPECT_EQ(String::formatted("{}", FormatWithMutableTypes {}), "");
+}
+
 TEST_MAIN(Format)

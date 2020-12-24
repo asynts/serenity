@@ -44,6 +44,9 @@ template<typename T, typename = void>
 struct Formatter {
     using __no_formatter_defined = void;
 };
+template<typename T, typename S>
+struct Formatter<const T, S> : Formatter<T, S> {
+};
 
 constexpr size_t max_format_arguments = 256;
 
@@ -210,7 +213,7 @@ void __format_value(TypeErasedFormatParams& params, FormatBuilder& builder, Form
     Formatter<T> formatter;
 
     formatter.parse(params, parser);
-    formatter.format(params, builder, *static_cast<const T*>(value));
+    formatter.format(params, builder, *static_cast<T*>(const_cast<void*>(value)));
 }
 
 template<typename... Parameters>
@@ -218,7 +221,7 @@ class VariadicFormatParams : public TypeErasedFormatParams {
 public:
     static_assert(sizeof...(Parameters) <= max_format_arguments);
 
-    explicit VariadicFormatParams(const Parameters&... parameters)
+    explicit VariadicFormatParams(Parameters&... parameters)
         : m_data({ TypeErasedParameter { &parameters, TypeErasedParameter::get_type<Parameters>(), __format_value<Parameters> }... })
     {
         this->set_parameters(m_data);
@@ -266,7 +269,7 @@ struct StandardFormatter {
 };
 
 template<typename T>
-struct Formatter<T, typename EnableIf<IsIntegral<T>::value>::Type> : StandardFormatter {
+struct Formatter<T, typename EnableIf<IsIntegral<T>::value && !IsConst<T>::value>::Type> : StandardFormatter {
     Formatter() { }
     explicit Formatter(StandardFormatter formatter)
         : StandardFormatter(formatter)
@@ -286,23 +289,8 @@ struct Formatter<StringView> : StandardFormatter {
 
     void format(TypeErasedFormatParams&, FormatBuilder&, StringView value);
 };
-template<>
-struct Formatter<const char*> : Formatter<StringView> {
-    void format(TypeErasedFormatParams& params, FormatBuilder& builder, const char* value)
-    {
-        if (m_mode == Mode::Pointer) {
-            Formatter<FlatPtr> formatter { *this };
-            formatter.format(params, builder, reinterpret_cast<FlatPtr>(value));
-        } else {
-            Formatter<StringView>::format(params, builder, value);
-        }
-    }
-};
-template<>
-struct Formatter<char*> : Formatter<const char*> {
-};
 template<size_t Size>
-struct Formatter<char[Size]> : Formatter<const char*> {
+struct Formatter<char[Size]> : Formatter<char*> {
 };
 template<>
 struct Formatter<String> : Formatter<StringView> {
@@ -312,9 +300,17 @@ struct Formatter<FlyString> : Formatter<StringView> {
 };
 
 template<typename T>
-struct Formatter<T*> : StandardFormatter {
-    void format(TypeErasedFormatParams& params, FormatBuilder& builder, T* value)
+struct Formatter<typename RemoveConst<T>::Type*> : StandardFormatter {
+    void format(TypeErasedFormatParams& params, FormatBuilder& builder, const T* value)
     {
+        if (IsSame<char*, typename RemoveConst<T>::Type>::value) {
+            if (m_mode != Mode::Pointer) {
+                Formatter<char*> formatter { *this };
+                formatter.format(params, builder, value);
+                return;
+            }
+        }
+
         if (m_mode == Mode::Default)
             m_mode = Mode::Pointer;
 
@@ -356,36 +352,36 @@ void vformat(const LogStream& stream, StringView fmtstr, TypeErasedFormatParams)
 void vout(FILE*, StringView fmtstr, TypeErasedFormatParams, bool newline = false);
 
 template<typename... Parameters>
-void out(FILE* file, StringView fmtstr, const Parameters&... parameters) { vout(file, fmtstr, VariadicFormatParams { parameters... }); }
+void out(FILE* file, StringView fmtstr, Parameters&&... parameters) { vout(file, fmtstr, VariadicFormatParams { parameters... }); }
 template<typename... Parameters>
-void outln(FILE* file, StringView fmtstr, const Parameters&... parameters) { vout(file, fmtstr, VariadicFormatParams { parameters... }, true); }
+void outln(FILE* file, StringView fmtstr, Parameters&&... parameters) { vout(file, fmtstr, VariadicFormatParams { parameters... }, true); }
 template<typename... Parameters>
-void outln(FILE* file, const char* fmtstr, const Parameters&... parameters) { vout(file, fmtstr, VariadicFormatParams { parameters... }, true); }
+void outln(FILE* file, const char* fmtstr, Parameters&&... parameters) { vout(file, fmtstr, VariadicFormatParams { parameters... }, true); }
 inline void outln(FILE* file) { fputc('\n', file); }
 
 template<typename... Parameters>
-void out(StringView fmtstr, const Parameters&... parameters) { out(stdout, fmtstr, parameters...); }
+void out(StringView fmtstr, Parameters&&... parameters) { out(stdout, fmtstr, parameters...); }
 template<typename... Parameters>
-void outln(StringView fmtstr, const Parameters&... parameters) { outln(stdout, fmtstr, parameters...); }
+void outln(StringView fmtstr, Parameters&&... parameters) { outln(stdout, fmtstr, parameters...); }
 template<typename... Parameters>
-void outln(const char* fmtstr, const Parameters&... parameters) { outln(stdout, fmtstr, parameters...); }
+void outln(const char* fmtstr, Parameters&&... parameters) { outln(stdout, fmtstr, parameters...); }
 inline void outln() { outln(stdout); }
 
 template<typename... Parameters>
-void warn(StringView fmtstr, const Parameters&... parameters) { out(stderr, fmtstr, parameters...); }
+void warn(StringView fmtstr, Parameters&&... parameters) { out(stderr, fmtstr, parameters...); }
 template<typename... Parameters>
-void warnln(StringView fmtstr, const Parameters&... parameters) { outln(stderr, fmtstr, parameters...); }
+void warnln(StringView fmtstr, Parameters&&... parameters) { outln(stderr, fmtstr, parameters...); }
 template<typename... Parameters>
-void warnln(const char* fmtstr, const Parameters&... parameters) { outln(stderr, fmtstr, parameters...); }
+void warnln(const char* fmtstr, Parameters&&... parameters) { outln(stderr, fmtstr, parameters...); }
 inline void warnln() { outln(stderr); }
 #endif
 
 void vdbgln(StringView fmtstr, TypeErasedFormatParams);
 
 template<typename... Parameters>
-void dbgln(StringView fmtstr, const Parameters&... parameters) { vdbgln(fmtstr, VariadicFormatParams { parameters... }); }
+void dbgln(StringView fmtstr, Parameters&&... parameters) { vdbgln(fmtstr, VariadicFormatParams { parameters... }); }
 template<typename... Parameters>
-void dbgln(const char* fmtstr, const Parameters&... parameters) { dbgln(StringView { fmtstr }, parameters...); }
+void dbgln(const char* fmtstr, Parameters&&... parameters) { dbgln(StringView { fmtstr }, parameters...); }
 
 template<typename T, typename = void>
 struct HasFormatter : TrueType {
