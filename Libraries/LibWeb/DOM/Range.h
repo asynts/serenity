@@ -88,3 +88,22 @@ private:
 };
 
 }
+
+namespace AK {
+
+template<>
+struct Formatter<Web::DOM::Range> : Formatter<String> {
+    void format(TypeErasedFormatParams& params, FormatBuilder& builder, const Web::DOM::Range& value)
+    {
+        auto& value_mutable = const_cast<Web::DOM::Range&>(value);
+
+        Formatter<String>::format(params, builder,
+            String::formatted("{}:{}-{}:{}",
+                value_mutable.start_container(),
+                value_mutable.start_offset(),
+                value_mutable.end_container(),
+                value_mutable.end_offset()));
+    }
+};
+
+}
