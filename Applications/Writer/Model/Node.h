@@ -87,50 +87,6 @@ private:
     DocumentNode& m_root;
 };
 
-class DocumentNode final : public Node {
-public:
-    static NonnullRefPtr<DocumentNode> create(Web::DOM::Document& document)
-    {
-        return adopt(*new DocumentNode { document });
-    }
-
-    static NonnullRefPtr<DocumentNode> create_from_json(Web::DOM::Document&, StringView json);
-    static NonnullRefPtr<DocumentNode> create_from_json(Web::DOM::Document&, const JsonObject&);
-    static NonnullRefPtr<DocumentNode> create_from_file(Web::DOM::Document&, StringView path);
-
-    const Web::DOM::Document& dom() const { return m_dom; }
-    Web::DOM::Document& dom() { return m_dom; }
-
-    void render(Badge<Node>) override;
-    void render();
-
-    void load_from_json(const JsonObject&) override;
-    JsonValue export_to_json() const override;
-    StringView class_name() const override { return "DocumentNode"; }
-
-    void write_to_file(StringView path);
-
-    Node* lookup(Web::DOM::Node& node) const
-    {
-        return m_lookup.get(&node).value_or(nullptr);
-    }
-
-    void add_lookup(Web::DOM::Node& web_node, Node& writer_node)
-    {
-        m_lookup.set(&web_node, &writer_node);
-    }
-
-private:
-    explicit DocumentNode(Web::DOM::Document& dom)
-        : Node(*this)
-        , m_dom(dom)
-    {
-    }
-
-    HashMap<Web::DOM::Node*, Node*> m_lookup;
-    NonnullRefPtr<Web::DOM::Document> m_dom;
-};
-
 class ParagraphNode final : public Node {
 public:
     static NonnullRefPtr<ParagraphNode> create(DocumentNode& document)
