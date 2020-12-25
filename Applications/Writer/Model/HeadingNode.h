@@ -24,34 +24,30 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <AK/JsonObject.h>
-#include <AK/JsonValue.h>
-#include <LibWeb/DOM/Document.h>
-#include <LibWeb/DOM/Element.h>
-#include <LibWeb/Dump.h>
-#include <LibWeb/HTML/HTMLElement.h>
-#include <LibWeb/Page/Frame.h>
+#pragma once
 
-#include <Applications/Writer/Model/DocumentNode.h>
-#include <Applications/Writer/Model/FragmentNode.h>
 #include <Applications/Writer/Model/Node.h>
 
 namespace Writer {
 
-void Node::dump(StringBuilder& builder, size_t indent)
-{
-    builder.appendff("{:{}}[{}]\n", "", indent * 2, class_name());
+class HeadingNode final : public Node {
+public:
+    static NonnullRefPtr<HeadingNode> create(DocumentNode& document)
+    {
+        return adopt(*new HeadingNode { document });
+    }
 
-    for_each_child([&](Node& child) {
-        child.dump(builder, indent + 1);
-    });
+    void render(Badge<Node>) override;
+    void load_from_json(const JsonObject&) override;
+    JsonValue export_to_json() const override;
+    StringView class_name() const override { return "HeadingNode"; }
+
+private:
+    using Node::Node;
+};
+
 }
 
-void Node::dump()
-{
-    StringBuilder builder;
-    dump(builder);
-    dbgln("\n{}", builder.string_view());
-}
-
-}
+AK_BEGIN_TYPE_TRAITS(Writer::HeadingNode)
+static bool is_type(const Writer::Node& node) { return node.class_name() == "HeadingNode"; }
+AK_END_TYPE_TRAITS()

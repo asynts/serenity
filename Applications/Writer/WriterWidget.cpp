@@ -30,6 +30,7 @@
 #include <LibWeb/Page/Frame.h>
 
 #include <Applications/Writer/EditEventHandler.h>
+#include <Applications/Writer/Model/DocumentNode.h>
 #include <Applications/Writer/WriterWidget.h>
 #include <Applications/Writer/WriterWidgetUI.h>
 
