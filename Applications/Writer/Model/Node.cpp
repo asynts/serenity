@@ -33,6 +33,7 @@
 #include <LibWeb/Page/Frame.h>
 
 #include <Applications/Writer/Model/DocumentNode.h>
+#include <Applications/Writer/Model/FragmentNode.h>
 #include <Applications/Writer/Model/Node.h>
 
 namespace Writer {
@@ -90,77 +91,6 @@ JsonValue HeadingNode::export_to_json() const
     json.set("children", children);
 
     return json;
-}
-
-void FragmentNode::render(Badge<Node>)
-{
-    auto new_element = root().dom().create_element("span");
-
-    new_element->set_text_content(m_content);
-
-    if (m_bold)
-        new_element->class_names().append("bold");
-
-    // There are text nodes created automatically, these also belong to this node.
-    new_element->for_each_in_subtree([&](Web::DOM::Node& node) {
-        root().add_lookup(node, *this);
-        return IterationDecision::Continue;
-    });
-
-    set_element(new_element);
-    parent()->element()->append_child(new_element);
-}
-
-void FragmentNode::load_from_json(const JsonObject& json)
-{
-    set_content(json.get("content").as_string());
-    set_bold(json.get("bold").as_bool());
-
-    ASSERT(json.get("children").is_null());
-}
-
-JsonValue FragmentNode::export_to_json() const
-{
-    JsonObject json;
-
-    json.set("class", "FragmentNode");
-    json.set("content", m_content);
-    json.set("bold", m_bold);
-
-    return json;
-}
-
-void FragmentNode::remove_content(size_t offset, size_t length)
-{
-    if (length == 0)
-        return;
-
-    StringBuilder builder;
-    builder.append(m_content.substring(0, offset));
-    builder.append(m_content.substring(offset + length, m_content.length() - offset - length));
-
-    set_content(builder.build());
-}
-
-void FragmentNode::remove_content(size_t offset)
-{
-    remove_content(offset, m_content.length() - offset);
-}
-
-void FragmentNode::insert_content(size_t offset, StringView snippet)
-{
-    StringBuilder builder;
-    builder.append(m_content.substring(0, offset));
-    builder.append(snippet);
-    builder.append(m_content.substring(offset));
-
-    set_content(builder.build());
-}
-
-void FragmentNode::dump(StringBuilder& builder, size_t indent)
-{
-    builder.appendff("{:{}}[{}] bold={}\n", "", indent * 2, class_name(), bold());
-    builder.appendff("{:{}}{}\n", "", (indent + 1) * 2, content());
 }
 
 }

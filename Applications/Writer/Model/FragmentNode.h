@@ -24,64 +24,53 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <AK/JsonObject.h>
-#include <AK/JsonValue.h>
+#pragma once
 
-#include <Applications/Writer/Model/DocumentNode.h>
-#include <Applications/Writer/Model/FragmentNode.h>
-#include <Applications/Writer/Model/ParagraphNode.h>
+#include <Applications/Writer/Model/Node.h>
 
 namespace Writer {
 
-void ParagraphNode::render(Badge<Node>)
-{
-    // FIXME: Make it possible to only re-render this element.
+class FragmentNode final : public Node {
+public:
+    static NonnullRefPtr<FragmentNode> create(DocumentNode& document)
+    {
+        return adopt(*new FragmentNode { document });
+    }
 
-    auto new_element = root().dom().create_element("p");
+    void render(Badge<Node>) override;
+    void load_from_json(const JsonObject&) override;
+    JsonValue export_to_json() const override;
+    StringView class_name() const override { return "FragmentNode"; }
+    void dump(StringBuilder& builder, size_t indent = 0) override;
 
-    set_element(new_element);
-    parent()->element()->append_child(new_element);
+    void remove_content(size_t offset, size_t length);
+    void remove_content(size_t offset);
 
-    for_each_child([&](Node& node) {
-        node.render(node_badge());
-    });
-}
+    void insert_content(size_t offset, StringView);
 
-void ParagraphNode::load_from_json(const JsonObject& json)
-{
-    json.get("children").as_array().for_each([&](const JsonValue& child_json) {
-        ASSERT(child_json.as_object().get("class").as_string() == "FragmentNode");
+    String content() const { return m_content; }
+    void set_content(String value)
+    {
+        m_content = value;
+        // FIXME: We want to call render() here.
+    }
 
-        auto child = create_child<FragmentNode>();
-        child->load_from_json(child_json.as_object());
-    });
-}
+    bool bold() const { return m_bold; }
+    void set_bold(bool value)
+    {
+        m_bold = value;
+        // FIXME: We want to call render() here.
+    }
 
-JsonValue ParagraphNode::export_to_json() const
-{
-    JsonObject json;
+private:
+    using Node::Node;
 
-    json.set("class", "ParagraphNode");
-
-    JsonArray children;
-    for_each_child([&](const Node& child) {
-        children.append(child.export_to_json());
-    });
-    json.set("children", children);
-
-    return json;
-}
-
-void ParagraphNode::merge(ParagraphNode& other)
-{
-    if (this == &other)
-        return;
-
-    other.for_each_child([&](Node& child) {
-        adopt_child(child);
-    });
-
-    other.parent()->remove_child(other);
-}
+    String m_content = "";
+    bool m_bold = false;
+};
 
 }
+
+AK_BEGIN_TYPE_TRAITS(Writer::FragmentNode)
+static bool is_type(const Writer::Node& node) { return node.class_name() == "FragmentNode"; }
+AK_END_TYPE_TRAITS()

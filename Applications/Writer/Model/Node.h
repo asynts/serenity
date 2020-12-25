@@ -36,6 +36,9 @@
 namespace Writer {
 
 class DocumentNode;
+class FragmentNode;
+class ParagraphNode;
+class HeadingNode;
 
 class Node : public Web::TreeNode<Node> {
 public:
@@ -103,50 +106,7 @@ private:
     using Node::Node;
 };
 
-class FragmentNode final : public Node {
-public:
-    static NonnullRefPtr<FragmentNode> create(DocumentNode& document)
-    {
-        return adopt(*new FragmentNode { document });
-    }
-
-    void render(Badge<Node>) override;
-    void load_from_json(const JsonObject&) override;
-    JsonValue export_to_json() const override;
-    StringView class_name() const override { return "FragmentNode"; }
-    void dump(StringBuilder& builder, size_t indent = 0) override;
-
-    void remove_content(size_t offset, size_t length);
-    void remove_content(size_t offset);
-
-    void insert_content(size_t offset, StringView);
-
-    String content() const { return m_content; }
-    void set_content(String value)
-    {
-        m_content = value;
-        // FIXME: We want to call render() here.
-    }
-
-    bool bold() const { return m_bold; }
-    void set_bold(bool value)
-    {
-        m_bold = value;
-        // FIXME: We want to call render() here.
-    }
-
-private:
-    using Node::Node;
-
-    String m_content = "";
-    bool m_bold = false;
-};
-
 }
-
-AK_BEGIN_TYPE_TRAITS(Writer::FragmentNode)
-static bool is_type(const Writer::Node& node) { return node.class_name() == "FragmentNode"; }
-AK_END_TYPE_TRAITS()
 
 AK_BEGIN_TYPE_TRAITS(Writer::HeadingNode)
 static bool is_type(const Writer::Node& node) { return node.class_name() == "HeadingNode"; }
