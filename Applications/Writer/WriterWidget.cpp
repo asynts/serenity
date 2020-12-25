@@ -100,6 +100,16 @@ constexpr const char* example_writer_document = R"~~~(
                     "bold": false
                 }
             ]
+        },
+        {
+            "class": "ParagraphNode",
+            "children": [
+                {
+                    "class": "FragmentNode",
+                    "content": "This is a paragraph that can be merged into the heading above.",
+                    "bold": false
+                }
+            ]
         }
     ]
 }
