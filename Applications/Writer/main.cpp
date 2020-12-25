@@ -37,6 +37,7 @@
 int main(int argc, char** argv)
 {
     auto app = GUI::Application::construct(argc, argv);
+    auto app_icon = GUI::Icon::default_icon("app-writer");
 
     const char* file_to_edit = nullptr;
 
@@ -84,6 +85,8 @@ int main(int argc, char** argv)
     app_menu.add_action(app_open_action);
 
     app->set_menubar(menubar);
+
+    window->set_icon(app_icon.bitmap_for_size(16));
     window->show();
 
     return app->exec();
