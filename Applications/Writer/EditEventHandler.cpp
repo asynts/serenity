@@ -68,6 +68,7 @@ void EditEventHandler::handle_delete(Web::DOM::Range& range)
         start->remove_content(range.start_offset());
         end->remove_content(0, range.end_offset());
 
+        // FIXME: Implement this for headings too.
         downcast<ParagraphNode>(start->parent())->merge(*downcast<ParagraphNode>(end->parent()));
     }
 
