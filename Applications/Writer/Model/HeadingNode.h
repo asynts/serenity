@@ -26,11 +26,11 @@
 
 #pragma once
 
-#include <Applications/Writer/Model/Node.h>
+#include <Applications/Writer/Model/ParagraphNode.h>
 
 namespace Writer {
 
-class HeadingNode final : public Node {
+class HeadingNode final : public ParagraphNode {
 public:
     static NonnullRefPtr<HeadingNode> create(DocumentNode& document)
     {
@@ -43,7 +43,7 @@ public:
     StringView class_name() const override { return "HeadingNode"; }
 
 private:
-    using Node::Node;
+    using ParagraphNode::ParagraphNode;
 };
 
 }
