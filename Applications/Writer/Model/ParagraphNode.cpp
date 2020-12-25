@@ -26,32 +26,62 @@
 
 #include <AK/JsonObject.h>
 #include <AK/JsonValue.h>
-#include <LibWeb/DOM/Document.h>
-#include <LibWeb/DOM/Element.h>
-#include <LibWeb/Dump.h>
-#include <LibWeb/HTML/HTMLElement.h>
-#include <LibWeb/Page/Frame.h>
 
 #include <Applications/Writer/Model/DocumentNode.h>
 #include <Applications/Writer/Model/FragmentNode.h>
-#include <Applications/Writer/Model/Node.h>
+#include <Applications/Writer/Model/ParagraphNode.h>
 
 namespace Writer {
 
-void Node::dump(StringBuilder& builder, size_t indent)
+void ParagraphNode::render(Badge<Node>)
 {
-    builder.appendff("{:{}}[{}]\n", "", indent * 2, class_name());
+    // FIXME: Make it possible to only re-render this element.
 
-    for_each_child([&](Node& child) {
-        child.dump(builder, indent + 1);
+    auto new_element = root().dom().create_element("p");
+
+    set_element(new_element);
+    parent()->element()->append_child(new_element);
+
+    for_each_child([&](Node& node) {
+        node.render(node_badge());
     });
 }
 
-void Node::dump()
+void ParagraphNode::load_from_json(const JsonObject& json)
 {
-    StringBuilder builder;
-    dump(builder);
-    dbgln("\n{}", builder.string_view());
+    json.get("children").as_array().for_each([&](const JsonValue& child_json) {
+        ASSERT(child_json.as_object().get("class").as_string() == "FragmentNode");
+
+        auto child = create_child<FragmentNode>();
+        child->load_from_json(child_json.as_object());
+    });
+}
+
+JsonValue ParagraphNode::export_to_json() const
+{
+    JsonObject json;
+
+    json.set("class", "ParagraphNode");
+
+    JsonArray children;
+    for_each_child([&](const Node& child) {
+        children.append(child.export_to_json());
+    });
+    json.set("children", children);
+
+    return json;
+}
+
+void ParagraphNode::merge(ParagraphNode& other)
+{
+    if (this == &other)
+        return;
+
+    other.for_each_child([&](Node& child) {
+        adopt_child(child);
+    });
+
+    other.parent()->remove_child(other);
 }
 
 }

@@ -24,34 +24,53 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <AK/JsonObject.h>
-#include <AK/JsonValue.h>
-#include <LibWeb/DOM/Document.h>
-#include <LibWeb/DOM/Element.h>
-#include <LibWeb/Dump.h>
-#include <LibWeb/HTML/HTMLElement.h>
-#include <LibWeb/Page/Frame.h>
+#pragma once
 
-#include <Applications/Writer/Model/DocumentNode.h>
-#include <Applications/Writer/Model/FragmentNode.h>
 #include <Applications/Writer/Model/Node.h>
 
 namespace Writer {
 
-void Node::dump(StringBuilder& builder, size_t indent)
-{
-    builder.appendff("{:{}}[{}]\n", "", indent * 2, class_name());
+class FragmentNode final : public Node {
+public:
+    static NonnullRefPtr<FragmentNode> create(DocumentNode& document)
+    {
+        return adopt(*new FragmentNode { document });
+    }
 
-    for_each_child([&](Node& child) {
-        child.dump(builder, indent + 1);
-    });
+    void render(Badge<Node>) override;
+    void load_from_json(const JsonObject&) override;
+    JsonValue export_to_json() const override;
+    StringView class_name() const override { return "FragmentNode"; }
+    void dump(StringBuilder& builder, size_t indent = 0) override;
+
+    void remove_content(size_t offset, size_t length);
+    void remove_content(size_t offset);
+
+    void insert_content(size_t offset, StringView);
+
+    String content() const { return m_content; }
+    void set_content(String value)
+    {
+        m_content = value;
+        // FIXME: We want to call render() here.
+    }
+
+    bool bold() const { return m_bold; }
+    void set_bold(bool value)
+    {
+        m_bold = value;
+        // FIXME: We want to call render() here.
+    }
+
+private:
+    using Node::Node;
+
+    String m_content = "";
+    bool m_bold = false;
+};
+
 }
 
-void Node::dump()
-{
-    StringBuilder builder;
-    dump(builder);
-    dbgln("\n{}", builder.string_view());
-}
-
-}
+AK_BEGIN_TYPE_TRAITS(Writer::FragmentNode)
+static bool is_type(const Writer::Node& node) { return node.class_name() == "FragmentNode"; }
+AK_END_TYPE_TRAITS()
