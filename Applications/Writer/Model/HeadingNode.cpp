@@ -26,32 +26,50 @@
 
 #include <AK/JsonObject.h>
 #include <AK/JsonValue.h>
-#include <LibWeb/DOM/Document.h>
-#include <LibWeb/DOM/Element.h>
-#include <LibWeb/Dump.h>
-#include <LibWeb/HTML/HTMLElement.h>
-#include <LibWeb/Page/Frame.h>
 
 #include <Applications/Writer/Model/DocumentNode.h>
 #include <Applications/Writer/Model/FragmentNode.h>
-#include <Applications/Writer/Model/Node.h>
+#include <Applications/Writer/Model/HeadingNode.h>
 
 namespace Writer {
 
-void Node::dump(StringBuilder& builder, size_t indent)
+void HeadingNode::render(Badge<Node>)
 {
-    builder.appendff("{:{}}[{}]\n", "", indent * 2, class_name());
+    // FIXME: Make it possible to only re-render this element.
 
-    for_each_child([&](Node& child) {
-        child.dump(builder, indent + 1);
+    auto new_element = root().dom().create_element("h3");
+
+    set_element(new_element);
+    parent()->element()->append_child(new_element);
+
+    for_each_child([&](Node& node) {
+        node.render(node_badge());
     });
 }
 
-void Node::dump()
+void HeadingNode::load_from_json(const JsonObject& json)
 {
-    StringBuilder builder;
-    dump(builder);
-    dbgln("\n{}", builder.string_view());
+    json.get("children").as_array().for_each([&](const JsonValue& child_json) {
+        ASSERT(child_json.as_object().get("class").as_string() == "FragmentNode");
+
+        auto child = create_child<FragmentNode>();
+        child->load_from_json(child_json.as_object());
+    });
+}
+
+JsonValue HeadingNode::export_to_json() const
+{
+    JsonObject json;
+
+    json.set("class", "HeadingNode");
+
+    JsonArray children;
+    for_each_child([&](const Node& child) {
+        children.append(child.export_to_json());
+    });
+    json.set("children", children);
+
+    return json;
 }
 
 }
