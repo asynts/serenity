@@ -349,7 +349,7 @@ bool EventHandler::handle_keydown(KeyCode key, unsigned modifiers, u32 code_poin
 
     if (layout_root()->selection().is_valid()) {
         auto range = layout_root()->selection().to_dom_range()->normalized();
-        if (range->start_container()->is_editable() && code_point <= 127 && isprint(code_point)) {
+        if (range->start_container()->is_editable()) {
             m_frame.document()->layout_node()->set_selection({});
 
             // FIXME: This doesn't work for some reason?
@@ -359,7 +359,7 @@ bool EventHandler::handle_keydown(KeyCode key, unsigned modifiers, u32 code_poin
 
                 m_edit_event_handler->handle_delete(range);
                 return true;
-            } else {
+            } else if (code_point <= 127 && isprint(code_point)) {
                 m_edit_event_handler->handle_delete(range);
 
                 m_edit_event_handler->handle_insert(m_frame.cursor_position(), code_point);
