@@ -53,57 +53,6 @@ void Node::dump()
     dbgln("\n{}", builder.string_view());
 }
 
-void ParagraphNode::render(Badge<Node>)
-{
-    // FIXME: Make it possible to only re-render this element.
-
-    auto new_element = root().dom().create_element("p");
-
-    set_element(new_element);
-    parent()->element()->append_child(new_element);
-
-    for_each_child([&](Node& node) {
-        node.render(node_badge());
-    });
-}
-
-void ParagraphNode::load_from_json(const JsonObject& json)
-{
-    json.get("children").as_array().for_each([&](const JsonValue& child_json) {
-        ASSERT(child_json.as_object().get("class").as_string() == "FragmentNode");
-
-        auto child = create_child<FragmentNode>();
-        child->load_from_json(child_json.as_object());
-    });
-}
-
-JsonValue ParagraphNode::export_to_json() const
-{
-    JsonObject json;
-
-    json.set("class", "ParagraphNode");
-
-    JsonArray children;
-    for_each_child([&](const Node& child) {
-        children.append(child.export_to_json());
-    });
-    json.set("children", children);
-
-    return json;
-}
-
-void ParagraphNode::merge(ParagraphNode& other)
-{
-    if (this == &other)
-        return;
-
-    other.for_each_child([&](Node& child) {
-        adopt_child(child);
-    });
-
-    other.parent()->remove_child(other);
-}
-
 void HeadingNode::render(Badge<Node>)
 {
     // FIXME: Make it possible to only re-render this element.

@@ -87,24 +87,6 @@ private:
     DocumentNode& m_root;
 };
 
-class ParagraphNode final : public Node {
-public:
-    static NonnullRefPtr<ParagraphNode> create(DocumentNode& document)
-    {
-        return adopt(*new ParagraphNode { document });
-    }
-
-    void merge(ParagraphNode&);
-
-    void render(Badge<Node>) override;
-    void load_from_json(const JsonObject&) override;
-    JsonValue export_to_json() const override;
-    StringView class_name() const override { return "ParagraphNode"; }
-
-private:
-    using Node::Node;
-};
-
 class HeadingNode final : public Node {
 public:
     static NonnullRefPtr<HeadingNode> create(DocumentNode& document)
@@ -161,14 +143,6 @@ private:
 };
 
 }
-
-AK_BEGIN_TYPE_TRAITS(Writer::DocumentNode)
-static bool is_type(const Writer::Node& node) { return node.class_name() == "DocumentNode"; }
-AK_END_TYPE_TRAITS()
-
-AK_BEGIN_TYPE_TRAITS(Writer::ParagraphNode)
-static bool is_type(const Writer::Node& node) { return node.class_name() == "ParagraphNode"; }
-AK_END_TYPE_TRAITS()
 
 AK_BEGIN_TYPE_TRAITS(Writer::FragmentNode)
 static bool is_type(const Writer::Node& node) { return node.class_name() == "FragmentNode"; }
