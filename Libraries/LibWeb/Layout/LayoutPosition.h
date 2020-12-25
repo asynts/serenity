@@ -76,3 +76,23 @@ private:
 };
 
 }
+
+namespace AK {
+
+template<>
+struct Formatter<Web::Layout::LayoutPosition> : Formatter<String> {
+    void format(TypeErasedFormatParams& params, FormatBuilder& builder, const Web::Layout::LayoutPosition& value)
+    {
+        Formatter<String>::format(params, builder, String::formatted("{}:{}", value.layout_node, value.index_in_node));
+    }
+};
+
+template<>
+struct Formatter<Web::Layout::LayoutRange> : Formatter<String> {
+    void format(TypeErasedFormatParams& params, FormatBuilder& builder, const Web::Layout::LayoutRange& value)
+    {
+        Formatter<String>::format(params, builder, String::formatted("{}-{}", value.start(), value.end()));
+    }
+};
+
+}
