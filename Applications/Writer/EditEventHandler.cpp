@@ -30,6 +30,10 @@
 #include <LibWeb/Dump.h>
 
 #include <Applications/Writer/EditEventHandler.h>
+#include <Applications/Writer/Model/DocumentNode.h>
+#include <Applications/Writer/Model/FragmentNode.h>
+#include <Applications/Writer/Model/HeadingNode.h>
+#include <Applications/Writer/Model/ParagraphNode.h>
 
 namespace Writer {
 
