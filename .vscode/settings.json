@@ -7,7 +7,5 @@
         ".git/": true,
         "build/": true
     },
-    "files.associations": {
-        "*.idl": "cpp"
-    }
+    "files.insertFinalNewline": true,
 }

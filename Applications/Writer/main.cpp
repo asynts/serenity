@@ -32,6 +32,7 @@
 #include <LibGUI/Window.h>
 #include <LibWeb/InProcessWebView.h>
 
+#include <Applications/Writer/Model/DocumentNode.h>
 #include <Applications/Writer/WriterWidget.h>
 
 int main(int argc, char** argv)
