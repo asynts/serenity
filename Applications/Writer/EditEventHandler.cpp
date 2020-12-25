@@ -94,7 +94,7 @@ void EditEventHandler::handle_newline(Web::DOM::Position position)
     auto* fragment = downcast<FragmentNode>(m_document.lookup(*position.node()));
     auto* parent_node = fragment->parent();
 
-    ASSERT(is<ParagraphNode>(parent_node) || is<HeadingNode>(parent_node));
+    ASSERT(is<ParagraphNode>(parent_node));
 
     auto new_paragraph = ParagraphNode::create(m_document);
 
