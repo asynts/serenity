@@ -30,7 +30,7 @@
 
 namespace Writer {
 
-class ParagraphNode final : public Node {
+class ParagraphNode : public Node {
 public:
     static NonnullRefPtr<ParagraphNode> create(DocumentNode& document)
     {
@@ -44,12 +44,16 @@ public:
     JsonValue export_to_json() const override;
     StringView class_name() const override { return "ParagraphNode"; }
 
-private:
+protected:
     using Node::Node;
 };
 
 }
 
 AK_BEGIN_TYPE_TRAITS(Writer::ParagraphNode)
-static bool is_type(const Writer::Node& node) { return node.class_name() == "ParagraphNode"; }
+static bool is_type(const Writer::Node& node)
+{
+    // FIXME: We need something more sophisticated.
+    return node.class_name() == "ParagraphNode" || node.class_name() == "HeadingNode";
+}
 AK_END_TYPE_TRAITS()
