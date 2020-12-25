@@ -90,24 +90,4 @@ private:
     DocumentNode& m_root;
 };
 
-class HeadingNode final : public Node {
-public:
-    static NonnullRefPtr<HeadingNode> create(DocumentNode& document)
-    {
-        return adopt(*new HeadingNode { document });
-    }
-
-    void render(Badge<Node>) override;
-    void load_from_json(const JsonObject&) override;
-    JsonValue export_to_json() const override;
-    StringView class_name() const override { return "HeadingNode"; }
-
-private:
-    using Node::Node;
-};
-
 }
-
-AK_BEGIN_TYPE_TRAITS(Writer::HeadingNode)
-static bool is_type(const Writer::Node& node) { return node.class_name() == "HeadingNode"; }
-AK_END_TYPE_TRAITS()

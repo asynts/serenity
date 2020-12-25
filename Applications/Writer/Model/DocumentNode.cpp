@@ -30,6 +30,7 @@
 #include <LibCore/FileStream.h>
 
 #include <Applications/Writer/Model/DocumentNode.h>
+#include <Applications/Writer/Model/HeadingNode.h>
 #include <Applications/Writer/Model/ParagraphNode.h>
 
 namespace Writer {
