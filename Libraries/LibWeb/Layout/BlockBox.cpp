@@ -103,6 +103,7 @@ HitTestResult BlockBox::hit_test(const Gfx::IntPoint& position, HitTestType type
         }
     }
 
+    // FIXME: This is not working for some reason. This seems to hit offset zero of the parent node instead.
     if (type == HitTestType::TextCursor && last_good_candidate.layout_node)
         return last_good_candidate;
     return { absolute_rect().contains(position.x(), position.y()) ? this : nullptr };
