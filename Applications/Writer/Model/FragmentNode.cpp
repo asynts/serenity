@@ -41,7 +41,7 @@ void FragmentNode::render(Badge<Node>)
     if (m_bold)
         new_element->class_names().append("bold");
 
-    // There are text nodes created automatically, these also belong to this node.
+    // There are text nodes created automatically, these belong to this node.
     new_element->for_each_in_subtree([&](Web::DOM::Node& node) {
         root().add_lookup(node, *this);
         return IterationDecision::Continue;
