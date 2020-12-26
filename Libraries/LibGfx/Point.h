@@ -26,6 +26,7 @@
 
 #pragma once
 
+#include <AK/Format.h>
 #include <AK/Forward.h>
 #include <AK/StdLibExtras.h>
 #include <LibGfx/Forward.h>
@@ -243,3 +244,12 @@ bool encode(Encoder&, const Gfx::IntPoint&);
 bool decode(Decoder&, Gfx::IntPoint&);
 
 }
+
+namespace AK {
+
+template<typename T>
+struct Formatter<Gfx::Point<T>> : Formatter<String> {
+    void format(TypeErasedFormatParams&, FormatBuilder&, const Gfx::Point<T>&);
+};
+
+} // namespace AK

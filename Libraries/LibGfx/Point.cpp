@@ -86,3 +86,13 @@ bool decode(Decoder& decoder, Gfx::IntPoint& point)
 
 template class Gfx::Point<int>;
 template class Gfx::Point<float>;
+
+namespace AK {
+
+template<typename T>
+void Formatter<Gfx::Point<T>>::format(TypeErasedFormatParams& params, FormatBuilder& builder, const Gfx::Point<T>& value)
+{
+    return Formatter<String>::format(params, builder, String::formatted("({},{})", value.x(), value.y()));
+}
+
+} // namespace AK
