@@ -88,6 +88,9 @@ HitTestResult BlockBox::hit_test(const Gfx::IntPoint& position, HitTestType type
     if (!children_are_inline())
         return Box::hit_test(position, type);
 
+    // FIXME: There is an additional framgent that messes up the last_good_candidate?
+    //
+    //        Why is there a trailing empty fragment?
     HitTestResult last_good_candidate;
     for (auto& line_box : m_line_boxes) {
         for (auto& fragment : line_box.fragments()) {
@@ -98,12 +101,15 @@ HitTestResult BlockBox::hit_test(const Gfx::IntPoint& position, HitTestType type
                     return downcast<BlockBox>(fragment.layout_node()).hit_test(position, type);
                 return { fragment.layout_node(), fragment.text_index_at(position.x()) };
             }
-            if (fragment.absolute_rect().top() <= position.y())
+            if (fragment.absolute_rect().top() <= position.y()) {
                 last_good_candidate = { fragment.layout_node(), fragment.text_index_at(position.x()) };
+                dbgln("setting last_good_candidate with text={}, index_in_node={}",
+                    fragment.text(),
+                    fragment.text_index_at(position.x()));
+            }
         }
     }
 
-    // FIXME: This is not working for some reason. This seems to hit offset zero of the parent node instead.
     if (type == HitTestType::TextCursor && last_good_candidate.layout_node)
         return last_good_candidate;
     return { absolute_rect().contains(position.x(), position.y()) ? this : nullptr };
