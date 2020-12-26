@@ -46,13 +46,17 @@ EditEventHandler::EditEventHandler(Writer::DocumentNode& document)
 void EditEventHandler::handle_delete(Web::DOM::Range& range)
 {
     auto* start = downcast<FragmentNode>(m_document.lookup(*range.start_container()));
+    auto start_offset = range.start_offset();
     auto* end = downcast<FragmentNode>(m_document.lookup(*range.end_container()));
+    auto end_offset = range.end_offset();
 
-    if (end->is_before(*start))
+    if (end->is_before(*start)) {
         swap(start, end);
+        swap(start_offset, end_offset);
+    }
 
     if (start == end) {
-        start->remove_content(range.start_offset(), range.end_offset() - range.start_offset());
+        start->remove_content(start_offset, end_offset - start_offset);
     } else {
         // Remove all the nodes that are fully enclosed in the range.
         HashTable<Node*> queued_for_deletion;
@@ -69,10 +73,9 @@ void EditEventHandler::handle_delete(Web::DOM::Range& range)
         for (auto* node : queued_for_deletion)
             node->parent()->remove_child(*node);
 
-        start->remove_content(range.start_offset());
-        end->remove_content(0, range.end_offset());
+        start->remove_content(start_offset);
+        end->remove_content(0, end_offset);
 
-        // FIXME: Implement this for headings too.
         downcast<ParagraphNode>(start->parent())->merge(*downcast<ParagraphNode>(end->parent()));
     }
 
