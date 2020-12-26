@@ -254,3 +254,28 @@ inline NodeWithStyle* Node::parent()
 }
 
 }
+
+AK_BEGIN_TYPE_TRAITS(Web::Layout::NodeWithStyle)
+static bool is_type(const Web::Layout::Node& node) { return node.has_style(); }
+AK_END_TYPE_TRAITS()
+
+namespace AK {
+
+template<>
+struct Formatter<Web::Layout::HitTestType> : Formatter<StringView> {
+    void format(TypeErasedFormatParams& params, FormatBuilder& builder, Web::Layout::HitTestType value)
+    {
+        const char* name = nullptr;
+
+        if (value == Web::Layout::HitTestType::Exact)
+            name = "Exact";
+        else if (value == Web::Layout::HitTestType::TextCursor)
+            name = "TextCursor";
+        else
+            ASSERT_NOT_REACHED();
+
+        return Formatter<StringView>::format(params, builder, name);
+    }
+};
+
+} // namespace AK
