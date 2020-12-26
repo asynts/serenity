@@ -29,6 +29,7 @@
 #include <AK/Format.h>
 #include <AK/Forward.h>
 #include <AK/StdLibExtras.h>
+#include <AK/String.h>
 #include <LibGfx/Forward.h>
 #include <LibGfx/Orientation.h>
 #include <LibIPC/Forward.h>
@@ -249,7 +250,10 @@ namespace AK {
 
 template<typename T>
 struct Formatter<Gfx::Point<T>> : Formatter<String> {
-    void format(TypeErasedFormatParams&, FormatBuilder&, const Gfx::Point<T>&);
+    void format(TypeErasedFormatParams& params, FormatBuilder& builder, const Gfx::Point<T>& value)
+    {
+        return Formatter<String>::format(params, builder, String::formatted("({},{})", value.x(), value.y()));
+    }
 };
 
 } // namespace AK
