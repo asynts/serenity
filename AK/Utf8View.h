@@ -26,6 +26,7 @@
 
 #pragma once
 
+#include <AK/Format.h>
 #include <AK/StringView.h>
 #include <AK/Types.h>
 
@@ -109,6 +110,14 @@ private:
     StringView m_string;
     mutable size_t m_length { 0 };
     mutable bool m_have_length { false };
+};
+
+template<>
+struct Formatter<Utf8View> : Formatter<StringView> {
+    void format(TypeErasedFormatParams& params, FormatBuilder& builder, Utf8View value)
+    {
+        Formatter<StringView>::format(params, builder, value.as_string());
+    }
 };
 
 }
