@@ -30,18 +30,11 @@
 
 namespace Compress {
 
-class DeflateCompressor final : public OutputStream {
+class OutputBitStream : public OutputStream {
 public:
-    explicit DeflateCompressor(OutputStream& stream)
+    explicit OutputBitStream(OutputStream& stream)
         : m_stream(stream)
     {
-        allocate_buffer();
-    }
-
-    ~DeflateCompressor()
-    {
-        flush_buffer();
-        deallocate_buffer();
     }
 
     size_t write(ReadonlyBytes bytes) override
@@ -49,15 +42,10 @@ public:
         if (has_any_error())
             return 0;
 
-        auto nwritten = bytes.copy_trimmed_to(m_buffer.slice(m_buffer_used));
-        m_buffer_used += nwritten;
+        if (!align_to_byte_boundary_with_zero_fill())
+            return 0;
 
-        if (bytes.size() - nwritten > 0) {
-            flush_buffer();
-            nwritten += write(bytes.slice(nwritten));
-        }
-
-        return nwritten;
+        return m_stream.write(bytes);
     }
 
     bool write_or_error(ReadonlyBytes bytes) override
@@ -70,14 +58,51 @@ public:
         return true;
     }
 
+    bool write_bit(u16 value)
+    {
+        m_buffer = m_buffer >> 1 | value << 31;
+        ++m_buffered;
+
+        return flush_if_needed();
+    }
+
+    bool write_bits(u16 value, size_t count)
+    {
+        m_buffer = m_buffer >> count | value << (31 - count);
+        m_buffered += count;
+
+        return flush_if_needed();
+    }
+
 private:
-    void allocate_buffer();
-    void deallocate_buffer();
-    void flush_buffer();
+    bool align_to_byte_boundary_with_zero_fill()
+    {
+        return write_bits(0, 8 - m_buffered % 8) && flush();
+    }
+
+    bool flush_if_needed()
+    {
+        if (m_buffered >= 16)
+            return flush();
+
+        return true;
+    }
+
+    bool flush()
+    {
+        const auto bytes_buffered = m_buffered / 8;
+
+        u32 value = convert_between_host_and_big_endian(m_buffer << m_buffered % 8);
+        m_stream.write_or_error({ &value, bytes_buffered });
+        m_buffered -= 8 * bytes_buffered;
+
+        return has_any_error();
+    }
+
+    u32 m_buffer = 0;
+    size_t m_buffered = 0;
 
     OutputStream& m_stream;
-    Bytes m_buffer;
-    size_t m_buffer_used = 0;
 };
 
 }
