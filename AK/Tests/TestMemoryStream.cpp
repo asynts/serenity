@@ -229,9 +229,6 @@ TEST_CASE(offset_calculation_error_regression)
     stream.read(output);
 
     EXPECT(compare(input, output));
-
-    AK::dump_bytes(input);
-    AK::dump_bytes(output);
 }
 
 TEST_MAIN(MemoryStream)
