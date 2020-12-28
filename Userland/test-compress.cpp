@@ -30,6 +30,7 @@
 #include <AK/MemoryStream.h>
 #include <LibCompress/Deflate.h>
 #include <LibCompress/Gzip.h>
+#include <LibCompress/OutputBitStream.h>
 #include <LibCompress/Zlib.h>
 
 static bool compare(ReadonlyBytes lhs, ReadonlyBytes rhs)
@@ -232,6 +233,22 @@ TEST_CASE(gzip_decompress_repeat_around_buffer)
 
     const auto decompressed = Compress::GzipDecompressor::decompress_all(compressed);
     EXPECT(compare(uncompressed, decompressed.value().bytes()));
+}
+
+TEST_CASE(bitstreams_are_normal_streams)
+{
+    const Array<u8, 6> expected {
+        0x00, 0x01, 0x02, 0x03, 0x02, 0x03
+    };
+
+    DuplexMemoryStream stream1;
+    Compress::OutputBitStream stream2 { stream1 };
+
+    stream2 << expected[0] << expected[1] << expected[2] << expected[3] << expected.span().slice(2, 2);
+
+    EXPECT(!stream1.has_any_error());
+    EXPECT(!stream2.has_any_error());
+    EXPECT(compare(expected, stream1.copy_into_contiguous_buffer()));
 }
 
 TEST_MAIN(Compress)

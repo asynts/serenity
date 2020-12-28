@@ -26,6 +26,7 @@
 
 #pragma once
 
+#include <AK/Format.h>
 #include <AK/Stream.h>
 
 namespace Compress {
@@ -77,7 +78,7 @@ public:
 private:
     bool align_to_byte_boundary_with_zero_fill()
     {
-        return write_bits(0, 8 - m_buffered % 8) && flush();
+        return write_bits(0, min<size_t>(0, 8 - m_buffered % 8)) && flush();
     }
 
     bool flush_if_needed()
@@ -92,11 +93,11 @@ private:
     {
         const auto bytes_buffered = m_buffered / 8;
 
-        u32 value = convert_between_host_and_big_endian(m_buffer << m_buffered % 8);
+        u32 value = AK::convert_between_host_and_big_endian(m_buffer << m_buffered % 8);
         m_stream.write_or_error({ &value, bytes_buffered });
         m_buffered -= 8 * bytes_buffered;
 
-        return has_any_error();
+        return !has_any_error();
     }
 
     u32 m_buffer = 0;
