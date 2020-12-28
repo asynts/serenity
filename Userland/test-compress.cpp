@@ -235,7 +235,7 @@ TEST_CASE(gzip_decompress_repeat_around_buffer)
     EXPECT(compare(uncompressed, decompressed.value().bytes()));
 }
 
-TEST_CASE(bitstreams_are_normal_streams)
+TEST_CASE(bitstream_is_normal_stream)
 {
     const Array<u8, 6> expected {
         0x00, 0x01, 0x02, 0x03, 0x02, 0x03
@@ -248,6 +248,28 @@ TEST_CASE(bitstreams_are_normal_streams)
 
     EXPECT(!stream1.has_any_error());
     EXPECT(!stream2.has_any_error());
+    EXPECT(compare(expected, stream1.copy_into_contiguous_buffer()));
+}
+
+TEST_CASE(bitstream_write_bits)
+{
+    const Array<u8, 3> expected {
+        0x1f, 0xdb, 0xfa
+    };
+
+    DuplexMemoryStream stream1;
+    Compress::OutputBitStream stream2 { stream1 };
+
+    stream2.write_bits(0b111, 3);
+    stream2.write_bits(0b0011, 4);
+    stream2.write_bits(0b0110110, 7);
+    stream2.write_bits(0b1111101011, 10);
+    stream2.align_to_byte_boundary_with_zero_fill();
+
+    EXPECT(!stream1.has_any_error());
+    EXPECT(!stream2.has_any_error());
+    AK::dump_bytes(expected);
+    AK::dump_bytes(stream1.copy_into_contiguous_buffer());
     EXPECT(compare(expected, stream1.copy_into_contiguous_buffer()));
 }
 

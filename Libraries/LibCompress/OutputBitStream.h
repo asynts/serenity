@@ -69,18 +69,18 @@ public:
 
     bool write_bits(u16 value, size_t count)
     {
-        m_buffer = m_buffer >> count | value << (31 - count);
+        m_buffer = m_buffer >> count | value << (32 - count);
         m_buffered += count;
 
         return flush_if_needed();
     }
 
-private:
     bool align_to_byte_boundary_with_zero_fill()
     {
         return write_bits(0, min<size_t>(0, 8 - m_buffered % 8)) && flush();
     }
 
+private:
     bool flush_if_needed()
     {
         if (m_buffered >= 16)
@@ -93,7 +93,7 @@ private:
     {
         const auto bytes_buffered = m_buffered / 8;
 
-        u32 value = AK::convert_between_host_and_big_endian(m_buffer << m_buffered % 8);
+        u32 value = AK::convert_between_host_and_little_endian((m_buffer << m_buffered % 8) >> 8 * (4 - bytes_buffered));
         m_stream.write_or_error({ &value, bytes_buffered });
         m_buffered -= 8 * bytes_buffered;
 
