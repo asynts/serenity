@@ -67,12 +67,19 @@ public:
         return flush_if_needed();
     }
 
-    bool write_bits(u16 value, size_t count)
+    bool write_bits(u16 value, size_t length)
     {
-        m_buffer = m_buffer >> count | value << (32 - count);
-        m_buffered += count;
+        m_buffer = m_buffer >> length | value << (32 - length);
+        m_buffered += length;
 
         return flush_if_needed();
+    }
+
+    // Symbols are equiped with a leading one, the length is implicitly detected.
+    bool write_bits_implicit(u16 value)
+    {
+        size_t length = 31 - __builtin_clz(value);
+        return write_bits(value, length);
     }
 
     bool align_to_byte_boundary_with_zero_fill()
