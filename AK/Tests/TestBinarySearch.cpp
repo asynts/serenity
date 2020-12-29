@@ -38,24 +38,32 @@ TEST_CASE(vector_ints)
     ints.append(2);
     ints.append(3);
 
-    auto test1 = *binary_search(ints.span(), 1);
-    auto test2 = *binary_search(ints.span(), 2);
-    auto test3 = *binary_search(ints.span(), 3);
+    auto test1 = *binary_search(ints, 1);
+    auto test2 = *binary_search(ints, 2);
+    auto test3 = *binary_search(ints, 3);
     EXPECT_EQ(test1, 1);
     EXPECT_EQ(test2, 2);
     EXPECT_EQ(test3, 3);
 }
 
+TEST_CASE(span_rvalue_reference)
+{
+    Array<long, 3> array { 1, 2, 3 };
+
+    size_t nearby_index = 0;
+    auto* pointer = binary_search(array.span(), 2, &nearby_index);
+
+    EXPECT_EQ(nearby_index, 1u);
+    EXPECT_EQ(pointer, &array[1]);
+}
+
 TEST_CASE(array_doubles)
 {
-    double doubles[] = { 1.1, 9.9, 33.33 };
+    Array<double, 3> array { 1.1, 9.9, 33.33 };
 
-    auto test1 = *binary_search(Span<double> { doubles, 3 }, 1.1);
-    auto test2 = *binary_search(Span<double> { doubles, 3 }, 9.9);
-    auto test3 = *binary_search(Span<double> { doubles, 3 }, 33.33);
-    EXPECT_EQ(test1, 1.1);
-    EXPECT_EQ(test2, 9.9);
-    EXPECT_EQ(test3, 33.33);
+    EXPECT_EQ(binary_search(array, 1.1), &array[0]);
+    EXPECT_EQ(binary_search(array, 33.33), &array[2]);
+    EXPECT_EQ(binary_search(array, 9.9), &array[1]);
 }
 
 TEST_CASE(vector_strings)
@@ -68,9 +76,9 @@ TEST_CASE(vector_strings)
     auto string_compare = [](const String& a, const String& b) -> int {
         return strcmp(a.characters(), b.characters());
     };
-    auto test1 = *binary_search(strings.span(), String("bat"), nullptr, string_compare);
-    auto test2 = *binary_search(strings.span(), String("cat"), nullptr, string_compare);
-    auto test3 = *binary_search(strings.span(), String("dog"), nullptr, string_compare);
+    auto test1 = *binary_search(strings, String("bat"), nullptr, string_compare);
+    auto test2 = *binary_search(strings, String("cat"), nullptr, string_compare);
+    auto test3 = *binary_search(strings, String("dog"), nullptr, string_compare);
     EXPECT_EQ(test1, String("bat"));
     EXPECT_EQ(test2, String("cat"));
     EXPECT_EQ(test3, String("dog"));
@@ -81,7 +89,7 @@ TEST_CASE(single_element)
     Vector<int> ints;
     ints.append(1);
 
-    auto test1 = *binary_search(ints.span(), 1);
+    auto test1 = *binary_search(ints, 1);
     EXPECT_EQ(test1, 1);
 }
 
@@ -92,9 +100,9 @@ TEST_CASE(not_found)
     ints.append(2);
     ints.append(3);
 
-    auto test1 = binary_search(ints.span(), -1);
-    auto test2 = binary_search(ints.span(), 0);
-    auto test3 = binary_search(ints.span(), 4);
+    auto test1 = binary_search(ints, -1);
+    auto test2 = binary_search(ints, 0);
+    auto test3 = binary_search(ints, 4);
     EXPECT_EQ(test1, nullptr);
     EXPECT_EQ(test2, nullptr);
     EXPECT_EQ(test3, nullptr);
@@ -104,23 +112,17 @@ TEST_CASE(no_elements)
 {
     Vector<int> ints;
 
-    auto test1 = binary_search(ints.span(), 1);
+    auto test1 = binary_search(ints, 1);
     EXPECT_EQ(test1, nullptr);
 }
 
-// TEST_CASE(constexpr_array_search)
-// {
-//     constexpr Array<int, 3> array = { 1, 17, 42 };
+TEST_CASE(constexpr_array_search)
+{
+    constexpr Array<int, 3> array = { 1, 17, 42 };
 
-//     constexpr auto* test1 = binary_search(array.span(), 1);
-//     constexpr auto* test2 = binary_search(array.span(), 17);
-//     constexpr auto* test3 = binary_search(array.span(), 42);
-//     constexpr auto* test4 = binary_search(array.span(), 99);
-
-//     static_assert(*test1 == 1);
-//     static_assert(*test2 == 17);
-//     static_assert(*test3 == 42);
-//     static_assert(test4 == nullptr);
-// }
+    static_assert(binary_search(array, 42) == &array[2]);
+    static_assert(binary_search(array, 17) == &array[1]);
+    static_assert(binary_search(array, 3) == nullptr);
+}
 
 TEST_MAIN(BinarySearch)

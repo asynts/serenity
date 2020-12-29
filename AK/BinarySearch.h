@@ -36,12 +36,12 @@ struct IntegralComperator {
     constexpr auto operator()(auto& lhs, auto& rhs) { return lhs - rhs; }
 };
 
-template<typename T, typename Needle, typename Comperator = IntegralComperator>
-constexpr T* binary_search(
-    Span<T> haystack,
+template<typename Container, typename Needle, typename Comperator = IntegralComperator>
+constexpr auto binary_search(
+    Container&& haystack,
     Needle&& needle,
     size_t* nearby_index = nullptr,
-    Comperator comperator = Comperator {})
+    Comperator comperator = Comperator {}) -> decltype(&haystack[0])
 {
     if (haystack.size() == 0) {
         if (nearby_index)
