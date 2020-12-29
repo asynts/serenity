@@ -32,14 +32,16 @@
 
 namespace AK {
 
-template<typename T>
-constexpr int integral_compare(const typename RemoveConst<T>::Type& a, const typename RemoveConst<T>::Type& b)
-{
-    return a - b;
-}
+struct IntegralComperator {
+    constexpr auto operator()(auto& lhs, auto& rhs) { return lhs - rhs; }
+};
 
-template<typename T, typename Compare>
-constexpr T* binary_search(Span<T> haystack, const typename RemoveConst<T>::Type& needle, Compare compare = integral_compare, size_t* nearby_index = nullptr)
+template<typename T, typename Needle, typename Comperator = IntegralComperator>
+constexpr T* binary_search(
+    Span<T> haystack,
+    Needle&& needle,
+    size_t* nearby_index = nullptr,
+    Comperator comperator = Comperator {})
 {
     if (haystack.size() == 0) {
         if (nearby_index)
@@ -51,7 +53,7 @@ constexpr T* binary_search(Span<T> haystack, const typename RemoveConst<T>::Type
     size_t high = haystack.size() - 1;
     while (low <= high) {
         size_t middle = low + ((high - low) / 2);
-        int comparison = compare(needle, haystack[middle]);
+        auto comparison = comperator(needle, haystack[middle]);
         if (comparison < 0)
             if (middle != 0)
                 high = middle - 1;
