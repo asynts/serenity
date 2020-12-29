@@ -71,7 +71,7 @@ void DeflateCompressor::flush_buffer()
         ++nodes[m_buffer[i]]->frequency;
 
     // We sort the list and keep it sorted further down the line.
-    AK::quick_sort(nodes);
+    AK::quick_sort(nodes, [](auto& lhs, auto& rhs) { return lhs->frequency < rhs->frequency; });
 
     // Create a Huffman code.
     while (nodes.size() >= 2) {
@@ -84,8 +84,8 @@ void DeflateCompressor::flush_buffer()
         AK::binary_search(
             nodes,
             joined,
-            [](auto& lhs, auto& rhs) { return static_cast<int>(lhs->frequency - rhs->frequency); },
-            &nearby_index);
+            &nearby_index,
+            [](auto& lhs, auto& rhs) { return static_cast<int>(lhs->frequency - rhs->frequency); });
 
         nodes.insert(nearby_index, move(joined));
     }
