@@ -26,13 +26,13 @@
 
 #pragma once
 
-#include <AK/Stream.h>
+#include <LibCompress/OutputBitStream.h>
 
 namespace Compress {
 
 class DeflateCompressor final : public OutputStream {
 public:
-    explicit DeflateCompressor(OutputStream& stream)
+    explicit DeflateCompressor(OutputBitStream& stream)
         : m_stream(stream)
     {
         allocate_buffer();
@@ -75,7 +75,7 @@ private:
     void deallocate_buffer();
     void flush_buffer();
 
-    OutputStream& m_stream;
+    OutputBitStream& m_stream;
     Bytes m_buffer;
     size_t m_buffer_used = 0;
 };
