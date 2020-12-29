@@ -9,7 +9,6 @@
     },
 
     "files.insertFinalNewline": true,
-    "files.associations": {
-        "*.tcc": "cpp"
-    },
+    
+    "C_Cpp.autoAddFileAssociations": false,
 }
