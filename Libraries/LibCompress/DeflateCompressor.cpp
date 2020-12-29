@@ -63,7 +63,7 @@ void DeflateCompressor::flush_buffer()
     constexpr u16 invalid_symbol = NumericLimits<u16>::max();
 
     // Count symbol frequency in buffer.
-    Vector<OwnPtr<CodeNode>, 256> nodes;
+    Vector<NonnullOwnPtr<CodeNode>, 256> nodes;
     for (u16 i = 0; i < 256; ++i)
         nodes.append(make<CodeNode>(i, 0));
     nodes.append(make<CodeNode>(0, 1));
