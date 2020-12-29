@@ -24,6 +24,12 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <AK/BinarySearch.h>
+#include <AK/Function.h>
+#include <AK/HashMap.h>
+#include <AK/OwnPtr.h>
+#include <AK/QuickSort.h>
+#include <AK/Vector.h>
 #include <sys/mman.h>
 
 #include <LibCompress/DeflateCompressor.h>
@@ -44,9 +50,83 @@ void DeflateCompressor::deallocate_buffer()
     ASSERT(retval == 0);
 }
 
+struct CodeNode {
+    u16 symbol;
+    size_t frequency;
+
+    OwnPtr<CodeNode> left = nullptr;
+    OwnPtr<CodeNode> right = nullptr;
+};
+
 void DeflateCompressor::flush_buffer()
 {
-    TODO();
+    constexpr u16 invalid_symbol = NumericLimits<u16>::max();
+
+    // Count symbol frequency in buffer.
+    Vector<NonnullOwnPtr<CodeNode>, 256> nodes;
+    for (u16 i = 0; i < 256; ++i)
+        nodes.append(make<CodeNode>(i, 0));
+    nodes.append(make<CodeNode>(0, 1));
+    for (size_t i = 0; i < m_buffer_used; ++i)
+        ++nodes[m_buffer[i]]->frequency;
+
+    // We sort the list and keep it sorted further down the line.
+    AK::quick_sort(nodes, [](auto& lhs, auto& rhs) { return lhs->frequency < rhs->frequency; });
+
+    // Create a Huffman code.
+    while (nodes.size() >= 2) {
+        auto left = nodes.take(0);
+        auto right = nodes.take(1);
+
+        auto joined = make<CodeNode>(invalid_symbol, left->frequency + right->frequency, move(left), move(right));
+
+        size_t nearby_index = 0;
+        AK::binary_search(
+            nodes,
+            joined,
+            &nearby_index,
+            [](auto& lhs, auto& rhs) { return static_cast<int>(lhs->frequency - rhs->frequency); });
+
+        nodes.insert(nearby_index, move(joined));
+    }
+
+    // Group the symbols by code length.
+    HashMap<u8, Vector<u16>> codewords_by_length;
+
+    Function<void(CodeNode*, u8)> visitor;
+    visitor = [&](CodeNode* node, u8 length) {
+        if (node->symbol != invalid_symbol)
+            codewords_by_length.ensure(length).append(node->symbol);
+
+        if (node->left)
+            visitor(node->left, length + 1);
+
+        if (node->right)
+            visitor(node->right, length + 1);
+    };
+
+    ASSERT(nodes.size() == 1);
+    visitor(nodes[0], 1);
+
+    // Extract the code in ascending order.
+    HashMap<u16, u16> code;
+
+    // We put a leading one to be able to tell the bit length.
+    u16 last_symbol = 1;
+    for (auto& codewords : codewords_by_length) {
+        AK::quick_sort(codewords.value);
+
+        last_symbol <<= 1;
+        for (auto symbol : codewords.value)
+            code.set(symbol, last_symbol++);
+    }
+
+    // FIXME: Write header with code...
+
+    // Encode the block onto the stream.
+    for (u8 byte : m_buffer.trim(m_buffer_used))
+        m_stream.write_bits_implicit(code.get(byte).value());
+    m_stream.align_to_byte_boundary_with_zero_fill();
 }
 
 }
