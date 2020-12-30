@@ -94,6 +94,10 @@ struct TypeErasedParameter {
         return Type::Custom;
     }
 
+    size_t to_size() const;
+
+    // FIXME: Getters and setters.
+
     const void* value;
     Type type;
     void (*formatter)(TypeErasedFormatParams&, FormatBuilder&, FormatParser&, const void* value);
@@ -197,8 +201,6 @@ public:
     void set_parameters(Span<const TypeErasedParameter> parameters) { m_parameters = parameters; }
     size_t take_next_index() { return m_next_index++; }
 
-    size_t decode(size_t value, size_t default_value = 0);
-
 private:
     Span<const TypeErasedParameter> m_parameters;
     size_t m_next_index { 0 };
@@ -210,7 +212,7 @@ void __format_value(TypeErasedFormatParams& params, FormatBuilder& builder, Form
     Formatter<T> formatter;
 
     formatter.parse(params, parser);
-    formatter.format(params, builder, *static_cast<const T*>(value));
+    formatter.format(builder, *static_cast<const T*>(value));
 }
 
 template<typename... Parameters>
@@ -250,6 +252,8 @@ struct StandardFormatter {
     };
 
     static constexpr size_t value_not_set = NumericLimits<size_t>::max();
+
+    // FIXME: Remove these.
     static constexpr size_t value_from_next_arg = NumericLimits<size_t>::max() - 1;
     static constexpr size_t value_from_arg = NumericLimits<size_t>::max() - max_format_arguments - 2;
 
@@ -273,7 +277,7 @@ struct Formatter<T, typename EnableIf<IsIntegral<T>::value>::Type> : StandardFor
     {
     }
 
-    void format(TypeErasedFormatParams&, FormatBuilder&, T value);
+    void format(FormatBuilder&, T value);
 };
 
 template<>
@@ -284,17 +288,17 @@ struct Formatter<StringView> : StandardFormatter {
     {
     }
 
-    void format(TypeErasedFormatParams&, FormatBuilder&, StringView value);
+    void format(FormatBuilder&, StringView value);
 };
 template<>
 struct Formatter<const char*> : Formatter<StringView> {
-    void format(TypeErasedFormatParams& params, FormatBuilder& builder, const char* value)
+    void format(FormatBuilder& builder, const char* value)
     {
         if (m_mode == Mode::Pointer) {
             Formatter<FlatPtr> formatter { *this };
-            formatter.format(params, builder, reinterpret_cast<FlatPtr>(value));
+            formatter.format(builder, reinterpret_cast<FlatPtr>(value));
         } else {
-            Formatter<StringView>::format(params, builder, value);
+            Formatter<StringView>::format(builder, value);
         }
     }
 };
@@ -313,29 +317,29 @@ struct Formatter<FlyString> : Formatter<StringView> {
 
 template<typename T>
 struct Formatter<T*> : StandardFormatter {
-    void format(TypeErasedFormatParams& params, FormatBuilder& builder, T* value)
+    void format(FormatBuilder& builder, T* value)
     {
         if (m_mode == Mode::Default)
             m_mode = Mode::Pointer;
 
         Formatter<FlatPtr> formatter { *this };
-        formatter.format(params, builder, reinterpret_cast<FlatPtr>(value));
+        formatter.format(builder, reinterpret_cast<FlatPtr>(value));
     }
 };
 
 template<>
 struct Formatter<char> : StandardFormatter {
-    void format(TypeErasedFormatParams&, FormatBuilder&, char value);
+    void format(FormatBuilder&, char value);
 };
 template<>
 struct Formatter<bool> : StandardFormatter {
-    void format(TypeErasedFormatParams&, FormatBuilder&, bool value);
+    void format(FormatBuilder&, bool value);
 };
 
 #ifndef KERNEL
 template<>
 struct Formatter<float> : StandardFormatter {
-    void format(TypeErasedFormatParams&, FormatBuilder&, float value);
+    void format(FormatBuilder&, float value);
 };
 template<>
 struct Formatter<double> : StandardFormatter {
@@ -345,7 +349,7 @@ struct Formatter<double> : StandardFormatter {
     {
     }
 
-    void format(TypeErasedFormatParams&, FormatBuilder&, double value);
+    void format(FormatBuilder&, double value);
 };
 #endif
 
@@ -409,16 +413,16 @@ private:
 };
 template<typename T, bool Supported = false>
 struct __FormatIfSupported : Formatter<StringView> {
-    void format(TypeErasedFormatParams& params, FormatBuilder& builder, const FormatIfSupported<T>&)
+    void format(FormatBuilder& builder, const FormatIfSupported<T>&)
     {
-        Formatter<StringView>::format(params, builder, "?");
+        Formatter<StringView>::format(builder, "?");
     }
 };
 template<typename T>
 struct __FormatIfSupported<T, true> : Formatter<T> {
-    void format(TypeErasedFormatParams& params, FormatBuilder& builder, const FormatIfSupported<T>& value)
+    void format(FormatBuilder& builder, const FormatIfSupported<T>& value)
     {
-        Formatter<T>::format(params, builder, value.value());
+        Formatter<T>::format(builder, value.value());
     }
 };
 template<typename T>
