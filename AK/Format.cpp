@@ -512,15 +512,13 @@ void Formatter<StringView>::format(FormatBuilder& builder, StringView value)
         ASSERT_NOT_REACHED();
     if (m_mode != Mode::Default && m_mode != Mode::String && m_mode != Mode::Character)
         ASSERT_NOT_REACHED();
-    if (m_width != value_not_set && m_precision != value_not_set)
+    if (m_width.has_value() && m_precision.has_value())
         ASSERT_NOT_REACHED();
 
-    if (m_width == value_not_set)
-        m_width = 0;
-    if (m_precision == value_not_set)
-        m_precision = NumericLimits<size_t>::max();
+    m_width = m_width.value_or(0);
+    m_precision = m_precision.value_or(NumericLimits<size_t>::max());
 
-    builder.put_string(value, m_align, m_width, m_precision, m_fill);
+    builder.put_string(value, m_align, m_width.value(), m_precision.value(), m_fill);
 }
 
 template<typename T>
@@ -536,7 +534,7 @@ void Formatter<T, typename EnableIf<IsIntegral<T>::value>::Type>::format(FormatB
         return formatter.format(builder, StringView { reinterpret_cast<const char*>(&value), 1 });
     }
 
-    if (m_precision != NumericLimits<size_t>::max())
+    if (m_precision.has_value())
         ASSERT_NOT_REACHED();
 
     if (m_mode == Mode::Pointer) {
@@ -546,7 +544,7 @@ void Formatter<T, typename EnableIf<IsIntegral<T>::value>::Type>::format(FormatB
             ASSERT_NOT_REACHED();
         if (m_alternative_form)
             ASSERT_NOT_REACHED();
-        if (m_width != value_not_set)
+        if (m_width.has_value())
             ASSERT_NOT_REACHED();
 
         m_mode = Mode::Hexadecimal;
@@ -575,13 +573,12 @@ void Formatter<T, typename EnableIf<IsIntegral<T>::value>::Type>::format(FormatB
         ASSERT_NOT_REACHED();
     }
 
-    if (m_width == value_not_set)
-        m_width = 0;
+    m_width = m_width.value_or(0);
 
     if (IsSame<typename MakeUnsigned<T>::Type, T>::value)
-        builder.put_u64(value, base, m_alternative_form, upper_case, m_zero_pad, m_align, m_width, m_fill, m_sign_mode);
+        builder.put_u64(value, base, m_alternative_form, upper_case, m_zero_pad, m_align, m_width.value(), m_fill, m_sign_mode);
     else
-        builder.put_i64(value, base, m_alternative_form, upper_case, m_zero_pad, m_align, m_width, m_fill, m_sign_mode);
+        builder.put_i64(value, base, m_alternative_form, upper_case, m_zero_pad, m_align, m_width.value(), m_fill, m_sign_mode);
 }
 
 void Formatter<char>::format(FormatBuilder& builder, char value)
@@ -623,12 +620,10 @@ void Formatter<double>::format(FormatBuilder& builder, double value)
         ASSERT_NOT_REACHED();
     }
 
-    if (m_width == value_not_set)
-        m_width = 0;
-    if (m_precision == value_not_set)
-        m_precision = 6;
+    m_width = m_width.value_or(0);
+    m_precision = m_precision.value_or(6);
 
-    builder.put_f64(value, base, upper_case, m_align, m_width, m_precision, m_fill, m_sign_mode);
+    builder.put_f64(value, base, upper_case, m_align, m_width.value(), m_precision.value(), m_fill, m_sign_mode);
 }
 void Formatter<float>::format(FormatBuilder& builder, float value)
 {

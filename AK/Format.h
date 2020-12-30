@@ -28,6 +28,7 @@
 
 #include <AK/Array.h>
 #include <AK/GenericLexer.h>
+#include <AK/Optional.h>
 #include <AK/StringView.h>
 
 #ifndef KERNEL
@@ -251,16 +252,14 @@ struct StandardFormatter {
         HexfloatUppercase,
     };
 
-    static constexpr size_t value_not_set = NumericLimits<size_t>::max();
-
     FormatBuilder::Align m_align = FormatBuilder::Align::Default;
     FormatBuilder::SignMode m_sign_mode = FormatBuilder::SignMode::OnlyIfNeeded;
     Mode m_mode = Mode::Default;
     bool m_alternative_form = false;
     char m_fill = ' ';
     bool m_zero_pad = false;
-    size_t m_width = value_not_set;
-    size_t m_precision = value_not_set;
+    Optional<size_t> m_width;
+    Optional<size_t> m_precision;
 
     void parse(TypeErasedFormatParams&, FormatParser&);
 };

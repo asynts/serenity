@@ -47,7 +47,9 @@ void AK::Formatter<Shell::AST::Command>::format(FormatBuilder& builder, const Sh
         ASSERT_NOT_REACHED();
     if (m_mode != Mode::Default && m_mode != Mode::String)
         ASSERT_NOT_REACHED();
-    if (m_width != value_not_set && m_precision != value_not_set)
+    if (m_width.has_value())
+        ASSERT_NOT_REACHED();
+    if (m_precision.has_value())
         ASSERT_NOT_REACHED();
 
     if (value.argv.is_empty()) {
