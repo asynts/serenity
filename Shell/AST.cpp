@@ -37,7 +37,7 @@
 
 //#define EXECUTE_DEBUG
 
-void AK::Formatter<Shell::AST::Command>::format(TypeErasedFormatParams&, FormatBuilder& builder, const Shell::AST::Command& value)
+void AK::Formatter<Shell::AST::Command>::format(FormatBuilder& builder, const Shell::AST::Command& value)
 {
     if (m_sign_mode != FormatBuilder::SignMode::Default)
         ASSERT_NOT_REACHED();
