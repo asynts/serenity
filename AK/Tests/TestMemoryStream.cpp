@@ -91,7 +91,7 @@ TEST_CASE(chain_stream_operator)
     stream >> actual[0] >> actual[1] >> actual[2] >> actual[3];
     EXPECT(!stream.has_any_error() && stream.eof());
 
-    EXPECT(expected == actual);
+    EXPECT_EQ(expected, actual);
 }
 
 TEST_CASE(seeking_slicing_offset)
@@ -107,17 +107,17 @@ TEST_CASE(seeking_slicing_offset)
 
     stream >> actual0;
     EXPECT(!stream.has_any_error() && !stream.eof());
-    EXPECT(expected0 == actual0);
+    EXPECT_EQ(expected0, actual0);
 
     stream.seek(4);
     stream >> actual1;
     EXPECT(!stream.has_any_error() && stream.eof());
-    EXPECT(expected1 == actual1);
+    EXPECT_EQ(expected1, actual1);
 
     stream.seek(1);
     stream >> actual2;
     EXPECT(!stream.has_any_error() && !stream.eof());
-    EXPECT(expected2 == actual2);
+    EXPECT_EQ(expected2, actual2);
 }
 
 TEST_CASE(duplex_simple)
@@ -238,7 +238,7 @@ TEST_CASE(offset_calculation_error_regression)
     stream.discard_or_error(sizeof(int));
     stream.read(output);
 
-    EXPECT(input == output);
+    EXPECT_EQ(input, output);
 }
 
 TEST_MAIN(MemoryStream)
