@@ -125,4 +125,36 @@ TEST_CASE(constexpr_array_search)
     static_assert(binary_search(array, 3) == nullptr);
 }
 
+// FIXME: Useless.
+TEST_CASE(first_matches)
+{
+    const Array<u16, 8> input { 1, 2, 4, 8, 16, 32, 64, 128 };
+
+    size_t nearby_index = 1;
+    EXPECT_EQ(binary_search(input, 1, &nearby_index), &input[0]);
+    EXPECT_EQ(nearby_index, 0u);
+}
+
+// FIXME: Useless.
+TEST_CASE(no_match_returns_null)
+{
+    const Array<u16, 8> input { 1, 2, 4, 8, 16, 32, 64, 128 };
+
+    size_t nearby_index = 1;
+    EXPECT_EQ(binary_search(input, 0, &nearby_index), nullptr);
+}
+
+// FIXME: Useless.
+TEST_CASE(weird_outlier_regression)
+{
+    const Array<u16, 32> input {
+        32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47,
+        48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63
+    };
+
+    size_t nearby_index = 1;
+    EXPECT_EQ(binary_search(input, 32, &nearby_index), &input[0]);
+    EXPECT_EQ(nearby_index, 0u);
+}
+
 TEST_MAIN(BinarySearch)
