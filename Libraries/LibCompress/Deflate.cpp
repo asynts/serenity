@@ -107,17 +107,12 @@ u32 CanonicalCode::read_symbol(InputBitStream& stream) const
 {
     u32 code_bits = 1;
 
-    ASSERT(m_symbol_values.size() == m_symbol_codes.size());
-    dbgln("symbols:");
-    for (size_t i = 0; i < m_symbol_codes.size(); ++i)
-        dbgln("  {} -> {}", m_symbol_codes[i], m_symbol_values[i]);
-
     for (;;) {
         code_bits = code_bits << 1 | stream.read_bits(1);
-        dbgln("code_bits={}", code_bits);
         ASSERT(code_bits < 1 << 16);
 
-        // FIXME: This seems really inefficient, this could be an index into an array instead.
+        // FIXME: This is very inefficent and could greatly be improved by implementing this
+        //        algorithm: https://www.hanshq.net/zip.html#huffdec
         size_t index;
         if (AK::binary_search(m_symbol_codes, code_bits, &index))
             return m_symbol_values[index];

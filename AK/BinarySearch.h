@@ -26,17 +26,27 @@
 
 #pragma once
 
+#include <AK/Format.h>
 #include <AK/Span.h>
 #include <AK/StdLibExtras.h>
 #include <AK/Types.h>
 
 namespace AK {
 
-struct IntegralComparator {
-    constexpr auto operator()(auto& lhs, auto& rhs) { return lhs - rhs; }
+struct DefaultComparator {
+    constexpr int operator()(auto& lhs, auto& rhs)
+    {
+        if (lhs < rhs)
+            return -1;
+
+        if (lhs > rhs)
+            return 1;
+
+        return 0;
+    }
 };
 
-template<typename Container, typename Needle, typename Comparator = IntegralComparator>
+template<typename Container, typename Needle, typename Comparator = DefaultComparator>
 constexpr auto binary_search(
     Container&& haystack,
     Needle&& needle,
@@ -52,16 +62,18 @@ constexpr auto binary_search(
     size_t low = 0;
     size_t high = haystack.size() - 1;
     while (low <= high) {
-        size_t middle = low + ((high - low) / 2);
-        auto comparison = comparator(needle, haystack[middle]);
-        if (comparison < 0)
+        size_t middle = low + (high - low) / 2;
+
+        int comparison = comparator(needle, haystack[middle]);
+
+        if (comparison < 0) {
             if (middle != 0)
                 high = middle - 1;
             else
                 break;
-        else if (comparison > 0)
+        } else if (comparison > 0) {
             low = middle + 1;
-        else {
+        } else {
             if (nearby_index)
                 *nearby_index = middle;
             return &haystack[middle];

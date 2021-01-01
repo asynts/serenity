@@ -50,14 +50,8 @@ TEST_CASE(canonical_code_simple)
     auto memory_stream = InputMemoryStream { input };
     auto bit_stream = InputBitStream { memory_stream };
 
-    dbgln("{}:{}: {}", __FILE__, __LINE__, __PRETTY_FUNCTION__);
-
-    for (size_t idx = 0; idx < 9; ++idx) {
-        dbgln("{}:{}: {}", __FILE__, __LINE__, __PRETTY_FUNCTION__);
+    for (size_t idx = 0; idx < 9; ++idx)
         EXPECT_EQ(huffman.read_symbol(bit_stream), output[idx]);
-    }
-
-    dbgln("{}:{}: {}", __FILE__, __LINE__, __PRETTY_FUNCTION__);
 }
 
 TEST_CASE(canonical_code_complex)
