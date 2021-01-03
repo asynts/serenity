@@ -26,21 +26,49 @@
 
 #pragma once
 
-#include <Applications/Writer/Model/RootNode.h>
-#include <LibGUI/Widget.h>
+// FIXME: Move this into AK.
+#include <LibWeb/TreeNode.h>
 
 namespace Writer {
 
-class WriterWidget final : public GUI::Widget {
-    C_OBJECT(WriterWidget)
+class RootNode;
+class ParagraphNode;
+class FragmentNode;
 
+class Node : public Web::TreeNode<Node> {
 public:
-    bool open_file(StringView);
+    virtual ~Node() = default;
+
+    RootNode& root() { return m_root; }
+    const RootNode& root() const { return m_root; }
+
+    void inserted_into(Node&) { }
+    void children_changed() { }
+    void removed_from(Node&) { }
+
+    void dump();
+
+    virtual StringView name() const = 0;
+    virtual bool is_child_allowed(Node&) const = 0;
+
+    bool dirty() const { return m_dirty; }
+
+protected:
+    explicit Node(RootNode& root)
+        : m_root(root)
+    {
+    }
+
+    virtual void dump(StringBuilder&, size_t indent = 0);
+    virtual bool load_from_json(const JsonObject&);
+
+    void flag_dirty() { m_dirty = true; }
 
 private:
-    WriterWidget();
-
-    RefPtr<RootNode> m_root;
+    RootNode& m_root;
+    bool m_dirty = true;
 };
+
+RefPtr<Node> construct_node_dynamically(RootNode&, StringView name);
 
 }

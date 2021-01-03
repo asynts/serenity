@@ -24,23 +24,11 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#pragma once
-
-#include <Applications/Writer/Model/RootNode.h>
-#include <LibGUI/Widget.h>
+#include <Applications/Writer/Model/FragmentNode.h>
+#include <Applications/Writer/Model/ParagraphNode.h>
 
 namespace Writer {
 
-class WriterWidget final : public GUI::Widget {
-    C_OBJECT(WriterWidget)
-
-public:
-    bool open_file(StringView);
-
-private:
-    WriterWidget();
-
-    RefPtr<RootNode> m_root;
-};
+bool ParagraphNode::is_child_allowed(Node& node) const { return is<FragmentNode>(node); }
 
 }
