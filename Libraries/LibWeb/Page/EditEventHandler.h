@@ -39,6 +39,15 @@ public:
 
     virtual ~EditEventHandler() = default;
 
+    void on_select(Layout::LayoutRange&);
+    virtual void on_select(DOM::Range&);
+
+    virtual void on_delete_pressed();
+    virtual void on_backspace_pressed();
+
+    virtual void on_insert(StringView);
+
+    // FIXME: Remove.
     virtual void handle_delete(DOM::Range&);
     virtual void handle_insert(DOM::Position, u32 code_point);
 

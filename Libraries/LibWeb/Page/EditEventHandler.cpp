@@ -117,4 +117,32 @@ void EditEventHandler::handle_insert(DOM::Position position, u32 code_point)
     //        which really hurts performance.
     m_frame.document()->force_layout();
 }
+
+void EditEventHandler::on_select(Layout::LayoutRange& range)
+{
+    // FIXME: Set selection on frame.
+
+    on_select(range.to_dom_range());
+}
+
+void EditEventHandler::on_select(DOM::Range&)
+{
+    TODO();
+}
+
+void EditEventHandler::on_delete_pressed()
+{
+    TODO();
+}
+
+void EditEventHandler::on_backspace_pressed()
+{
+    TODO();
+}
+
+void EditEventHandler::on_insert(StringView)
+{
+    TODO();
+}
+
 }
