@@ -32,6 +32,13 @@ namespace Web {
 
 class EditEventHandler {
 public:
+    enum class Direction {
+        Left,
+        Right,
+        Up,
+        Down
+    };
+
     explicit EditEventHandler(Frame& frame)
         : m_frame(frame)
     {
@@ -39,17 +46,15 @@ public:
 
     virtual ~EditEventHandler() = default;
 
+    // If this is called with a collapsed selection, then we just place the cursor.
     void on_select(Layout::LayoutRange&);
     virtual void on_select(DOM::Range&);
+    virtual void on_navigate(Direction);
 
     virtual void on_delete_pressed();
     virtual void on_backspace_pressed();
 
     virtual void on_insert(StringView);
-
-    // FIXME: Remove.
-    virtual void handle_delete(DOM::Range&);
-    virtual void handle_insert(DOM::Position, u32 code_point);
 
 private:
     Frame& m_frame;
