@@ -1,6 +1,6 @@
 compile_gml(WriterWidget.gml WriterWidgetGML.h writer_widget_gml)
 
-file(GLOB SOURCES CONFIGURE_DEPENDS *.cpp)
+file(GLOB SOURCES CONFIGURE_DEPENDS *.cpp Model/*.cpp)
 set(SOURCES ${SOURCES} WriterWidgetGML.h)
 
 serenity_app(Writer ICON app-writer)
