@@ -24,23 +24,31 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#pragma once
+#include <AK/JsonObject.h>
+#include <AK/JsonValue.h>
 
-#include <Applications/Writer/Model/RootNode.h>
-#include <LibGUI/Widget.h>
+#include <Applications/Writer/Model/FragmentNode.h>
 
 namespace Writer {
 
-class WriterWidget final : public GUI::Widget {
-    C_OBJECT(WriterWidget)
+bool FragmentNode::load_from_json(const JsonObject& object)
+{
+    if (!Node::load_from_json(object))
+        return false;
 
-public:
-    bool open_file(StringView);
+    if (!object.get("content").is_string())
+        return false;
+    set_content(object.get("content").as_string());
 
-private:
-    WriterWidget();
+    return true;
+}
 
-    RefPtr<RootNode> m_root;
-};
+void FragmentNode::dump(StringBuilder& builder, size_t indent)
+{
+    builder.appendff("{:{}}[{}]\n", "", indent * 2, name());
+    builder.appendff("{:{}}{}\n", "", (indent + 1) * 2, content());
+
+    ASSERT(!has_children());
+}
 
 }

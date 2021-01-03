@@ -1,0 +1,14 @@
+{
+    "name": "RootNode",
+    "children": [
+        {
+            "name": "ParagraphNode",
+            "children": [
+                {
+                    "name": "FragmentNode",
+                    "content": "Hello, world!"
+                }
+            ]
+        }
+    ]
+}

@@ -26,21 +26,22 @@
 
 #pragma once
 
-#include <Applications/Writer/Model/RootNode.h>
-#include <LibGUI/Widget.h>
+#include <AK/NonnullRefPtr.h>
+#include <AK/String.h>
+
+#include <Applications/Writer/Model/Node.h>
 
 namespace Writer {
 
-class WriterWidget final : public GUI::Widget {
-    C_OBJECT(WriterWidget)
-
+class ParagraphNode final : public Node {
 public:
-    bool open_file(StringView);
+    static NonnullRefPtr<ParagraphNode> create(RootNode& root) { return adopt(*new ParagraphNode(root)); }
+
+    StringView name() const override { return "ParagraphNode"; }
+    bool is_child_allowed(Node& node) const override;
 
 private:
-    WriterWidget();
-
-    RefPtr<RootNode> m_root;
+    using Node::Node;
 };
 
 }
