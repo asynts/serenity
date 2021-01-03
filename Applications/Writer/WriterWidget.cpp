@@ -46,6 +46,8 @@ bool WriterWidget::open_file(StringView filename)
 
     auto input = file.value()->read_all();
 
+    dbgln("{}", String { input.span(), AK::ShouldChomp::NoChomp });
+
     auto root = RootNode::create_from_json(String { input.span(), AK::ShouldChomp::NoChomp });
     if (!root)
         return false;

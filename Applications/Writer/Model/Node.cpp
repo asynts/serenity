@@ -71,6 +71,8 @@ bool Node::load_from_json(const JsonObject& object)
 
             if (!child->load_from_json(child_object))
                 return false;
+
+            append_child(*child);
         }
     }
 
