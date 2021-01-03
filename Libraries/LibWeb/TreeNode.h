@@ -99,9 +99,9 @@ public:
 
     bool is_ancestor_of(const TreeNode&) const;
 
-    void prepend_child(NonnullRefPtr<T> node);
-    void append_child(NonnullRefPtr<T> node, bool notify = true);
-    void insert_before(NonnullRefPtr<T> node, RefPtr<T> child, bool notify = true);
+    bool prepend_child(NonnullRefPtr<T> node);
+    bool append_child(NonnullRefPtr<T> node, bool notify = true);
+    bool insert_before(NonnullRefPtr<T> node, RefPtr<T> child, bool notify = true);
     NonnullRefPtr<T> remove_child(NonnullRefPtr<T> node);
 
     bool is_child_allowed(const T&) const { return true; }
@@ -343,12 +343,12 @@ inline NonnullRefPtr<T> TreeNode<T>::remove_child(NonnullRefPtr<T> node)
 }
 
 template<typename T>
-inline void TreeNode<T>::append_child(NonnullRefPtr<T> node, bool notify)
+inline bool TreeNode<T>::append_child(NonnullRefPtr<T> node, bool notify)
 {
     ASSERT(!node->m_parent);
 
     if (!static_cast<T*>(this)->is_child_allowed(*node))
-        return;
+        return false;
 
     if (m_last_child)
         m_last_child->m_next_sibling = node.ptr();
@@ -363,10 +363,12 @@ inline void TreeNode<T>::append_child(NonnullRefPtr<T> node, bool notify)
 
     if (notify)
         static_cast<T*>(this)->children_changed();
+
+    return true;
 }
 
 template<typename T>
-inline void TreeNode<T>::insert_before(NonnullRefPtr<T> node, RefPtr<T> child, bool notify)
+inline bool TreeNode<T>::insert_before(NonnullRefPtr<T> node, RefPtr<T> child, bool notify)
 {
     if (!child)
         return append_child(move(node), notify);
@@ -375,7 +377,7 @@ inline void TreeNode<T>::insert_before(NonnullRefPtr<T> node, RefPtr<T> child, b
     ASSERT(child->parent() == this);
 
     if (!static_cast<T*>(this)->is_child_allowed(*node))
-        return;
+        return false;
 
     node->m_previous_sibling = child->m_previous_sibling;
     node->m_next_sibling = child;
@@ -398,15 +400,17 @@ inline void TreeNode<T>::insert_before(NonnullRefPtr<T> node, RefPtr<T> child, b
 
     if (notify)
         static_cast<T*>(this)->children_changed();
+
+    return true;
 }
 
 template<typename T>
-inline void TreeNode<T>::prepend_child(NonnullRefPtr<T> node)
+inline bool TreeNode<T>::prepend_child(NonnullRefPtr<T> node)
 {
     ASSERT(!node->m_parent);
 
     if (!static_cast<T*>(this)->is_child_allowed(*node))
-        return;
+        return false;
 
     if (m_first_child)
         m_first_child->m_previous_sibling = node.ptr();
@@ -419,6 +423,8 @@ inline void TreeNode<T>::prepend_child(NonnullRefPtr<T> node)
     [[maybe_unused]] auto& rc = node.leak_ref();
 
     static_cast<T*>(this)->children_changed();
+
+    return true;
 }
 
 template<typename T>
