@@ -1,0 +1,7 @@
+[App]
+Name=Writer
+Executable=/bin/Writer
+Category=Utilities
+
+[Launcher]
+FileTypes=writer
