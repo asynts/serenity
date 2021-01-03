@@ -351,11 +351,9 @@ bool EventHandler::handle_keydown(KeyCode key, unsigned modifiers, u32 code_poin
         if (range->start_container()->is_editable()) {
             m_frame.document()->layout_node()->set_selection({});
 
-            // FIXME: This doesn't work for some reason?
             m_frame.set_cursor_position({ *range->start_container(), range->start_offset() });
 
             if (key == KeyCode::Key_Backspace || key == KeyCode::Key_Delete) {
-
                 m_edit_event_handler->handle_delete(range);
                 return true;
             } else if (code_point <= 127 && isprint(code_point)) {
