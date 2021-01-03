@@ -34,13 +34,13 @@ namespace Writer {
 
 class RootNode final : public Node {
 public:
-    static NonnullRefPtr<RootNode> construct()
-    {
-        return adopt(*new RootNode);
-    }
+    static NonnullRefPtr<RootNode> create() { return adopt(*new RootNode); }
+
+    static RefPtr<RootNode> create_from_json(StringView);
+    static RefPtr<RootNode> create_from_json(const JsonObject&);
 
     StringView name() const override { return "RootNode"; }
-    bool is_child_allowed(Node& node) const override { return is<ParagraphNode>(node); }
+    bool is_child_allowed(Node& node) const override;
 
 private:
     RootNode()

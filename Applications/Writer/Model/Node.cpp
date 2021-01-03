@@ -24,9 +24,13 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <AK/JsonObject.h>
+#include <AK/JsonValue.h>
 #include <AK/StringBuilder.h>
 
+#include <Applications/Writer/Model/FragmentNode.h>
 #include <Applications/Writer/Model/Node.h>
+#include <Applications/Writer/Model/ParagraphNode.h>
 
 namespace Writer {
 
@@ -44,6 +48,42 @@ void Node::dump()
     StringBuilder builder;
     dump(builder);
     dbgln("\n{}", builder.string_view());
+}
+
+bool Node::load_from_json(const JsonObject& object)
+{
+    if (object.get("name").as_string_or("") != name())
+        return false;
+
+    if (!object.get("children").is_null()) {
+        if (!object.get("children").is_array())
+            return false;
+
+        for (auto& child_json : object.get("children").as_array().values()) {
+            if (!child_json.is_object())
+                return false;
+            auto& child_object = child_json.as_object();
+
+            auto child = construct_node_dynamically(root(), child_object.get("name").as_string_or(""));
+            if (!child)
+                return false;
+
+            if (!child->load_from_json(child_object))
+                return false;
+        }
+    }
+
+    return true;
+}
+
+RefPtr<Node> construct_node_dynamically(RootNode& root, StringView name)
+{
+    if (name == "ParagraphNode")
+        return ParagraphNode::create(root);
+    if (name == "FragmentNode")
+        return FragmentNode::create(root);
+
+    return nullptr;
 }
 
 }

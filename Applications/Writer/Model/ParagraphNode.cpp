@@ -24,24 +24,11 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#pragma once
-
-#include <AK/NonnullRefPtr.h>
-#include <AK/String.h>
-
-#include <Applications/Writer/Model/Node.h>
+#include <Applications/Writer/Model/FragmentNode.h>
+#include <Applications/Writer/Model/ParagraphNode.h>
 
 namespace Writer {
 
-class ParagraphNode final : public Node {
-public:
-    static NonnullRefPtr<ParagraphNode> create(RootNode& root) { return adopt(*new ParagraphNode(root)); }
-
-    StringView name() const override { return "ParagraphNode"; }
-    bool is_child_allowed(Node& node) const override;
-
-private:
-    using Node::Node;
-};
+bool ParagraphNode::is_child_allowed(Node& node) const { return is<FragmentNode>(node); }
 
 }

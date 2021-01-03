@@ -24,24 +24,33 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#pragma once
+#include <AK/JsonObject.h>
+#include <AK/JsonValue.h>
 
-#include <AK/NonnullRefPtr.h>
-#include <AK/String.h>
-
-#include <Applications/Writer/Model/Node.h>
+#include <Applications/Writer/Model/ParagraphNode.h>
+#include <Applications/Writer/Model/RootNode.h>
 
 namespace Writer {
 
-class ParagraphNode final : public Node {
-public:
-    static NonnullRefPtr<ParagraphNode> create(RootNode& root) { return adopt(*new ParagraphNode(root)); }
+RefPtr<RootNode> RootNode::create_from_json(StringView input)
+{
+    auto json = JsonValue::from_string(input);
+    if (!json.has_value() || !json->is_object())
+        return nullptr;
 
-    StringView name() const override { return "ParagraphNode"; }
-    bool is_child_allowed(Node& node) const override;
+    return create_from_json(json->as_object());
+}
 
-private:
-    using Node::Node;
-};
+RefPtr<RootNode> RootNode::create_from_json(const JsonObject& json)
+{
+    auto root = create();
+
+    if (!root->load_from_json(json))
+        return nullptr;
+
+    return root;
+}
+
+bool RootNode::is_child_allowed(Node& node) const { return is<ParagraphNode>(node); }
 
 }

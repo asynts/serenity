@@ -24,24 +24,31 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#pragma once
+#include <AK/JsonObject.h>
+#include <AK/JsonValue.h>
 
-#include <AK/NonnullRefPtr.h>
-#include <AK/String.h>
-
-#include <Applications/Writer/Model/Node.h>
+#include <Applications/Writer/Model/FragmentNode.h>
 
 namespace Writer {
 
-class ParagraphNode final : public Node {
-public:
-    static NonnullRefPtr<ParagraphNode> create(RootNode& root) { return adopt(*new ParagraphNode(root)); }
+bool FragmentNode::load_from_json(const JsonObject& object)
+{
+    if (!Node::load_from_json(object))
+        return false;
 
-    StringView name() const override { return "ParagraphNode"; }
-    bool is_child_allowed(Node& node) const override;
+    if (!object.get("content").is_string())
+        return false;
+    set_content(object.get("content").as_string());
 
-private:
-    using Node::Node;
-};
+    return true;
+}
+
+void FragmentNode::dump(StringBuilder& builder, size_t indent)
+{
+    builder.appendff("{:{}}[{}]\n", "", indent * 2, name());
+    builder.appendff("{:{}}{}\n", "", (indent + 1) * 2, content());
+
+    ASSERT(!has_children());
+}
 
 }

@@ -50,7 +50,6 @@ public:
 
     virtual StringView name() const = 0;
     virtual bool is_child_allowed(Node&) const = 0;
-    virtual void dump(StringBuilder&, size_t indent = 0);
 
     bool dirty() const { return m_dirty; }
 
@@ -60,11 +59,16 @@ protected:
     {
     }
 
+    virtual void dump(StringBuilder&, size_t indent = 0);
+    virtual bool load_from_json(const JsonObject&);
+
     void flag_dirty() { m_dirty = true; }
 
 private:
     RootNode& m_root;
-    bool m_dirty = false;
+    bool m_dirty = true;
 };
+
+RefPtr<Node> construct_node_dynamically(RootNode&, StringView name);
 
 }

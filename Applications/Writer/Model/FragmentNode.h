@@ -35,10 +35,12 @@ namespace Writer {
 
 class FragmentNode final : public Node {
 public:
-    static NonnullRefPtr<FragmentNode> construct(RootNode& root) { return adopt(*new FragmentNode(root)); }
+    static NonnullRefPtr<FragmentNode> create(RootNode& root) { return adopt(*new FragmentNode(root)); }
 
     StringView name() const override { return "FragmentNode"; }
     bool is_child_allowed(Node&) const override { return false; }
+    void dump(StringBuilder&, size_t indent = 0) override;
+    bool load_from_json(const JsonObject&) override;
 
     String content() const { return m_content; }
     void set_content(String value)
