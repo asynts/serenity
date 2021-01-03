@@ -24,23 +24,33 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#pragma once
+#include <AK/JsonObject.h>
+#include <AK/JsonValue.h>
 
+#include <Applications/Writer/Model/ParagraphNode.h>
 #include <Applications/Writer/Model/RootNode.h>
-#include <LibGUI/Widget.h>
 
 namespace Writer {
 
-class WriterWidget final : public GUI::Widget {
-    C_OBJECT(WriterWidget)
+RefPtr<RootNode> RootNode::create_from_json(StringView input)
+{
+    auto json = JsonValue::from_string(input);
+    if (!json.has_value() || !json->is_object())
+        return nullptr;
 
-public:
-    bool open_file(StringView);
+    return create_from_json(json->as_object());
+}
 
-private:
-    WriterWidget();
+RefPtr<RootNode> RootNode::create_from_json(const JsonObject& json)
+{
+    auto root = create();
 
-    RefPtr<RootNode> m_root;
-};
+    if (!root->load_from_json(json))
+        return nullptr;
+
+    return root;
+}
+
+bool RootNode::is_child_allowed(Node& node) const { return is<ParagraphNode>(node); }
 
 }
