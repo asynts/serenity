@@ -77,7 +77,3 @@ private:
 };
 
 }
-
-AK_BEGIN_TYPE_TRAITS(Writer::DocumentNode)
-static bool is_type(const Writer::Node& node) { return node.class_name() == "DocumentNode"; }
-AK_END_TYPE_TRAITS()

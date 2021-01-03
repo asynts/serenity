@@ -47,7 +47,3 @@ private:
 };
 
 }
-
-AK_BEGIN_TYPE_TRAITS(Writer::HeadingNode)
-static bool is_type(const Writer::Node& node) { return node.class_name() == "HeadingNode"; }
-AK_END_TYPE_TRAITS()

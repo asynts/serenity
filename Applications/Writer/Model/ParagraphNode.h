@@ -49,11 +49,3 @@ protected:
 };
 
 }
-
-AK_BEGIN_TYPE_TRAITS(Writer::ParagraphNode)
-static bool is_type(const Writer::Node& node)
-{
-    // FIXME: We need something more sophisticated.
-    return node.class_name() == "ParagraphNode" || node.class_name() == "HeadingNode";
-}
-AK_END_TYPE_TRAITS()

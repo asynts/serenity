@@ -32,7 +32,7 @@
 #include <Applications/Writer/EditEventHandler.h>
 #include <Applications/Writer/Model/DocumentNode.h>
 #include <Applications/Writer/WriterWidget.h>
-#include <Applications/Writer/WriterWidgetUI.h>
+#include <Applications/Writer/WriterWindowGML.h>
 
 namespace Writer {
 
@@ -117,9 +117,9 @@ constexpr const char* example_writer_document = R"~~~(
 
 WriterWidget::WriterWidget()
 {
-    load_from_json(writer_widget_ui_json);
+    load_from_gml(writer_window_gml);
 
-    m_webview = static_cast<Web::InProcessWebView*>(find_descendant_by_name("webview"));
+    m_webview = find_descendant_of_type_named<Web::InProcessWebView>("webview");
     m_webview->load_html(html_template, "memory://writer");
 
     replace_document(DocumentNode::create_from_json(*m_webview->document(), example_writer_document));

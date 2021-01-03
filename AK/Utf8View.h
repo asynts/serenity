@@ -114,9 +114,9 @@ private:
 
 template<>
 struct Formatter<Utf8View> : Formatter<StringView> {
-    void format(TypeErasedFormatParams& params, FormatBuilder& builder, Utf8View value)
+    void format(FormatBuilder& builder, Utf8View value)
     {
-        Formatter<StringView>::format(params, builder, value.as_string());
+        Formatter<StringView>::format(builder, value.as_string());
     }
 };
 

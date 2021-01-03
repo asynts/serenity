@@ -70,7 +70,3 @@ private:
 };
 
 }
-
-AK_BEGIN_TYPE_TRAITS(Writer::FragmentNode)
-static bool is_type(const Writer::Node& node) { return node.class_name() == "FragmentNode"; }
-AK_END_TYPE_TRAITS()
