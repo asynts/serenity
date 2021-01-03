@@ -59,7 +59,8 @@ bool Node::load_from_json(const JsonObject& object)
         if (!object.get("children").is_array())
             return false;
 
-        for (auto& child_json : object.get("children").as_array().values()) {
+        auto children = object.get("children").as_array();
+        for (auto& child_json : children.values()) {
             if (!child_json.is_object())
                 return false;
             auto& child_object = child_json.as_object();

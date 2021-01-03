@@ -24,6 +24,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <LibCore/File.h>
+
 #include <Applications/Writer/WriterWidget.h>
 #include <Applications/Writer/WriterWidgetGML.h>
 
@@ -32,6 +34,27 @@ namespace Writer {
 WriterWidget::WriterWidget()
 {
     load_from_gml(writer_widget_gml);
+}
+
+bool WriterWidget::open_file(StringView filename)
+{
+    dbgln("opening file {}", filename);
+
+    auto file = Core::File::open(filename, Core::IODevice::OpenMode::ReadOnly);
+    if (file.is_error())
+        return false;
+
+    auto input = file.value()->read_all();
+
+    auto root = RootNode::create_from_json(String { input.span(), AK::ShouldChomp::NoChomp });
+    if (!root)
+        return false;
+
+    root->dump();
+
+    m_root = root;
+
+    return true;
 }
 
 }

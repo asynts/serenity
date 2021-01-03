@@ -26,6 +26,7 @@
 
 #pragma once
 
+#include <Applications/Writer/Model/RootNode.h>
 #include <LibGUI/Widget.h>
 
 namespace Writer {
@@ -33,8 +34,13 @@ namespace Writer {
 class WriterWidget final : public GUI::Widget {
     C_OBJECT(WriterWidget)
 
+public:
+    bool open_file(StringView);
+
 private:
     WriterWidget();
+
+    RefPtr<RootNode> m_root;
 };
 
 }
