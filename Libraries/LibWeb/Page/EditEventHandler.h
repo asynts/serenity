@@ -26,6 +26,7 @@
 
 #pragma once
 
+#include <LibWeb/DOM/Range.h>
 #include <LibWeb/Forward.h>
 
 namespace Web {
@@ -42,8 +43,26 @@ public:
     virtual void handle_delete(DOM::Range);
     virtual void handle_insert(DOM::Position, u32 code_point);
 
+    void on_select(DOM::Range range);
+
+    void on_clear_selection()
+    {
+        m_selection.clear();
+    }
+
+    Optional<DOM::Range> selection() const { return m_selection; }
+
+    Optional<DOM::Position> cursor() const
+    {
+        if (m_selection)
+            return m_selection->end();
+        return {};
+    }
+
 private:
     Frame& m_frame;
+
+    Optional<DOM::Range> m_selection;
 };
 
 }

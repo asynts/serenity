@@ -152,7 +152,6 @@ set(SOURCES
     Layout/InitialContainingBlockBox.cpp
     Layout/InlineFormattingContext.cpp
     Layout/InlineNode.cpp
-    Layout/LayoutPosition.cpp
     Layout/LineBox.cpp
     Layout/LineBoxFragment.cpp
     Layout/ListItemBox.cpp
