@@ -96,23 +96,23 @@ void InitialContainingBlockBox::recompute_selection_states()
 {
     SelectionState state = SelectionState::None;
 
-    auto selection = this->selection().normalized();
+    auto selection = document().frame()->event_handler().edit_event_handler().selection();
 
     for_each_in_subtree([&](auto& layout_node) {
-        if (!selection.is_valid()) {
-            // Everything gets SelectionState::None.
-        } else if (&layout_node == selection.start().layout_node && &layout_node == selection.end().layout_node) {
-            state = SelectionState::StartAndEnd;
-        } else if (&layout_node == selection.start().layout_node) {
-            state = SelectionState::Start;
-        } else if (&layout_node == selection.end().layout_node) {
-            state = SelectionState::End;
+        if (!selection) {
+            state = SelectionState::None;
         } else {
-            if (state == SelectionState::Start)
-                state = SelectionState::Full;
-            else if (state == SelectionState::End || state == SelectionState::StartAndEnd)
-                state = SelectionState::None;
+            auto* start = selection->start().node().layout_node();
+            auto* end = selection->end().node().layout_node();
+
+            if (&layout_node == start && &layout_node == end)
+                state = SelectionState::StartAndEnd;
+            else if (&layout_node == start)
+                state = SelectionState::Start;
+            else if (&layout_node == end)
+                state = SelectionState::End;
         }
+
         layout_node.set_selection_state(state);
         return IterationDecision::Continue;
     });

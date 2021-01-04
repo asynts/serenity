@@ -224,43 +224,43 @@ String Frame::selected_text() const
     StringBuilder builder;
     if (!m_document)
         return {};
-    auto* layout_root = m_document->layout_node();
-    if (!layout_root)
-        return {};
-    if (!layout_root->selection().is_valid())
+
+    if (!m_event_handler.edit_event_handler().selection())
         return {};
 
-    auto selection = layout_root->selection().normalized();
+    auto selection = m_event_handler.edit_event_handler().selection()->normalized();
 
-    if (selection.start().layout_node == selection.end().layout_node) {
-        if (!is<Layout::TextNode>(*selection.start().layout_node))
+    if (&selection.start().node() == &selection.end().node()) {
+        if (!is<Layout::TextNode>(selection.start().node().layout_node()))
             return "";
-        return downcast<Layout::TextNode>(*selection.start().layout_node).text_for_rendering().substring(selection.start().index_in_node, selection.end().index_in_node - selection.start().index_in_node);
+
+        auto text_for_rendering = downcast<Layout::TextNode>(selection.start().node().layout_node())->text_for_rendering();
+        return text_for_rendering.substring(selection.start().offset(), selection.end().offset() - selection.start().offset());
     }
 
     // Start node
-    auto layout_node = selection.start().layout_node;
-    if (is<Layout::TextNode>(*layout_node)) {
-        auto& text = downcast<Layout::TextNode>(*layout_node).text_for_rendering();
-        builder.append(text.substring(selection.start().index_in_node, text.length() - selection.start().index_in_node));
+    auto layout_node = selection.start().node().layout_node();
+    if (is<Layout::TextNode>(layout_node)) {
+        auto& text = downcast<Layout::TextNode>(layout_node)->text_for_rendering();
+        builder.append(text.substring(selection.start().offset(), text.length() - selection.start().offset()));
     }
 
     // Middle nodes
     layout_node = layout_node->next_in_pre_order();
-    while (layout_node && layout_node != selection.end().layout_node) {
-        if (is<Layout::TextNode>(*layout_node))
-            builder.append(downcast<Layout::TextNode>(*layout_node).text_for_rendering());
-        else if (is<Layout::BreakNode>(*layout_node) || is<Layout::BlockBox>(*layout_node))
+    while (layout_node && layout_node != selection.end().node().layout_node()) {
+        if (is<Layout::TextNode>(layout_node))
+            builder.append(downcast<Layout::TextNode>(layout_node)->text_for_rendering());
+        else if (is<Layout::BreakNode>(layout_node) || is<Layout::BlockBox>(layout_node))
             builder.append('\n');
 
         layout_node = layout_node->next_in_pre_order();
     }
 
     // End node
-    ASSERT(layout_node == selection.end().layout_node);
-    if (is<Layout::TextNode>(*layout_node)) {
-        auto& text = downcast<Layout::TextNode>(*layout_node).text_for_rendering();
-        builder.append(text.substring(0, selection.end().index_in_node));
+    ASSERT(layout_node == selection.end().node().layout_node());
+    if (is<Layout::TextNode>(layout_node)) {
+        auto& text = downcast<Layout::TextNode>(layout_node)->text_for_rendering();
+        builder.append(text.substring(0, selection.end().offset()));
     }
 
     return builder.to_string();

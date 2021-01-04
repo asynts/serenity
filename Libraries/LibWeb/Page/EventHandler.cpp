@@ -352,17 +352,17 @@ bool EventHandler::handle_keydown(KeyCode key, unsigned modifiers, u32 code_poin
             return focus_next_element();
     }
 
-    if (layout_root()->selection().is_valid()) {
-        auto range = layout_root()->selection().to_dom_range()->normalized();
-        if (range.start().node().is_editable()) {
+    if (m_edit_event_handler->selection()) {
+        auto selection = m_edit_event_handler->selection()->normalized();
+        if (selection.start().node().is_editable()) {
             // FIXME: This should not be done here.
             m_edit_event_handler->on_clear_selection();
 
             if (key == KeyCode::Key_Backspace || key == KeyCode::Key_Delete) {
-                m_edit_event_handler->handle_delete(range);
+                m_edit_event_handler->handle_delete(selection);
                 return true;
             } else {
-                m_edit_event_handler->handle_delete(range);
+                m_edit_event_handler->handle_delete(selection);
 
                 ASSERT(m_frame.cursor_position());
                 m_edit_event_handler->handle_insert(*m_frame.cursor_position(), code_point);
