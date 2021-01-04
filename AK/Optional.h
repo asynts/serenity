@@ -160,6 +160,9 @@ public:
     const T* operator->() const { return &value(); }
     T* operator->() { return &value(); }
 
+    operator const T*() const { return &value(); }
+    operator T*() { return &value(); }
+
 private:
     // Call when we don't want to alter the consume state
     ALWAYS_INLINE const T& value_without_consume_state() const

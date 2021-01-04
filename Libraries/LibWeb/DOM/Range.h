@@ -46,7 +46,7 @@ public:
 
     bool is_before(const Position& other) const
     {
-        return m_node.ptr() == other.m_node.ptr() && m_offset < other.m_offset
+        return (m_node.ptr() == other.m_node.ptr() && m_offset < other.m_offset)
             || m_node->is_before(other.m_node);
     }
 
