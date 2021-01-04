@@ -154,6 +154,17 @@ public:
         return fallback;
     }
 
+    const T* ptr() const
+    {
+        if (m_has_value)
+            return &value_without_consume_state();
+        return nullptr;
+    }
+    T* ptr()
+    {
+        return const_cast<T*>(const_cast<const Optional<T>*>(this)->ptr());
+    }
+
     const T& operator*() const { return value(); }
     T& operator*() { return value(); }
 

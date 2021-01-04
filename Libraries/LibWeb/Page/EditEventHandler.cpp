@@ -39,34 +39,52 @@
 
 namespace Web {
 
-void EditEventHandler::on_select(Layout::LayoutRange& range)
+void EditEventHandler::on_select(DOM::Range& range)
 {
-    // FIXME: Set selection on frame.
-
-    on_select(range.to_dom_range());
-}
-
-void EditEventHandler::on_select(DOM::Range&)
-{
-    TODO();
+    m_dom_selection = range;
 }
 
 void EditEventHandler::on_delete_pressed()
 {
-    TODO();
+    if (!dom_selection())
+        return;
+
+    if (dom_selection()->is_collapsed())
+        on_navigate(Direction::Right, true);
+
+    delete_dom_range(*dom_selection());
+    m_dom_selection.clear();
 }
 
 void EditEventHandler::on_backspace_pressed()
 {
-    TODO();
+    if (!dom_selection())
+        return;
+
+    if (dom_selection()->is_collapsed())
+        on_navigate(Direction::Left, true);
+
+    delete_dom_range(*dom_selection());
+    m_dom_selection.clear();
 }
 
 void EditEventHandler::on_insert(StringView)
 {
+    if (!dom_selection())
+        return;
+
+    if (!dom_selection()->is_collapsed()) {
+        delete_dom_range(*dom_selection());
+        m_dom_selection = m_dom_selection->start();
+    }
+}
+
+void EditEventHandler::on_navigate(Direction, bool)
+{
     TODO();
 }
 
-void EditEventHandler::on_navigate(Direction)
+void EditEventHandler::delete_dom_range(const DOM::Range&)
 {
     TODO();
 }

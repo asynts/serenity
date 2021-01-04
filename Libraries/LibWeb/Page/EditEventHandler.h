@@ -46,18 +46,23 @@ public:
 
     virtual ~EditEventHandler() = default;
 
-    // If this is called with a collapsed selection, then we just place the cursor.
-    void on_select(Layout::LayoutRange&);
     virtual void on_select(DOM::Range&);
-    virtual void on_navigate(Direction);
-
+    virtual void on_navigate(Direction, bool do_select);
     virtual void on_delete_pressed();
     virtual void on_backspace_pressed();
-
     virtual void on_insert(StringView);
 
+    const DOM::Range* dom_selection() const { return m_dom_selection.ptr(); }
+
+protected:
+    void set_dom_selection(DOM::Range& value) { m_dom_selection = value; }
+
 private:
+    void delete_dom_range(const DOM::Range&);
+
     Frame& m_frame;
+
+    Optional<DOM::Range> m_dom_selection;
 };
 
 }
