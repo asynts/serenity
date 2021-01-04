@@ -33,7 +33,7 @@ namespace Web::DOM {
 
 class Position {
 public:
-    Position(Node& node, size_t offset)
+    Position(const Node& node, size_t offset)
         : m_node(node)
         , m_offset(offset)
     {
@@ -68,7 +68,7 @@ public:
     {
     }
 
-    explicit Range(Position position)
+    Range(Position position)
         : m_start(position)
         , m_end(position)
     {

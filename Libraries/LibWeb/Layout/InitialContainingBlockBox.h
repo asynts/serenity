@@ -43,9 +43,8 @@ public:
 
     virtual HitTestResult hit_test(const Gfx::IntPoint&, HitTestType) const override;
 
+    // FIXME: Remove.
     const LayoutRange& selection() const { return m_selection; }
-    void set_selection(const LayoutRange&);
-    void set_selection_end(const LayoutPosition&);
 
     void did_set_viewport_rect(Badge<Frame>, const Gfx::IntRect&);
 

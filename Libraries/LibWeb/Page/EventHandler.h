@@ -51,6 +51,9 @@ public:
 
     void set_mouse_event_tracking_layout_node(Layout::Node*);
 
+    const EditEventHandler& edit_event_handler() const { return *m_edit_event_handler; }
+    EditEventHandler& edit_event_handler() { return *m_edit_event_handler; }
+
     void set_edit_event_handler(NonnullOwnPtr<EditEventHandler> value) { m_edit_event_handler = move(value); }
 
 private:

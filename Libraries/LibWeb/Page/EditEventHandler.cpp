@@ -116,4 +116,13 @@ void EditEventHandler::handle_insert(DOM::Position position, u32 code_point)
     //        which really hurts performance.
     m_frame.document()->force_layout();
 }
+
+void EditEventHandler::on_select(DOM::Range range)
+{
+    m_selection = range;
+
+    if (m_frame.document() && m_frame.document()->layout_node())
+        m_frame.document()->layout_node()->recompute_selection_states();
+}
+
 }

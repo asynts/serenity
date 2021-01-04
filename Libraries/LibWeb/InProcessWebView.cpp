@@ -114,7 +114,16 @@ void InProcessWebView::select_all()
     if (is<Layout::TextNode>(*last_layout_node))
         last_layout_node_index_in_node = downcast<Layout::TextNode>(*last_layout_node).text_for_rendering().length() - 1;
 
-    layout_root->set_selection({ { first_layout_node, 0 }, { last_layout_node, last_layout_node_index_in_node } });
+    ASSERT(first_layout_node->dom_node());
+    ASSERT(last_layout_node->dom_node());
+
+    ASSERT(last_layout_node_index_in_node >= 0);
+
+    page().main_frame().event_handler().edit_event_handler().on_select(DOM::Range {
+        DOM::Position { *first_layout_node->dom_node(), 0 },
+        DOM::Position { *last_layout_node->dom_node(), static_cast<size_t>(last_layout_node_index_in_node) },
+    });
+
     update();
 }
 
