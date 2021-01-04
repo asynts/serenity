@@ -27,64 +27,74 @@
 #pragma once
 
 #include <AK/RefCounted.h>
-#include <LibWeb/Bindings/Wrappable.h>
 #include <LibWeb/DOM/Node.h>
 
 namespace Web::DOM {
 
-class Range final
-    : public RefCounted<Range>
-    , public Bindings::Wrappable {
+class Position {
 public:
-    using WrapperType = Bindings::RangeWrapper;
-
-    static NonnullRefPtr<Range> create(Window& window)
+    Position(Node& node, size_t offset)
+        : m_node(node)
+        , m_offset(offset)
     {
-        return adopt(*new Range(window));
-    }
-    static NonnullRefPtr<Range> create(Node& start_container, size_t start_offset, Node& end_container, size_t end_offset)
-    {
-        return adopt(*new Range(start_container, start_offset, end_container, end_offset));
     }
 
-    // FIXME: There are a ton of methods missing here.
+    const Node& node() const { return m_node; }
+    Node& node() { return m_node; }
 
-    Node* start_container() { return m_start_container; }
-    unsigned start_offset() { return m_start_offset; }
+    size_t offset() const { return m_offset; }
 
-    Node* end_container() { return m_end_container; }
-    unsigned end_offset() { return m_end_offset; }
-
-    bool collapsed()
+    bool is_before(const Position& other) const
     {
-        return start_container() == end_container() && start_offset() == end_offset();
+        return m_node.ptr() == other.m_node.ptr() && m_offset < other.m_offset
+            || m_node->is_before(other.m_node);
     }
 
-    void set_start(Node& container, unsigned offset)
+    bool operator==(const Position& other) const
     {
-        m_start_container = container;
-        m_start_offset = offset;
+        return m_node.ptr() == other.m_node.ptr() && m_offset == other.m_offset;
     }
-
-    void set_end(Node& container, unsigned offset)
-    {
-        m_end_container = container;
-        m_end_offset = offset;
-    }
-
-    NonnullRefPtr<Range> inverted() const;
-    NonnullRefPtr<Range> normalized() const;
-    NonnullRefPtr<Range> clone_range() const;
 
 private:
-    explicit Range(Window&);
-    Range(Node& start_container, size_t start_offset, Node& end_container, size_t end_offset);
+    NonnullRefPtr<Node> m_node;
+    size_t m_offset;
+};
 
-    NonnullRefPtr<Node> m_start_container;
-    unsigned m_start_offset;
+class Range {
+public:
+    Range(Position start, Position end)
+        : m_start(start)
+        , m_end(end)
+    {
+    }
 
-    NonnullRefPtr<Node> m_end_container;
-    unsigned m_end_offset;
+    explicit Range(Position position)
+        : m_start(position)
+        , m_end(position)
+    {
+    }
+
+    const Position& start() const { return m_start; }
+    Position& start() { return m_start; }
+
+    const Position& end() const { return m_end; }
+    Position& end() { return m_end; }
+
+    bool is_collapsed() const { return m_start == m_end; }
+
+    Range collapse_to_start() const { return Range { m_start }; }
+    Range collapse_to_end() const { return Range { m_end }; }
+
+    Range normalized() const
+    {
+        if (m_end.is_before(m_start))
+            return { m_end, m_start };
+        return *this;
+    }
+
+private:
+    Position m_start;
+    Position m_end;
 };
 
 }
