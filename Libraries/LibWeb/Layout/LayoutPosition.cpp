@@ -24,20 +24,19 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <LibWeb/DOM/Position.h>
 #include <LibWeb/DOM/Range.h>
 #include <LibWeb/Layout/LayoutPosition.h>
 #include <LibWeb/Layout/Node.h>
 
 namespace Web::Layout {
 
-DOM::Position LayoutPosition::to_dom_position() const
+Optional<DOM::Position> LayoutPosition::to_dom_position() const
 {
     if (!layout_node)
         return {};
 
     // FIXME: Verify that there are no shenanigans going on.
-    return { const_cast<DOM::Node&>(*layout_node->dom_node()), (unsigned)index_in_node };
+    return DOM::Position { const_cast<DOM::Node&>(*layout_node->dom_node()), (unsigned)index_in_node };
 }
 
 LayoutRange LayoutRange::normalized() const
@@ -54,14 +53,17 @@ LayoutRange LayoutRange::normalized() const
     return { m_end, m_start };
 }
 
-NonnullRefPtr<DOM::Range> LayoutRange::to_dom_range() const
+Optional<DOM::Range> LayoutRange::to_dom_range() const
 {
     ASSERT(is_valid());
 
     auto start = m_start.to_dom_position();
     auto end = m_end.to_dom_position();
 
-    return DOM::Range::create(*start.node(), start.offset(), *end.node(), end.offset());
+    if (!start.has_value() || !end.has_value())
+        return {};
+
+    return DOM::Range { *start, *end };
 }
 
 }

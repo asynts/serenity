@@ -63,9 +63,10 @@ void Frame::setup()
     m_cursor_blink_timer = Core::Timer::construct(500, [this] {
         if (!is_focused_frame())
             return;
-        if (m_cursor_position.node() && m_cursor_position.node()->layout_node()) {
+
+        if (m_cursor_position && m_cursor_position->node().layout_node()) {
             m_cursor_blink_state = !m_cursor_blink_state;
-            m_cursor_position.node()->layout_node()->set_needs_display();
+            m_cursor_position->node().layout_node()->set_needs_display();
         }
     });
 }
@@ -202,16 +203,18 @@ Gfx::IntPoint Frame::to_main_frame_position(const Gfx::IntPoint& a_position)
 
 void Frame::set_cursor_position(const DOM::Position& position)
 {
-    if (m_cursor_position == position)
-        return;
+    if (m_cursor_position) {
+        if (*m_cursor_position == position)
+            return;
 
-    if (m_cursor_position.node() && m_cursor_position.node()->layout_node())
-        m_cursor_position.node()->layout_node()->set_needs_display();
+        if (m_cursor_position->node().layout_node())
+            m_cursor_position->node().layout_node()->set_needs_display();
+    }
 
     m_cursor_position = position;
 
-    if (m_cursor_position.node() && m_cursor_position.node()->layout_node())
-        m_cursor_position.node()->layout_node()->set_needs_display();
+    if (m_cursor_position->node().layout_node())
+        m_cursor_position->node().layout_node()->set_needs_display();
 
     dbg() << "Cursor position: " << m_cursor_position;
 }
