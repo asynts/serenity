@@ -34,7 +34,7 @@
 #include <LibGfx/Bitmap.h>
 #include <LibGfx/Rect.h>
 #include <LibGfx/Size.h>
-#include <LibWeb/DOM/Position.h>
+#include <LibWeb/DOM/Range.h>
 #include <LibWeb/Loader/FrameLoader.h>
 #include <LibWeb/Page/EventHandler.h>
 #include <LibWeb/TreeNode.h>
@@ -86,8 +86,8 @@ public:
     Gfx::IntPoint to_main_frame_position(const Gfx::IntPoint&);
     Gfx::IntRect to_main_frame_rect(const Gfx::IntRect&);
 
-    DOM::Position& cursor_position() { return m_cursor_position; }
-    const DOM::Position& cursor_position() const { return m_cursor_position; }
+    DOM::Position* cursor_position() { return m_cursor_position; }
+    const DOM::Position* cursor_position() const { return m_cursor_position; }
     void set_cursor_position(const DOM::Position&);
 
     bool cursor_blink_state() const { return m_cursor_blink_state; }
@@ -111,7 +111,7 @@ private:
     Gfx::IntSize m_size;
     Gfx::IntPoint m_viewport_scroll_offset;
 
-    DOM::Position m_cursor_position;
+    Optional<DOM::Position> m_cursor_position;
     RefPtr<Core::Timer> m_cursor_blink_timer;
     bool m_cursor_blink_state { false };
 };

@@ -347,68 +347,78 @@ bool EventHandler::handle_keydown(KeyCode key, unsigned modifiers, u32 code_poin
 
     if (layout_root()->selection().is_valid()) {
         auto range = layout_root()->selection().to_dom_range()->normalized();
-        if (range->start_container()->is_editable()) {
+        if (range.start().node().is_editable()) {
             m_frame.document()->layout_node()->set_selection({});
 
             // FIXME: This doesn't work for some reason?
-            m_frame.set_cursor_position({ *range->start_container(), range->start_offset() });
+            m_frame.set_cursor_position({ range.start().node(), range.start().offset() });
 
             if (key == KeyCode::Key_Backspace || key == KeyCode::Key_Delete) {
 
                 m_edit_event_handler->handle_delete(range);
                 return true;
             } else {
-
                 m_edit_event_handler->handle_delete(range);
 
-                m_edit_event_handler->handle_insert(m_frame.cursor_position(), code_point);
-                m_frame.cursor_position().set_offset(m_frame.cursor_position().offset() + 1);
+                ASSERT(m_frame.cursor_position());
+                m_edit_event_handler->handle_insert(*m_frame.cursor_position(), code_point);
+
+                auto new_cursor_position = DOM::Position { m_frame.cursor_position()->node(), m_frame.cursor_position()->offset() + 1 };
+                m_frame.set_cursor_position(new_cursor_position);
+
                 return true;
             }
         }
     }
 
-    if (m_frame.cursor_position().is_valid() && m_frame.cursor_position().node()->is_editable()) {
-        if (key == KeyCode::Key_Backspace) {
-            auto position = m_frame.cursor_position();
+    if (m_frame.cursor_position() && m_frame.cursor_position()->node().is_editable()) {
+        auto position = *m_frame.cursor_position();
 
+        if (key == KeyCode::Key_Backspace) {
             if (position.offset() == 0)
                 TODO();
 
-            m_frame.cursor_position().set_offset(position.offset() - 1);
-            m_edit_event_handler->handle_delete(DOM::Range::create(*position.node(), position.offset() - 1, *position.node(), position.offset()));
+            auto new_cursor_position = DOM::Position { position.node(), position.offset() - 1 };
+            m_frame.set_cursor_position(new_cursor_position);
+
+            m_edit_event_handler->handle_delete(DOM::Range {
+                { position.node(), position.offset() - 1 },
+                { position.node(), position.offset() },
+            });
 
             return true;
         } else if (key == KeyCode::Key_Delete) {
-            auto position = m_frame.cursor_position();
-
-            if (position.offset() >= downcast<DOM::Text>(position.node())->data().length())
+            if (position.offset() >= downcast<DOM::Text>(position.node()).data().length())
                 TODO();
 
-            m_edit_event_handler->handle_delete(DOM::Range::create(*position.node(), position.offset(), *position.node(), position.offset() + 1));
+            m_edit_event_handler->handle_delete(DOM::Range {
+                { position.node(), position.offset() },
+                { position.node(), position.offset() + 1 },
+            });
 
             return true;
         } else if (key == KeyCode::Key_Right) {
-            auto position = m_frame.cursor_position();
-
-            if (position.offset() >= downcast<DOM::Text>(position.node())->data().length())
+            if (position.offset() >= downcast<DOM::Text>(position.node()).data().length())
                 TODO();
 
-            m_frame.cursor_position().set_offset(position.offset() + 1);
+            auto new_cursor_position = DOM::Position { position.node(), position.offset() + 1 };
+            m_frame.set_cursor_position(new_cursor_position);
 
             return true;
         } else if (key == KeyCode::Key_Left) {
-            auto position = m_frame.cursor_position();
-
             if (position.offset() == 0)
                 TODO();
 
-            m_frame.cursor_position().set_offset(position.offset() - 1);
+            auto new_cursor_position = DOM::Position { position.node(), position.offset() - 1 };
+            m_frame.set_cursor_position(new_cursor_position);
 
             return true;
         } else {
-            m_edit_event_handler->handle_insert(m_frame.cursor_position(), code_point);
-            m_frame.cursor_position().set_offset(m_frame.cursor_position().offset() + 1);
+            m_edit_event_handler->handle_insert(position, code_point);
+
+            auto new_cursor_position = DOM::Position { position.node(), position.offset() + 1 };
+            m_frame.set_cursor_position(new_cursor_position);
+
             return true;
         }
     }

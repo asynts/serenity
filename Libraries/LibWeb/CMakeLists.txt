@@ -11,9 +11,6 @@ set(SOURCES
     Bindings/XMLHttpRequestConstructor.cpp
     Bindings/XMLHttpRequestPrototype.cpp
     Bindings/XMLHttpRequestWrapper.cpp
-    Bindings/RangeConstructor.cpp
-    Bindings/RangePrototype.cpp
-    Bindings/RangeWrapper.cpp
     CSS/DefaultStyleSheetSource.cpp
     CSS/Length.cpp
     CSS/Parser/CSSParser.cpp
@@ -42,13 +39,11 @@ set(SOURCES
     DOM/Element.cpp
     DOM/ElementFactory.cpp
     DOM/Event.cpp
-    DOM/Range.cpp
     DOM/EventDispatcher.cpp
     DOM/EventListener.cpp
     DOM/EventTarget.cpp
     DOM/Node.cpp
     DOM/ParentNode.cpp
-    DOM/Position.cpp
     DOM/ShadowRoot.cpp
     DOM/Text.cpp
     DOM/Text.idl
