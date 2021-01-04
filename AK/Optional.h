@@ -133,6 +133,17 @@ public:
         return *reinterpret_cast<T*>(&m_storage);
     }
 
+    const T* ptr() const
+    {
+        if (m_has_value)
+            return &value();
+        return nullptr;
+    }
+    T* ptr()
+    {
+        return const_cast<T*>(const_cast<const Optional<T>*>(this)->ptr());
+    }
+
     ALWAYS_INLINE const T& value() const
     {
         return value_without_consume_state();
@@ -160,8 +171,8 @@ public:
     const T* operator->() const { return &value(); }
     T* operator->() { return &value(); }
 
-    operator const T*() const { return &value(); }
-    operator T*() { return &value(); }
+    operator const T*() const { return ptr(); }
+    operator T*() { return ptr(); }
 
 private:
     // Call when we don't want to alter the consume state
