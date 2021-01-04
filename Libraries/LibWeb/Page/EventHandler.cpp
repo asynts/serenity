@@ -203,8 +203,9 @@ bool EventHandler::handle_mousedown(const Gfx::IntPoint& position, unsigned butt
         if (button == GUI::MouseButton::Left) {
             auto result = layout_root()->hit_test(position, Layout::HitTestType::TextCursor);
             if (result.layout_node && result.layout_node->dom_node()) {
-                m_frame.set_cursor_position(DOM::Position(*node, result.index_in_node));
-                layout_root()->set_selection({ { result.layout_node, result.index_in_node }, {} });
+                ASSERT(result.index_in_node >= 0);
+                m_edit_event_handler->on_select(DOM::Position { *node, static_cast<size_t>(result.index_in_node) });
+
                 dump_selection("MouseDown");
                 m_in_mouse_selection = true;
             }
@@ -269,7 +270,13 @@ bool EventHandler::handle_mousemove(const Gfx::IntPoint& position, unsigned butt
         if (m_in_mouse_selection) {
             auto hit = layout_root()->hit_test(position, Layout::HitTestType::TextCursor);
             if (hit.layout_node && hit.layout_node->dom_node()) {
-                layout_root()->set_selection_end({ hit.layout_node, hit.index_in_node });
+                ASSERT(m_edit_event_handler->cursor().has_value());
+
+                ASSERT(hit.index_in_node >= 0);
+                m_edit_event_handler->on_select({
+                    m_edit_event_handler->selection()->start(),
+                    { *hit.layout_node->dom_node(), static_cast<size_t>(hit.index_in_node) },
+                });
             }
             dump_selection("MouseMove");
             if (auto* page = m_frame.page())
@@ -345,20 +352,17 @@ bool EventHandler::handle_keydown(KeyCode key, unsigned modifiers, u32 code_poin
             return focus_next_element();
     }
 
-    if (layout_root()->selection().is_valid()) {
-        auto range = layout_root()->selection().to_dom_range()->normalized();
-        if (range.start().node().is_editable()) {
-            m_frame.document()->layout_node()->set_selection({});
-
-            // FIXME: This doesn't work for some reason?
-            m_frame.set_cursor_position({ range.start().node(), range.start().offset() });
+    if (m_edit_event_handler->selection()) {
+        auto selection = m_edit_event_handler->selection()->normalized();
+        if (selection.start().node().is_editable()) {
+            // FIXME: This should not be done here.
+            m_edit_event_handler->on_clear_selection();
 
             if (key == KeyCode::Key_Backspace || key == KeyCode::Key_Delete) {
-
-                m_edit_event_handler->handle_delete(range);
+                m_edit_event_handler->handle_delete(selection);
                 return true;
             } else {
-                m_edit_event_handler->handle_delete(range);
+                m_edit_event_handler->handle_delete(selection);
 
                 ASSERT(m_frame.cursor_position());
                 m_edit_event_handler->handle_insert(*m_frame.cursor_position(), code_point);

@@ -82,8 +82,8 @@ public:
 
 private:
     Node& m_layout_node;
-    int m_start { 0 };
-    int m_length { 0 };
+    size_t m_start { 0 };
+    size_t m_length { 0 };
     Gfx::FloatPoint m_offset;
     Gfx::FloatSize m_size;
     Type m_type { Type::Normal };

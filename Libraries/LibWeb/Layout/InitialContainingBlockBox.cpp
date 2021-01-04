@@ -96,38 +96,34 @@ void InitialContainingBlockBox::recompute_selection_states()
 {
     SelectionState state = SelectionState::None;
 
-    auto selection = this->selection().normalized();
+    // FIXME: This is suboptimal.
+    auto selection = document().frame()->event_handler().edit_event_handler().selection();
+
+    dbgln("recomputing selection states for {}", selection ? String::formatted("{}", *selection) : "");
 
     for_each_in_subtree([&](auto& layout_node) {
-        if (!selection.is_valid()) {
-            // Everything gets SelectionState::None.
-        } else if (&layout_node == selection.start().layout_node && &layout_node == selection.end().layout_node) {
-            state = SelectionState::StartAndEnd;
-        } else if (&layout_node == selection.start().layout_node) {
-            state = SelectionState::Start;
-        } else if (&layout_node == selection.end().layout_node) {
-            state = SelectionState::End;
-        } else {
-            if (state == SelectionState::Start)
+        if (selection) {
+            auto* start_layout_node = selection->start().node().layout_node();
+            auto* end_layout_node = selection->end().node().layout_node();
+
+            ASSERT(start_layout_node);
+            ASSERT(end_layout_node);
+
+            if (&layout_node == start_layout_node && &layout_node == end_layout_node)
+                state = SelectionState::StartAndEnd;
+            else if (&layout_node == start_layout_node)
+                state = SelectionState::Start;
+            else if (&layout_node == end_layout_node)
+                state = SelectionState::End;
+            else if (state == SelectionState::Start)
                 state = SelectionState::Full;
             else if (state == SelectionState::End || state == SelectionState::StartAndEnd)
                 state = SelectionState::None;
         }
+
         layout_node.set_selection_state(state);
         return IterationDecision::Continue;
     });
-}
-
-void InitialContainingBlockBox::set_selection(const LayoutRange& selection)
-{
-    m_selection = selection;
-    recompute_selection_states();
-}
-
-void InitialContainingBlockBox::set_selection_end(const LayoutPosition& position)
-{
-    m_selection.set_end(position);
-    recompute_selection_states();
 }
 
 }

@@ -29,6 +29,7 @@
 #include <LibWeb/Layout/InitialContainingBlockBox.h>
 #include <LibWeb/Layout/LineBoxFragment.h>
 #include <LibWeb/Layout/TextNode.h>
+#include <LibWeb/Page/Frame.h>
 #include <LibWeb/Painting/BorderPainting.h>
 #include <LibWeb/Painting/PaintContext.h>
 #include <ctype.h>
@@ -105,11 +106,14 @@ Gfx::FloatRect LineBoxFragment::selection_rect(const Gfx::Font& font) const
     if (layout_node().selection_state() == Node::SelectionState::Full)
         return absolute_rect();
 
-    auto selection = layout_node().root().selection().normalized();
-    if (!selection.is_valid())
-        return {};
     if (!is<TextNode>(layout_node()))
         return {};
+
+    auto selection = layout_node().document().frame()->event_handler().edit_event_handler().selection();
+    if (!selection)
+        return {};
+
+    selection = selection->normalized();
 
     const auto start_index = m_start;
     const auto end_index = m_start + m_length;
@@ -117,16 +121,16 @@ Gfx::FloatRect LineBoxFragment::selection_rect(const Gfx::Font& font) const
 
     if (layout_node().selection_state() == Node::SelectionState::StartAndEnd) {
         // we are in the start/end node (both the same)
-        if (start_index > selection.end().index_in_node)
+        if (start_index > selection->end().offset())
             return {};
-        if (end_index < selection.start().index_in_node)
-            return {};
-
-        if (selection.start().index_in_node == selection.end().index_in_node)
+        if (end_index < selection->start().offset())
             return {};
 
-        auto selection_start_in_this_fragment = max(0, selection.start().index_in_node - m_start);
-        auto selection_end_in_this_fragment = min(m_length, selection.end().index_in_node - m_start);
+        if (selection->start().offset() == selection->end().offset())
+            return {};
+
+        auto selection_start_in_this_fragment = max<size_t>(0, selection->start().offset() - m_start);
+        auto selection_end_in_this_fragment = min(m_length, selection->end().offset() - m_start);
         auto pixel_distance_to_first_selected_character = font.width(text.substring_view(0, selection_start_in_this_fragment));
         auto pixel_width_of_selection = font.width(text.substring_view(selection_start_in_this_fragment, selection_end_in_this_fragment - selection_start_in_this_fragment)) + 1;
 
@@ -138,10 +142,10 @@ Gfx::FloatRect LineBoxFragment::selection_rect(const Gfx::Font& font) const
     }
     if (layout_node().selection_state() == Node::SelectionState::Start) {
         // we are in the start node
-        if (end_index < selection.start().index_in_node)
+        if (end_index < selection->start().offset())
             return {};
 
-        auto selection_start_in_this_fragment = max(0, selection.start().index_in_node - m_start);
+        auto selection_start_in_this_fragment = max<size_t>(0, selection->start().offset() - m_start);
         auto selection_end_in_this_fragment = m_length;
         auto pixel_distance_to_first_selected_character = font.width(text.substring_view(0, selection_start_in_this_fragment));
         auto pixel_width_of_selection = font.width(text.substring_view(selection_start_in_this_fragment, selection_end_in_this_fragment - selection_start_in_this_fragment)) + 1;
@@ -154,11 +158,11 @@ Gfx::FloatRect LineBoxFragment::selection_rect(const Gfx::Font& font) const
     }
     if (layout_node().selection_state() == Node::SelectionState::End) {
         // we are in the end node
-        if (start_index > selection.end().index_in_node)
+        if (start_index > selection->end().offset())
             return {};
 
         auto selection_start_in_this_fragment = 0;
-        auto selection_end_in_this_fragment = min(selection.end().index_in_node, m_length);
+        auto selection_end_in_this_fragment = min(selection->end().offset(), m_length);
         auto pixel_distance_to_first_selected_character = font.width(text.substring_view(0, selection_start_in_this_fragment));
         auto pixel_width_of_selection = font.width(text.substring_view(selection_start_in_this_fragment, selection_end_in_this_fragment - selection_start_in_this_fragment)) + 1;
 
