@@ -98,3 +98,23 @@ private:
 };
 
 }
+
+namespace AK {
+
+template<>
+struct Formatter<Web::DOM::Position> : Formatter<String> {
+    void format(FormatBuilder& builder, Web::DOM::Position value)
+    {
+        return Formatter<String>::format(builder, String::formatted("{}:{}", &value.node(), value.offset()));
+    }
+};
+
+template<>
+struct Formatter<Web::DOM::Range> : Formatter<String> {
+    void format(FormatBuilder& builder, Web::DOM::Range value)
+    {
+        return Formatter<String>::format(builder, String::formatted("{}-{}", value.start(), value.end()));
+    }
+};
+
+}
