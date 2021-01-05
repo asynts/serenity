@@ -40,18 +40,12 @@ public:
 
     virtual ~EditEventHandler() = default;
 
-    virtual void handle_delete(DOM::Range);
-    virtual void handle_insert(DOM::Position, u32 code_point);
-
     bool on_backspace_pressed();
     bool on_delete_pressed();
+    bool on_text_inserted(StringView);
 
     void on_select(DOM::Range range);
-
-    void on_clear_selection()
-    {
-        m_selection.clear();
-    }
+    void on_clear_selection() { m_selection.clear(); }
 
     Optional<DOM::Range> selection() const { return m_selection; }
 

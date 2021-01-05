@@ -24,6 +24,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <LibC/ctype.h>
 #include <LibGUI/Event.h>
 #include <LibGUI/Window.h>
 #include <LibJS/Runtime/Value.h>
@@ -358,54 +359,13 @@ bool EventHandler::handle_keydown(KeyCode key, unsigned modifiers, u32 code_poin
     } else if (key == KeyCode::Key_Delete) {
         if (m_edit_event_handler->on_delete_pressed())
             return true;
-    }
+    } else if (key == KeyCode::Key_Left || key == KeyCode::Key_Right || key == KeyCode::Key_Up || key == KeyCode::Key_Down) {
+        TODO();
+    } else if (code_point <= 127 && isprint(code_point)) {
+        char snippet = static_cast<char>(code_point);
 
-    if (m_edit_event_handler->cursor() && m_edit_event_handler->cursor()->node().is_editable()) {
-        if (m_edit_event_handler->selection()->is_collapsed()) {
-            auto cursor_position = *m_edit_event_handler->cursor();
-
-            if (key == KeyCode::Key_Right) {
-                if (cursor_position.offset() >= downcast<DOM::Text>(cursor_position.node()).data().length())
-                    TODO();
-
-                // FIXME: We should happen in EditEventHandler.
-                auto new_cursor_position = DOM::Position { cursor_position.node(), cursor_position.offset() + 1 };
-                m_edit_event_handler->on_select(new_cursor_position);
-
-                return true;
-            } else if (key == KeyCode::Key_Left) {
-                if (cursor_position.offset() == 0)
-                    TODO();
-
-                // FIXME: We should happen in EditEventHandler.
-                auto new_cursor_position = DOM::Position { cursor_position.node(), cursor_position.offset() - 1 };
-                m_edit_event_handler->on_select(new_cursor_position);
-
-                return true;
-            } else {
-                m_edit_event_handler->handle_insert(cursor_position, code_point);
-
-                // FIXME: We should happen in EditEventHandler.
-                auto new_cursor_position = DOM::Position { cursor_position.node(), cursor_position.offset() + 1 };
-                m_edit_event_handler->on_select(new_cursor_position);
-
-                return true;
-            }
-        } else {
-            auto selection = m_edit_event_handler->selection()->normalized();
-            if (selection.start().node().is_editable()) {
-                m_edit_event_handler->handle_delete(selection);
-
-                m_edit_event_handler->handle_insert(*m_edit_event_handler->cursor(), code_point);
-
-                // FIXME: We should happen in EditEventHandler.
-                auto cursor_position = *m_edit_event_handler->cursor();
-                auto new_cursor_position = DOM::Position { cursor_position.node(), cursor_position.offset() + 1 };
-                m_edit_event_handler->on_select(new_cursor_position);
-
-                return true;
-            }
-        }
+        if (m_edit_event_handler->on_text_inserted({ &snippet, 1 }))
+            return true;
     }
 
     return false;

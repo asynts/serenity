@@ -38,85 +38,6 @@
 
 namespace Web {
 
-// This method is quite convoluted but this is necessary to make editing feel intuitive.
-void EditEventHandler::handle_delete(DOM::Range range)
-{
-    auto& start = downcast<DOM::Text>(range.start().node());
-    auto& end = downcast<DOM::Text>(range.end().node());
-
-    if (&start == &end) {
-        StringBuilder builder;
-        builder.append(start.data().substring_view(0, range.start().offset()));
-        builder.append(end.data().substring_view(range.end().offset()));
-
-        start.set_data(builder.to_string());
-    } else {
-        // Remove all the nodes that are fully enclosed in the range.
-        HashTable<DOM::Node*> queued_for_deletion;
-        for (auto* node = start.next_in_pre_order(); node; node = node->next_in_pre_order()) {
-            if (node == &end)
-                break;
-
-            queued_for_deletion.set(node);
-        }
-        for (auto* parent = start.parent(); parent; parent = parent->parent())
-            queued_for_deletion.remove(parent);
-        for (auto* parent = end.parent(); parent; parent = parent->parent())
-            queued_for_deletion.remove(parent);
-        for (auto* node : queued_for_deletion)
-            node->parent()->remove_child(*node);
-
-        // Join the parent nodes of start and end.
-        DOM::Node *insert_after = &start, *remove_from = &end, *parent_of_end = end.parent();
-        while (remove_from) {
-            auto* next_sibling = remove_from->next_sibling();
-
-            remove_from->parent()->remove_child(*remove_from);
-            insert_after->parent()->insert_before(*remove_from, *insert_after);
-
-            insert_after = remove_from;
-            remove_from = next_sibling;
-        }
-        if (!parent_of_end->has_children()) {
-            if (parent_of_end->parent())
-                parent_of_end->parent()->remove_child(*parent_of_end);
-        }
-
-        // Join the start and end nodes.
-        StringBuilder builder;
-        builder.append(start.data().substring_view(0, range.start().offset()));
-        builder.append(end.data().substring_view(range.end().offset()));
-
-        start.set_data(builder.to_string());
-        start.parent()->remove_child(end);
-    }
-
-    // FIXME: When nodes are removed from the DOM, the associated layout nodes become stale and still
-    //        remain in the layout tree. This has to be fixed, this just causes everything to be recomputed
-    //        which really hurts performance.
-    m_frame.document()->force_layout();
-}
-
-void EditEventHandler::handle_insert(DOM::Position position, u32 code_point)
-{
-    if (is<DOM::Text>(position.node())) {
-        auto& node = downcast<DOM::Text>(position.node());
-
-        StringBuilder builder;
-        builder.append(node.data().substring_view(0, position.offset()));
-        builder.append_code_point(code_point);
-        builder.append(node.data().substring_view(position.offset()));
-        node.set_data(builder.to_string());
-
-        node.invalidate_style();
-    }
-
-    // FIXME: When nodes are removed from the DOM, the associated layout nodes become stale and still
-    //        remain in the layout tree. This has to be fixed, this just causes everything to be recomputed
-    //        which really hurts performance.
-    m_frame.document()->force_layout();
-}
-
 void EditEventHandler::on_select(DOM::Range range)
 {
     m_selection = range;
@@ -158,24 +79,50 @@ bool EditEventHandler::on_delete_pressed()
     if (!selection())
         return false;
 
-    auto cached_selection = selection();
-    auto cached_cursor = cursor();
+    auto old_selection = selection();
+    auto old_cursor = cursor();
 
-    if (cached_selection->is_collapsed()) {
-        auto& text = downcast<DOM::Text>(cached_cursor->node());
+    if (old_selection->is_collapsed()) {
+        auto& text = downcast<DOM::Text>(old_cursor->node());
 
-        if (cached_cursor->offset() >= text.length())
+        if (old_cursor->offset() >= text.length())
             TODO();
 
         delete_dom_range({
-            { cached_cursor->node(), cached_cursor->offset() },
-            { cached_cursor->node(), cached_cursor->offset() + 1 },
+            { old_cursor->node(), old_cursor->offset() },
+            { old_cursor->node(), old_cursor->offset() + 1 },
         });
     } else {
-        m_selection = cached_selection->normalized().start();
+        m_selection = old_selection->normalized().start();
 
-        delete_dom_range(*cached_selection);
+        delete_dom_range(*old_selection);
     }
+
+    update_dom();
+    return true;
+}
+
+bool EditEventHandler::on_text_inserted(StringView snippet)
+{
+    if (!selection())
+        return false;
+
+    if (selection()->is_collapsed()) {
+        auto old_selection = m_selection;
+        m_selection = old_selection->normalized().start();
+
+        delete_dom_range(*old_selection);
+    }
+
+    auto& text = downcast<DOM::Text>(cursor()->node());
+
+    StringBuilder builder;
+    builder.append(text.data().substring_view(0, cursor()->offset()));
+    builder.append(snippet);
+    builder.append(text.data().substring_view(cursor()->offset()));
+    text.set_data(builder.string_view());
+
+    m_selection = DOM::Position { cursor()->node(), cursor()->offset() + snippet.length() };
 
     update_dom();
     return true;
@@ -231,7 +178,7 @@ void EditEventHandler::delete_dom_range(DOM::Range range)
         builder.append(start.data().substring_view(0, range.start().offset()));
         builder.append(end.data().substring_view(range.end().offset()));
 
-        start.set_data(builder.to_string());
+        start.set_data(builder.string_view());
         start.parent()->remove_child(end);
     }
 }
