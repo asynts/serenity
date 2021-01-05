@@ -43,6 +43,8 @@ public:
     virtual void handle_delete(DOM::Range);
     virtual void handle_insert(DOM::Position, u32 code_point);
 
+    void on_backspace_pressed();
+
     void on_select(DOM::Range range);
 
     void on_clear_selection()
@@ -60,8 +62,10 @@ public:
     }
 
 private:
-    Frame& m_frame;
+    void delete_dom_range(DOM::Range);
+    void update_dom();
 
+    Frame& m_frame;
     Optional<DOM::Range> m_selection;
 };
 

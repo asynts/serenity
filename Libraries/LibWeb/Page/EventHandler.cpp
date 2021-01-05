@@ -357,18 +357,7 @@ bool EventHandler::handle_keydown(KeyCode key, unsigned modifiers, u32 code_poin
             auto cursor_position = *m_edit_event_handler->cursor();
 
             if (key == KeyCode::Key_Backspace) {
-                if (cursor_position.offset() == 0)
-                    TODO();
-
-                m_edit_event_handler->handle_delete(DOM::Range {
-                    { cursor_position.node(), cursor_position.offset() - 1 },
-                    { cursor_position.node(), cursor_position.offset() },
-                });
-
-                // FIXME: We should happen in EditEventHandler.
-                auto new_cursor_position = DOM::Position { cursor_position.node(), cursor_position.offset() - 1 };
-                m_edit_event_handler->on_select(new_cursor_position);
-
+                m_edit_event_handler->on_backspace_pressed();
                 return true;
             } else if (key == KeyCode::Key_Delete) {
                 if (cursor_position.offset() >= downcast<DOM::Text>(cursor_position.node()).data().length())
