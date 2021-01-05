@@ -125,10 +125,10 @@ void EditEventHandler::on_select(DOM::Range range)
         m_frame.document()->layout_node()->recompute_selection_states();
 }
 
-void EditEventHandler::on_backspace_pressed()
+bool EditEventHandler::on_backspace_pressed()
 {
     if (!selection())
-        return;
+        return false;
 
     auto cached_selection = selection();
     auto cached_cursor = cursor();
@@ -150,12 +150,13 @@ void EditEventHandler::on_backspace_pressed()
     }
 
     update_dom();
+    return true;
 }
 
-void EditEventHandler::on_delete_pressed()
+bool EditEventHandler::on_delete_pressed()
 {
     if (!selection())
-        return;
+        return false;
 
     auto cached_selection = selection();
     auto cached_cursor = cursor();
@@ -177,6 +178,7 @@ void EditEventHandler::on_delete_pressed()
     }
 
     update_dom();
+    return true;
 }
 
 void EditEventHandler::delete_dom_range(DOM::Range range)

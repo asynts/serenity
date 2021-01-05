@@ -352,17 +352,19 @@ bool EventHandler::handle_keydown(KeyCode key, unsigned modifiers, u32 code_poin
             return focus_next_element();
     }
 
+    if (key == KeyCode::Key_Backspace) {
+        if (m_edit_event_handler->on_backspace_pressed())
+            return true;
+    } else if (key == KeyCode::Key_Delete) {
+        if (m_edit_event_handler->on_delete_pressed())
+            return true;
+    }
+
     if (m_edit_event_handler->cursor() && m_edit_event_handler->cursor()->node().is_editable()) {
         if (m_edit_event_handler->selection()->is_collapsed()) {
             auto cursor_position = *m_edit_event_handler->cursor();
 
-            if (key == KeyCode::Key_Backspace) {
-                m_edit_event_handler->on_backspace_pressed();
-                return true;
-            } else if (key == KeyCode::Key_Delete) {
-                m_edit_event_handler->on_delete_pressed();
-                return true;
-            } else if (key == KeyCode::Key_Right) {
+            if (key == KeyCode::Key_Right) {
                 if (cursor_position.offset() >= downcast<DOM::Text>(cursor_position.node()).data().length())
                     TODO();
 
@@ -392,21 +394,16 @@ bool EventHandler::handle_keydown(KeyCode key, unsigned modifiers, u32 code_poin
         } else {
             auto selection = m_edit_event_handler->selection()->normalized();
             if (selection.start().node().is_editable()) {
-                if (key == KeyCode::Key_Backspace || key == KeyCode::Key_Delete) {
-                    m_edit_event_handler->handle_delete(selection);
-                    return true;
-                } else {
-                    m_edit_event_handler->handle_delete(selection);
+                m_edit_event_handler->handle_delete(selection);
 
-                    m_edit_event_handler->handle_insert(*m_edit_event_handler->cursor(), code_point);
+                m_edit_event_handler->handle_insert(*m_edit_event_handler->cursor(), code_point);
 
-                    // FIXME: We should happen in EditEventHandler.
-                    auto cursor_position = *m_edit_event_handler->cursor();
-                    auto new_cursor_position = DOM::Position { cursor_position.node(), cursor_position.offset() + 1 };
-                    m_edit_event_handler->on_select(new_cursor_position);
+                // FIXME: We should happen in EditEventHandler.
+                auto cursor_position = *m_edit_event_handler->cursor();
+                auto new_cursor_position = DOM::Position { cursor_position.node(), cursor_position.offset() + 1 };
+                m_edit_event_handler->on_select(new_cursor_position);
 
-                    return true;
-                }
+                return true;
             }
         }
     }
