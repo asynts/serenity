@@ -64,13 +64,22 @@ void Frame::setup()
         if (!is_focused_frame())
             return;
 
-        auto cursor_position = event_handler().edit_event_handler().cursor();
-
-        if (cursor_position && cursor_position->node().layout_node()) {
-            m_cursor_blink_state = !m_cursor_blink_state;
-            cursor_position->node().layout_node()->set_needs_display();
-        }
+        blink_cursor();
     });
+}
+
+void Frame::blink_cursor(bool toggle)
+{
+    auto cursor_position = event_handler().edit_event_handler().cursor();
+
+    if (cursor_position && cursor_position->node().layout_node()) {
+        if (toggle)
+            m_cursor_blink_state = !m_cursor_blink_state;
+        else
+            m_cursor_blink_state = true;
+
+        cursor_position->node().layout_node()->set_needs_display();
+    }
 }
 
 bool Frame::is_focused_frame() const

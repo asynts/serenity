@@ -87,6 +87,7 @@ public:
     Gfx::IntRect to_main_frame_rect(const Gfx::IntRect&);
 
     bool cursor_blink_state() const { return m_cursor_blink_state; }
+    void blink_cursor(bool toggle = true);
 
     String selected_text() const;
 
