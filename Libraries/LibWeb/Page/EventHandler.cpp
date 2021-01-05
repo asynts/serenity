@@ -359,8 +359,14 @@ bool EventHandler::handle_keydown(KeyCode key, unsigned modifiers, u32 code_poin
     } else if (key == KeyCode::Key_Delete) {
         if (m_edit_event_handler->on_delete_pressed())
             return true;
-    } else if (key == KeyCode::Key_Left || key == KeyCode::Key_Right || key == KeyCode::Key_Up || key == KeyCode::Key_Down) {
-        TODO();
+    } else if (key == KeyCode::Key_Left) {
+        m_edit_event_handler->on_navigation(EditEventHandler::Direction::Left, modifiers & KeyModifier::Mod_Shift);
+    } else if (key == KeyCode::Key_Right) {
+        m_edit_event_handler->on_navigation(EditEventHandler::Direction::Right, modifiers & KeyModifier::Mod_Shift);
+    } else if (key == KeyCode::Key_Down) {
+        m_edit_event_handler->on_navigation(EditEventHandler::Direction::Down, modifiers & KeyModifier::Mod_Shift);
+    } else if (key == KeyCode::Key_Up) {
+        m_edit_event_handler->on_navigation(EditEventHandler::Direction::Up, modifiers & KeyModifier::Mod_Shift);
     } else if (code_point <= 127 && isprint(code_point)) {
         char snippet = static_cast<char>(code_point);
 

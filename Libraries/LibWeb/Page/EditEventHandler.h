@@ -33,6 +33,13 @@ namespace Web {
 
 class EditEventHandler {
 public:
+    enum class Direction {
+        Left,
+        Right,
+        Up,
+        Down,
+    };
+
     explicit EditEventHandler(Frame& frame)
         : m_frame(frame)
     {
@@ -43,6 +50,7 @@ public:
     bool on_backspace_pressed();
     bool on_delete_pressed();
     bool on_text_inserted(StringView);
+    bool on_navigation(Direction, bool do_select);
 
     void on_select(DOM::Range range);
     void on_clear_selection() { m_selection.clear(); }

@@ -128,6 +128,36 @@ bool EditEventHandler::on_text_inserted(StringView snippet)
     return true;
 }
 
+bool EditEventHandler::on_navigation(Direction direction, bool do_select)
+{
+    if (!selection())
+        return false;
+
+    Optional<DOM::Position> new_cursor_position;
+    if (direction == Direction::Left) {
+        if (cursor()->offset() == 0)
+            TODO();
+
+        new_cursor_position = DOM::Position { cursor()->node(), cursor()->offset() - 1 };
+    } else if (direction == Direction::Right) {
+        auto& text = downcast<DOM::Text>(cursor()->node());
+        if (cursor()->offset() >= text.length())
+            TODO();
+
+        new_cursor_position = DOM::Position { cursor()->node(), cursor()->offset() + 1 };
+    } else {
+        TODO();
+    }
+
+    if (do_select)
+        m_selection = DOM::Range { m_selection->start(), *new_cursor_position };
+    else
+        m_selection = *new_cursor_position;
+
+    m_frame.blink_cursor(false);
+    return true;
+}
+
 void EditEventHandler::delete_dom_range(DOM::Range range)
 {
     range = range.normalized();
