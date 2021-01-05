@@ -64,9 +64,11 @@ void Frame::setup()
         if (!is_focused_frame())
             return;
 
-        if (m_cursor_position && m_cursor_position->node().layout_node()) {
+        auto cursor_position = event_handler().edit_event_handler().cursor();
+
+        if (cursor_position && cursor_position->node().layout_node()) {
             m_cursor_blink_state = !m_cursor_blink_state;
-            m_cursor_position->node().layout_node()->set_needs_display();
+            cursor_position->node().layout_node()->set_needs_display();
         }
     });
 }
@@ -81,7 +83,7 @@ void Frame::set_document(DOM::Document* document)
     if (m_document == document)
         return;
 
-    m_cursor_position = {};
+    event_handler().edit_event_handler().on_clear_selection();
 
     if (m_document)
         m_document->detach_from_frame({}, *this);
@@ -199,24 +201,6 @@ Gfx::IntPoint Frame::to_main_frame_position(const Gfx::IntPoint& a_position)
         position.move_by(ancestor->host_element()->layout_node()->box_type_agnostic_position().to_type<int>());
     }
     return position;
-}
-
-void Frame::set_cursor_position(const DOM::Position& position)
-{
-    if (m_cursor_position) {
-        if (*m_cursor_position == position)
-            return;
-
-        if (m_cursor_position->node().layout_node())
-            m_cursor_position->node().layout_node()->set_needs_display();
-    }
-
-    m_cursor_position = position;
-
-    if (m_cursor_position->node().layout_node())
-        m_cursor_position->node().layout_node()->set_needs_display();
-
-    dbg() << "Cursor position: " << m_cursor_position;
 }
 
 String Frame::selected_text() const

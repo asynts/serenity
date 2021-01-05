@@ -99,8 +99,6 @@ void InitialContainingBlockBox::recompute_selection_states()
     // FIXME: This is suboptimal.
     auto selection = document().frame()->event_handler().edit_event_handler().selection();
 
-    dbgln("recomputing selection states for {}", selection ? String::formatted("{}", *selection) : "");
-
     for_each_in_subtree([&](auto& layout_node) {
         if (selection) {
             auto* start_layout_node = selection->start().node().layout_node();
