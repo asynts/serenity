@@ -44,6 +44,7 @@ public:
     virtual void handle_insert(DOM::Position, u32 code_point);
 
     void on_backspace_pressed();
+    void on_delete_pressed();
 
     void on_select(DOM::Range range);
 

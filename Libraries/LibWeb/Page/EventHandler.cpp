@@ -360,14 +360,7 @@ bool EventHandler::handle_keydown(KeyCode key, unsigned modifiers, u32 code_poin
                 m_edit_event_handler->on_backspace_pressed();
                 return true;
             } else if (key == KeyCode::Key_Delete) {
-                if (cursor_position.offset() >= downcast<DOM::Text>(cursor_position.node()).data().length())
-                    TODO();
-
-                m_edit_event_handler->handle_delete(DOM::Range {
-                    { cursor_position.node(), cursor_position.offset() },
-                    { cursor_position.node(), cursor_position.offset() + 1 },
-                });
-
+                m_edit_event_handler->on_delete_pressed();
                 return true;
             } else if (key == KeyCode::Key_Right) {
                 if (cursor_position.offset() >= downcast<DOM::Text>(cursor_position.node()).data().length())

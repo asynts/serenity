@@ -152,6 +152,33 @@ void EditEventHandler::on_backspace_pressed()
     update_dom();
 }
 
+void EditEventHandler::on_delete_pressed()
+{
+    if (!selection())
+        return;
+
+    auto cached_selection = selection();
+    auto cached_cursor = cursor();
+
+    if (cached_selection->is_collapsed()) {
+        auto& text = downcast<DOM::Text>(cached_cursor->node());
+
+        if (cached_cursor->offset() >= text.length())
+            TODO();
+
+        delete_dom_range({
+            { cached_cursor->node(), cached_cursor->offset() },
+            { cached_cursor->node(), cached_cursor->offset() + 1 },
+        });
+    } else {
+        m_selection = cached_selection->normalized().start();
+
+        delete_dom_range(*cached_selection);
+    }
+
+    update_dom();
+}
+
 void EditEventHandler::delete_dom_range(DOM::Range range)
 {
     range = range.normalized();
