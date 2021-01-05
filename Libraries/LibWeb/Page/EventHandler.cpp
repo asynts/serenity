@@ -274,7 +274,7 @@ bool EventHandler::handle_mousemove(const Gfx::IntPoint& position, unsigned butt
 
                 ASSERT(hit.index_in_node >= 0);
                 m_edit_event_handler->on_select({
-                    *m_edit_event_handler->cursor(),
+                    m_edit_event_handler->selection()->start(),
                     { *hit.layout_node->dom_node(), static_cast<size_t>(hit.index_in_node) },
                 });
             }

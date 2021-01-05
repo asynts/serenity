@@ -96,21 +96,29 @@ void InitialContainingBlockBox::recompute_selection_states()
 {
     SelectionState state = SelectionState::None;
 
+    // FIXME: This is suboptimal.
     auto selection = document().frame()->event_handler().edit_event_handler().selection();
 
-    for_each_in_subtree([&](auto& layout_node) {
-        if (!selection) {
-            state = SelectionState::None;
-        } else {
-            auto* start = selection->start().node().layout_node();
-            auto* end = selection->end().node().layout_node();
+    dbgln("recomputing selection states for {}", selection ? String::formatted("{}", *selection) : "");
 
-            if (&layout_node == start && &layout_node == end)
+    for_each_in_subtree([&](auto& layout_node) {
+        if (selection) {
+            auto* start_layout_node = selection->start().node().layout_node();
+            auto* end_layout_node = selection->end().node().layout_node();
+
+            ASSERT(start_layout_node);
+            ASSERT(end_layout_node);
+
+            if (&layout_node == start_layout_node && &layout_node == end_layout_node)
                 state = SelectionState::StartAndEnd;
-            else if (&layout_node == start)
+            else if (&layout_node == start_layout_node)
                 state = SelectionState::Start;
-            else if (&layout_node == end)
+            else if (&layout_node == end_layout_node)
                 state = SelectionState::End;
+            else if (state == SelectionState::Start)
+                state = SelectionState::Full;
+            else if (state == SelectionState::End || state == SelectionState::StartAndEnd)
+                state = SelectionState::None;
         }
 
         layout_node.set_selection_state(state);
