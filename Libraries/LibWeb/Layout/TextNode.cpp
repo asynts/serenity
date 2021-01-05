@@ -119,15 +119,16 @@ void TextNode::paint_cursor_if_needed(PaintContext& context, const LineBoxFragme
     if (!frame().cursor_blink_state())
         return;
 
-    if (!frame().cursor_position())
+    // FIXME: This is suboptimal.
+    auto cursor_position = frame().event_handler().edit_event_handler().cursor();
+
+    if (!cursor_position)
         return;
 
-    auto cursor_position = *frame().cursor_position();
-
-    if (&cursor_position.node() != &dom_node())
+    if (&cursor_position->node() != &dom_node())
         return;
 
-    if (!(cursor_position.offset() >= (unsigned)fragment.start() && cursor_position.offset() < (unsigned)(fragment.start() + fragment.length())))
+    if (!(cursor_position->offset() >= (unsigned)fragment.start() && cursor_position->offset() < (unsigned)(fragment.start() + fragment.length())))
         return;
 
     if (!fragment.layout_node().dom_node() || !fragment.layout_node().dom_node()->is_editable())
@@ -135,7 +136,7 @@ void TextNode::paint_cursor_if_needed(PaintContext& context, const LineBoxFragme
 
     auto fragment_rect = fragment.absolute_rect();
 
-    float cursor_x = fragment_rect.x() + specified_style().font().width(fragment.text().substring_view(0, cursor_position.offset() - fragment.start()));
+    float cursor_x = fragment_rect.x() + specified_style().font().width(fragment.text().substring_view(0, cursor_position->offset() - fragment.start()));
     float cursor_top = fragment_rect.top();
     float cursor_height = fragment_rect.height();
     Gfx::IntRect cursor_rect(cursor_x, cursor_top, 1, cursor_height);
