@@ -160,6 +160,8 @@ bool EditEventHandler::on_navigation(Direction direction, bool do_select)
 
 void EditEventHandler::delete_dom_range(DOM::Range range)
 {
+    dbgln("range={}, normalized={}", range, range.normalized());
+
     range = range.normalized();
 
     dbgln("deleting range {}", range);
@@ -186,16 +188,30 @@ void EditEventHandler::delete_dom_range(DOM::Range range)
     for (auto* node : queued_for_deletion)
         node->parent()->remove_child(*node);
 
+    dbgln("after step1:");
+    dump_tree(*m_frame.document());
+
     // Partially remove text from start and end nodes.
     if (&start == &end) {
+        dbgln("case 1");
         StringBuilder builder;
         builder.append(start.data().substring_view(0, range.start().offset()));
         builder.append(start.data().substring_view(range.end().offset()));
         start.set_data(builder.string_view());
     } else {
+        // FIXME: I think the CSS stuff calculates the offset based on the rendered text while this stuff uses the internal data?
+
+        dbgln("case 2");
+        dbgln("range.start().offset()={}", range.start().offset());
+        dbgln("start.data()={}, substring={}", start.data(), start.data().substring(0, range.start().offset()));
+        dbgln("end.data()={}, substring={}", end.data(), end.data().substring(range.end().offset()));
+
         start.set_data(start.data().substring(0, range.start().offset()));
         end.set_data(end.data().substring(range.end().offset()));
     }
+
+    dbgln("after step2:");
+    dump_tree(*m_frame.document());
 
     // Join parents of start and end.
     if (start.parent() != end.parent()) {
@@ -230,7 +246,7 @@ void EditEventHandler::delete_dom_range(DOM::Range range)
         end.parent()->parent()->remove_child(*end.parent());
     }
 
-    dbgln("after:");
+    dbgln("after step3:");
     dump_tree(*m_frame.document());
 }
 
