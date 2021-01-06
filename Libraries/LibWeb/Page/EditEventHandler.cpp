@@ -162,55 +162,72 @@ void EditEventHandler::delete_dom_range(DOM::Range range)
 {
     range = range.normalized();
 
+    dbgln("deleting range {}", range);
+    dbgln("before:");
+    dump_tree(*m_frame.document());
+
     auto& start = downcast<DOM::Text>(range.start().node());
     auto& end = downcast<DOM::Text>(range.end().node());
 
+    // Remove all the nodes that are fully enclosed in the range.
+    HashTable<DOM::Node*> queued_for_deletion;
+    for (DOM::Node* node = &start; node; node = node->next_in_pre_order()) {
+        if (node == &end)
+            break;
+
+        queued_for_deletion.set(node);
+    }
+    for (auto* parent = start.parent(); parent; parent = parent->parent())
+        queued_for_deletion.remove(parent);
+    for (auto* parent = end.parent(); parent; parent = parent->parent())
+        queued_for_deletion.remove(parent);
+    for (auto* node : queued_for_deletion)
+        node->parent()->remove_child(*node);
+
+    // Partially remove text from start and end nodes.
     if (&start == &end) {
         StringBuilder builder;
         builder.append(start.data().substring_view(0, range.start().offset()));
-        builder.append(end.data().substring_view(range.end().offset()));
-
+        builder.append(start.data().substring_view(range.end().offset()));
         start.set_data(builder.string_view());
     } else {
-        // Remove all the nodes that are fully enclosed in the range.
-        HashTable<DOM::Node*> queued_for_deletion;
-        for (auto* node = start.next_in_pre_order(); node; node = node->next_in_pre_order()) {
-            if (node == &end)
-                break;
-
-            queued_for_deletion.set(node);
-        }
-        for (auto* parent = start.parent(); parent; parent = parent->parent())
-            queued_for_deletion.remove(parent);
-        for (auto* parent = end.parent(); parent; parent = parent->parent())
-            queued_for_deletion.remove(parent);
-        for (auto* node : queued_for_deletion)
-            node->parent()->remove_child(*node);
-
-        // Join the parent nodes of start and end.
-        DOM::Node *insert_after = &start, *remove_from = &end, *parent_of_end = end.parent();
-        while (remove_from) {
-            auto* next_sibling = remove_from->next_sibling();
-
-            remove_from->parent()->remove_child(*remove_from);
-            insert_after->parent()->insert_before(*remove_from, *insert_after);
-
-            insert_after = remove_from;
-            remove_from = next_sibling;
-        }
-        if (!parent_of_end->has_children()) {
-            if (parent_of_end->parent())
-                parent_of_end->parent()->remove_child(*parent_of_end);
-        }
-
-        // Join the start and end nodes.
-        StringBuilder builder;
-        builder.append(start.data().substring_view(0, range.start().offset()));
-        builder.append(end.data().substring_view(range.end().offset()));
-
-        start.set_data(builder.string_view());
-        start.parent()->remove_child(end);
+        start.set_data(start.data().substring(0, range.start().offset()));
+        end.set_data(end.data().substring(range.end().offset()));
     }
+
+    // Join parents of start and end.
+    if (start.parent() != end.parent()) {
+        // There is no good way of implementing this. HTML is simply not structured enough to
+        // "join" nodes together. Example:
+        //
+        //     <div>heLlo</div>
+        //     <i style="display: block;"><div style="display: inline; font-weight: bold;">woRld</div></i>
+        //
+        // The capital letters indicate where the range starts and ends. To list a few sensible results:
+        //
+        //     <div>he<i style="display: block;"><div style="display: inline; font-weight: bold;">ld</div></i></div>
+        //
+        //     <div>he<div style="display: inline; font-weight: bold;">ld</div></div>
+        //
+        //     <div>held</div>
+        //
+        // The approach here is to move all the nodes into the parent node of start which works
+        // semi-optimal but is simple to implement.
+
+        NonnullRefPtr<DOM::Node> node = end.parent()->first_child();
+        while (node) {
+            NonnullRefPtr<DOM::Node> next_node = node->next_sibling();
+
+            end.parent()->remove_child(node);
+            start.parent()->append_child(node);
+
+            node = move(next_node);
+        }
+        end.parent()->parent()->remove_child(*end.parent());
+    }
+
+    dbgln("after:");
+    dump_tree(*m_frame.document());
 }
 
 void EditEventHandler::update_dom()
