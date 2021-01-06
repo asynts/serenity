@@ -169,6 +169,8 @@ void EditEventHandler::delete_dom_range(DOM::Range range)
     auto& start = downcast<DOM::Text>(range.start().node());
     auto& end = downcast<DOM::Text>(range.end().node());
 
+    dbgln("start.parent()={}", start.parent());
+
     // Remove all the nodes that are fully enclosed in the range.
     HashTable<DOM::Node*> queued_for_deletion;
     for (DOM::Node* node = &start; node; node = node->next_in_pre_order()) {
@@ -177,10 +179,10 @@ void EditEventHandler::delete_dom_range(DOM::Range range)
 
         queued_for_deletion.set(node);
     }
-    for (auto* parent = start.parent(); parent; parent = parent->parent())
-        queued_for_deletion.remove(parent);
-    for (auto* parent = end.parent(); parent; parent = parent->parent())
-        queued_for_deletion.remove(parent);
+    for (DOM::Node* node = &start; node; node = node->parent())
+        queued_for_deletion.remove(node);
+    for (DOM::Node* node = &end; node; node = node->parent())
+        queued_for_deletion.remove(node);
     for (auto* node : queued_for_deletion)
         node->parent()->remove_child(*node);
 
@@ -214,12 +216,14 @@ void EditEventHandler::delete_dom_range(DOM::Range range)
         // The approach here is to move all the nodes into the parent node of start which works
         // semi-optimal but is simple to implement.
 
-        NonnullRefPtr<DOM::Node> node = end.parent()->first_child();
+        RefPtr<DOM::Node> node = end.parent()->first_child();
         while (node) {
-            NonnullRefPtr<DOM::Node> next_node = node->next_sibling();
+            RefPtr<DOM::Node> next_node = node->next_sibling();
 
-            end.parent()->remove_child(node);
-            start.parent()->append_child(node);
+            dbgln("node={}, end={}, end.parent()={}, start={}, start.parent()={}", node, &end, end.parent(), &start, start.parent());
+
+            end.parent()->remove_child(*node);
+            start.parent()->append_child(*node);
 
             node = move(next_node);
         }
