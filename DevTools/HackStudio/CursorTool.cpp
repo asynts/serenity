@@ -50,7 +50,7 @@ void CursorTool::on_mousedown(GUI::MouseEvent& event)
             } else if (!event.modifiers()) {
                 if (!m_editor.selection().contains(*result.widget)) {
 #ifdef DEBUG_CURSOR_TOOL
-                    dbg() << "Selection didn't contain " << *result.widget << ", making it the only selected one";
+                    dbgln("Selection didn't contain {}, making it the only selected one", *result.widget);
 #endif
                     m_editor.selection().set(*result.widget);
                 }

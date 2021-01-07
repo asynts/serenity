@@ -90,7 +90,7 @@ void ClientConnection::handle(const Messages::LanguageServer::FileOpened& messag
     document->set_text(content_view);
     m_open_files.set(message.file_name(), document);
 #ifdef DEBUG_FILE_CONTENT
-    dbg() << document->text();
+    dbgln("{}", document->text());
 #endif
 }
 

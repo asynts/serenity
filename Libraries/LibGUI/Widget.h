@@ -393,3 +393,9 @@ inline const Widget* Widget::parent_widget() const
     return nullptr;
 }
 }
+
+namespace AK {
+template<>
+struct Formatter<GUI::Widget> : Formatter<Core::Object> {
+};
+}

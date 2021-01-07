@@ -59,7 +59,7 @@ void Lock::lock(Mode mode)
                 switch (current_mode) {
                 case Mode::Unlocked: {
 #ifdef LOCK_TRACE_DEBUG
-                    dbg() << "Lock::lock @ " << this << ": acquire " << mode_to_string(mode) << ", currently unlocked";
+                    dbgln("Lock::lock @ {}: acquire {}, currently unlocked", this, mode_to_string(mode));
 #endif
                     m_mode = mode;
                     ASSERT(!m_holder);
@@ -85,9 +85,9 @@ void Lock::lock(Mode mode)
                     ASSERT(m_shared_holders.is_empty());
 #ifdef LOCK_TRACE_DEBUG
                     if (mode == Mode::Exclusive)
-                        dbg() << "Lock::lock @ " << this << ": acquire " << mode_to_string(mode) << ", currently exclusive, holding: " << m_times_locked;
+                        dbgln("Lock::lock @ {}: acquire {}, currenty exclusive, holding: {}", this, mode_to_string(mode), m_times_locked);
                     else
-                        dbg() << "Lock::lock @ " << this << ": acquire exclusive (requested " << mode_to_string(mode) << "), currently exclusive, holding " << m_times_locked;
+                        dbgln("Lock::lock @ {}: acquire exclusive (requested {}), currently exclusive, holding ", this, mode_to_string(mode), m_times_locked);
 #endif
                     ASSERT(mode == Mode::Exclusive || mode == Mode::Shared);
                     ASSERT(m_times_locked > 0);
@@ -103,7 +103,7 @@ void Lock::lock(Mode mode)
                     if (mode != Mode::Shared)
                         break;
 #ifdef LOCK_TRACE_DEBUG
-                    dbg() << "Lock::lock @ " << this << ": acquire " << mode_to_string(mode) << ", currently shared, locks held: " << m_times_locked;
+                    dbgln("Lock::lock @ {}: acquire {}, currently shared, locks held: {}", this, mode_to_string(mode), m_times_locked);
 #endif
                     ASSERT(m_times_locked > 0);
                     m_times_locked++;

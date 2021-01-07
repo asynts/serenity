@@ -308,15 +308,15 @@ Position Sheet::offset_relative_to(const Position& base, const Position& offset,
     auto base_column_it = m_columns.find(base.column);
 
     if (offset_column_it.is_end()) {
-        dbg() << "Column '" << offset.column << "' does not exist!";
+        dbgln("Column '{}' does not exist!", offset.column);
         return base;
     }
     if (offset_base_column_it.is_end()) {
-        dbg() << "Column '" << offset_base.column << "' does not exist!";
+        dbgln("Column '{}' does not exist!", offset.column);
         return base;
     }
     if (base_column_it.is_end()) {
-        dbg() << "Column '" << base.column << "' does not exist!";
+        dbgln("Column '{}' does not exist!", offset.column);
         return offset;
     }
 
@@ -355,7 +355,7 @@ void Sheet::copy_cells(Vector<Position> from, Vector<Position> to, Optional<Posi
 
         for (auto& position : from) {
 #ifdef COPY_DEBUG
-            dbg() << "Paste from '" << position.to_url() << "' to '" << target.to_url() << "'";
+            dbgln("Paste from '{}' to '{}'", position.to_url(), target.to_url());
 #endif
             copy_to(position, resolve_relative_to.has_value() ? offset_relative_to(target, position, resolve_relative_to.value()) : target);
         }
@@ -368,7 +368,7 @@ void Sheet::copy_cells(Vector<Position> from, Vector<Position> to, Optional<Posi
         auto& source = from.first();
         for (auto& position : to) {
 #ifdef COPY_DEBUG
-            dbg() << "Paste from '" << source.to_url() << "' to '" << position.to_url() << "'";
+            dbgln("Paste from '{}' to '{}'", source.to_url(), position.to_url());
 #endif
             copy_to(source, resolve_relative_to.has_value() ? offset_relative_to(position, source, resolve_relative_to.value()) : position);
         }
@@ -376,7 +376,7 @@ void Sheet::copy_cells(Vector<Position> from, Vector<Position> to, Optional<Posi
     }
 
     // Just disallow misaligned copies.
-    dbg() << "Cannot copy " << from.size() << " cells to " << to.size() << " cells";
+    dbgln("Cannot copy {} cells to {} cells", from.size(), to.size());
 }
 
 RefPtr<Sheet> Sheet::from_json(const JsonObject& object, Workbook& workbook)
