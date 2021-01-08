@@ -65,3 +65,11 @@ inline const LogStream& operator<<(const LogStream& stream, PhysicalAddress valu
 {
     return stream << 'P' << value.as_ptr();
 }
+
+template<>
+struct AK::Formatter<PhysicalAddress> : AK::Formatter<String> {
+    void format(FormatBuilder& builder, PhysicalAddress value)
+    {
+        return AK::Formatter<String>::format(builder, String::formatted("P{}", value.as_ptr()));
+    }
+};
