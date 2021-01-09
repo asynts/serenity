@@ -417,6 +417,12 @@ void vformat(StringBuilder& builder, StringView fmtstr, TypeErasedFormatParams p
 
     vformat_impl(params, fmtbuilder, parser);
 }
+void vformat(FormatBuilder& fmtbuilder, StringView fmtstr, TypeErasedFormatParams params)
+{
+    FormatParser parser { fmtstr };
+
+    vformat_impl(params, fmtbuilder, parser);
+}
 void vformat(const LogStream& stream, StringView fmtstr, TypeErasedFormatParams params)
 {
     StringBuilder builder;
