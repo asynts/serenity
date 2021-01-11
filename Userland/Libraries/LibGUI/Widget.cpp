@@ -992,7 +992,7 @@ bool Widget::load_from_json(const JsonObject& json, RefPtr<Widget> (*unregistere
         } else if (class_name.to_string() == "GUI::HorizontalBoxLayout") {
             set_layout<GUI::HorizontalBoxLayout>();
         } else {
-            dbg() << "Unknown layout class: '" << class_name.to_string() << "'";
+            dbgln("Unknown layout class: '{}'", class_name.to_string());
             return false;
         }
 
@@ -1010,6 +1010,11 @@ bool Widget::load_from_json(const JsonObject& json, RefPtr<Widget> (*unregistere
             auto class_name = child_json.get("class");
             if (!class_name.is_string()) {
                 dbgln("No class name in entry");
+                return false;
+            }
+            auto* registration = WidgetClassRegistration::find(class_name.as_string());
+            if (!registration) {
+                dbgln("Class '{}' not registered", class_name.as_string());
                 return false;
             }
 
