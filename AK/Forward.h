@@ -133,7 +133,7 @@ class WeakPtr;
 template<typename T, size_t inline_capacity = 0>
 class Vector;
 
-template<typename... Parameters>
+template<bool enabled = true, typename... Parameters>
 void dbgln(const char* fmtstr, const Parameters&...);
 
 template<typename... Parameters>
