@@ -26,6 +26,7 @@
 
 #pragma once
 
+#include <AK/Debug.h>
 #include <AK/Function.h>
 #include <AK/IntrusiveList.h>
 #include <AK/Optional.h>
