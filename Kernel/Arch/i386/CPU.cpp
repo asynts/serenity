@@ -1677,9 +1677,7 @@ asm(
 
 void Processor::assume_context(Thread& thread, u32 flags)
 {
-#ifdef CONTEXT_SWITCH_DEBUG
-    dbg() << "Assume context for thread " << VirtualAddress(&thread) << " " << thread;
-#endif
+    dbgln<debug_context_switch>("Assume context for thread {} {}", VirtualAddress(&thread), thread);
     ASSERT_INTERRUPTS_DISABLED();
     Scheduler::prepare_after_exec();
     // in_critical() should be 2 here. The critical section in Process::exec
