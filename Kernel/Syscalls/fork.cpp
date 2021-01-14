@@ -51,9 +51,7 @@ pid_t Process::sys$fork(RegisterState& regs)
     child->m_pg = m_pg;
     child->m_umask = m_umask;
 
-#ifdef FORK_DEBUG
-    dbg() << "fork: child=" << child;
-#endif
+    dbgln<debug_fork>("fork: child={}", child);
 
     child->m_extra_gids = m_extra_gids;
 
@@ -82,9 +80,7 @@ pid_t Process::sys$fork(RegisterState& regs)
     {
         ScopedSpinLock lock(m_lock);
         for (auto& region : m_regions) {
-#ifdef FORK_DEBUG
-            dbg() << "fork: cloning Region{" << &region << "} '" << region.name() << "' @ " << region.vaddr();
-#endif
+            dbgln<debug_fork>("fork: cloning Region({}) '{}' @ {}", &region, region.name(), region.vaddr());
             auto region_clone = region.clone(*child);
             if (!region_clone) {
                 dbgln("fork: Cannot clone region, insufficient memory");
