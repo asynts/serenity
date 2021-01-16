@@ -363,3 +363,9 @@ constexpr bool debug_gif = true;
 #else
 constexpr bool debug_gif = false;
 #endif
+
+#ifdef JPG_DEBUG
+constexpr bool debug_jpg = true;
+#else
+constexpr bool debug_jpg = false;
+#endif
