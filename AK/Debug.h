@@ -351,3 +351,15 @@ constexpr bool debug_job = true;
 #else
 constexpr bool debug_job = false;
 #endif
+
+#ifdef BMP_DEBUG
+constexpr bool debug_bmp = true;
+#else
+constexpr bool debug_bmp = false;
+#endif
+
+#ifdef GIF_DEBUG
+constexpr bool debug_gif = true;
+#else
+constexpr bool debug_gif = false;
+#endif
