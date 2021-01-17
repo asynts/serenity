@@ -29,6 +29,7 @@
 #include "Event.h"
 #include "EventLoop.h"
 #include "WindowManager.h"
+#include <AK/Debug.h>
 #include <Kernel/API/FB.h>
 #include <Kernel/API/MousePacket.h>
 #include <fcntl.h>
@@ -73,15 +74,15 @@ bool Screen::set_resolution(int width, int height)
 {
     FBResolution resolution { 0, (unsigned)width, (unsigned)height };
     int rc = fb_set_resolution(m_framebuffer_fd, &resolution);
-#ifdef WSSCREEN_DEBUG
-    dbg() << "fb_set_resolution() - return code " << rc;
-#endif
+
+    dbgln<debug_wsscreen>("fb_set_resolution() - return code {}", rc);
+
     if (rc == 0) {
         on_change_resolution(resolution.pitch, resolution.width, resolution.height);
         return true;
     }
     if (rc == -1) {
-        dbg() << "Invalid resolution " << width << "x" << height;
+        dbgln("Invalid resolution {}x{}", width, height);
         on_change_resolution(resolution.pitch, resolution.width, resolution.height);
         return false;
     }
