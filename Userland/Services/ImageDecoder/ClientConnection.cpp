@@ -25,6 +25,7 @@
  */
 
 #include <AK/Badge.h>
+#include <AK/Debug.h>
 #include <AK/SharedBuffer.h>
 #include <ImageDecoder/ClientConnection.h>
 #include <ImageDecoder/ImageDecoderClientEndpoint.h>
@@ -75,9 +76,10 @@ OwnPtr<Messages::ImageDecoderServer::DecodeImageResponse> ClientConnection::hand
         return {};
     }
 
-#ifdef IMAGE_DECODER_DEBUG
-    dbg() << "Trying to decode " << message.encoded_size() << " bytes of image(?) data in shbuf_id=" << message.encoded_shbuf_id() << " (shbuf size: " << encoded_buffer->size() << ")";
-#endif
+    dbgln<debug_image_decoder>("Trying to decode {} bytes of image(?) data in shbuf_id={} (shbuf size: {})",
+        message.encoded_size(),
+        message.encoded_shbuf_id(),
+        encoded_buffer->size());
 
     auto decoder = Gfx::ImageDecoder::create(encoded_buffer->data<u8>(), message.encoded_size());
     auto bitmap = decoder->bitmap();
