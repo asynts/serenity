@@ -24,6 +24,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <AK/Debug.h>
 #include <Clipboard/Storage.h>
 
 namespace Clipboard {
@@ -46,9 +47,9 @@ Storage::~Storage()
 
 void Storage::set_data(NonnullRefPtr<SharedBuffer> data, size_t data_size, const String& mime_type, const HashMap<String, String>& metadata)
 {
-    dbg() << "Storage::set_data <- [" << mime_type << "] " << data->data<void>() << " (" << data_size << " bytes)";
+    dbgln("Storage::set_data <- [{}] {} ({} bytes)", mime_type, data->data<void>(), data_size);
     for (auto& it : metadata) {
-        dbg() << "  " << it.key << ": " << it.value;
+        dbgln("  {}: {}", it.key, it.value);
     }
     m_shared_buffer = move(data);
     m_data_size = data_size;
