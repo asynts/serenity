@@ -1624,7 +1624,7 @@ u32 Processor::init_context(Thread& thread, bool leave_crit)
                 iretframe.userspace_ss,
                 iretframe.userspace_esp);
         } else {
-            dbgln("init_context {} ({}) set up to execute at eip={}:{}, esp={}, stack_top={}, user_top={}:{}",
+            dbgln("init_context {} ({}) set up to execute at eip={}:{}, esp={}, stack_top={}",
                 thread,
                 VirtualAddress(&thread),
                 iretframe.cs, tss.eip,
