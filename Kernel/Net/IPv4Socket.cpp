@@ -417,7 +417,11 @@ bool IPv4Socket::did_receive(const IPv4Address& source_address, u16 source_port,
         if (buffer_mode() == BufferMode::Bytes)
             dbgln("IPv4Socket({}): did_receive {} bytes, total_received={}", this, packet_size, m_bytes_received);
         else
-            dbgln("IPv4Socket({}): did_receive {} bytes, total_received={}, packets in queue: {}", this, packet_size, m_bytes_received);
+            dbgln("IPv4Socket({}): did_receive {} bytes, total_received={}, packets in queue: {}",
+                this,
+                packet_size,
+                m_bytes_received,
+                m_receive_queue.size());
     }
 
     return true;
