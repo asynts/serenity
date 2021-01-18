@@ -66,7 +66,7 @@ Socket::~Socket()
 
 void Socket::set_setup_state(SetupState new_setup_state)
 {
-    dbgln<debug_socket>("Socket({}) setup state moving from {} to {}", to_string(m_setup_state), to_string(new_setup_state));
+    dbgln<debug_socket>("Socket({}) setup state moving from {} to {}", this, to_string(m_setup_state), to_string(new_setup_state));
     m_setup_state = new_setup_state;
     evaluate_block_conditions();
 }

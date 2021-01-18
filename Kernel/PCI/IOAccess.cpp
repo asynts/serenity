@@ -28,8 +28,6 @@
 #include <Kernel/IO.h>
 #include <Kernel/PCI/IOAccess.h>
 
-//#define PCI_DEBUG
-
 namespace Kernel {
 namespace PCI {
 
@@ -51,19 +49,19 @@ IOAccess::IOAccess()
 
 u8 IOAccess::read8_field(Address address, u32 field)
 {
-    dbgln<debug_pci>("PCI: IO Reading 8-bit field {:#08x}", field, address);
+    dbgln<debug_pci>("PCI: IO Reading 8-bit field {:#08x} for {}", field, address);
     return Access::early_read8_field(address, field);
 }
 
 u16 IOAccess::read16_field(Address address, u32 field)
 {
-    dbgln<debug_pci>("PCI: IO Reading 16-bit field {:#08x}", field, address);
+    dbgln<debug_pci>("PCI: IO Reading 16-bit field {:#08x} for {}", field, address);
     return Access::early_read16_field(address, field);
 }
 
 u32 IOAccess::read32_field(Address address, u32 field)
 {
-    dbgln<debug_pci>("PCI: IO Reading 32-bit field {:#08x}", field, address);
+    dbgln<debug_pci>("PCI: IO Reading 32-bit field {:#08x} for {}", field, address);
     return Access::early_read32_field(address, field);
 }
 
