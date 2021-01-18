@@ -52,7 +52,7 @@ void WaitQueue::wake_one()
         ASSERT(data);
         ASSERT(b.blocker_type() == Thread::Blocker::Type::Queue);
         auto& blocker = static_cast<Thread::QueueBlocker&>(b);
-        dbgln<debug_waitqueue>("WaitQueue @ {}: wake_one unblocking ", this, data);
+        dbgln<debug_waitqueue>("WaitQueue @ {}: wake_one unblocking {}", this, data);
         if (blocker.unblock()) {
             stop_iterating = true;
             return true;

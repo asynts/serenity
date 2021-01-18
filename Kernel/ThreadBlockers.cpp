@@ -497,7 +497,7 @@ bool Thread::WaitBlockCondition::unblock(Process& process, WaitBlocker::UnblockF
                 info.flags = flags;
                 info.signal = signal;
                 info.was_waited = did_wait;
-                dbgln<debug_waitblock>("WaitBlockCondition[{}] update {} flags: {} mark as waited:", m_process, process, (int)flags, info.was_waited);
+                dbgln<debug_waitblock>("WaitBlockCondition[{}] update {} flags={}, waited={}", m_process, process, (int)flags, info.was_waited);
                 updated_existing = true;
                 break;
             }
