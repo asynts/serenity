@@ -623,11 +623,11 @@ static bool read_huffman_table(InputMemoryStream& stream, JPGLoadingContext& con
         u8 table_type = table_info >> 4;
         u8 table_destination_id = table_info & 0x0F;
         if (table_type > 1) {
-            dbgln<debug_jpg>("{}: Unrecognized huffman table: %i!", stream.offset(), table_type);
+            dbgln<debug_jpg>("{}: Unrecognized huffman table: {}!", stream.offset(), table_type);
             return false;
         }
         if (table_destination_id > 1) {
-            dbgln<debug_jpg>("{}: Invalid huffman table destination id: %i!", stream.offset(), table_destination_id);
+            dbgln<debug_jpg>("{}: Invalid huffman table destination id: {}!", stream.offset(), table_destination_id);
             return false;
         }
 
