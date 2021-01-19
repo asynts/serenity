@@ -159,8 +159,7 @@ void HTMLDocumentParser::run(const URL& url)
         }
 
         if (m_stop_parsing) {
-            dbgln<debug_parser>("Stop parsing{}{}! :^)",
-                m_parsing_fragment ? " fragment" : "");
+            dbgln<debug_parser>("Stop parsing{}! :^)", m_parsing_fragment ? " fragment" : "");
             break;
         }
     }

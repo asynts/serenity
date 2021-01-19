@@ -221,7 +221,7 @@ Optional<u32> HTMLTokenizer::next_code_point()
         return {};
     m_prev_utf8_iterator = m_utf8_iterator;
     ++m_utf8_iterator;
-    dbgln<debug_trace_tokenizer>("(Tokenizer) Next code_point: ", (char)*m_prev_utf8_iterator);
+    dbgln<debug_trace_tokenizer>("(Tokenizer) Next code_point: {}", (char)*m_prev_utf8_iterator);
     return *m_prev_utf8_iterator;
 }
 
