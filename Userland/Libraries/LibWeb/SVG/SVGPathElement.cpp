@@ -94,6 +94,7 @@ static void print_instruction(const PathInstruction& instruction)
                 data[i + 2],
                 data[i + 3],
                 data[i + 4],
+                data[i + 5],
                 data[i + 6]);
         break;
     case PathInstructionType::Invalid:

@@ -234,7 +234,8 @@ auto Lock::force_unlock_if_locked(u32& lock_count_to_restore) -> Mode
                     return Mode::Unlocked;
                 }
 
-                dbgln<debug_lock_restore>("Lock::force_unlock_if_locked @ {}: unlocking exclusive with lock count: {}, total locks: {}", this, m_times_locked);
+                dbgln<debug_lock_restore>("Lock::force_unlock_if_locked @ {}: unlocking exclusive with lock count: {}, total locks: {}",
+                    this, it->value, m_times_locked);
 
                 ASSERT(it->value > 0);
                 lock_count_to_restore = it->value;
