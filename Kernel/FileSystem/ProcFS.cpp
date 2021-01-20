@@ -1110,7 +1110,7 @@ InodeMetadata ProcFSInode::metadata() const
     auto proc_parent_directory = to_proc_parent_directory(identifier());
     auto proc_file_type = to_proc_file_type(identifier());
 
-    dbgln<debug_procfs>("  -> pid={}, fi={}, pdi={}", to_pid(identifier()).value(), proc_file_type, proc_parent_directory);
+    dbgln<debug_procfs>("  -> pid={}, fi={}, pdi={}", to_pid(identifier()).value(), (int)proc_file_type, (int)proc_parent_directory);
 
     if (is_process_related_file(identifier())) {
         ProcessID pid = to_pid(identifier());
