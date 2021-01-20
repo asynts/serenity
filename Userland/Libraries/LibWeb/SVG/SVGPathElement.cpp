@@ -80,6 +80,7 @@ static void print_instruction(const PathInstruction& instruction)
         dbgln("QuadraticBezierCurve (absolute={})", instruction.absolute);
         for (size_t i = 0; i < data.size(); i += 4)
             dbgln("    (x1={}, y1={}), (x={}, y={})", data[i], data[i + 1], data[i + 2], data[i + 3]);
+        break;
     case PathInstructionType::SmoothQuadraticBezierCurve:
         dbgln("SmoothQuadraticBezierCurve (absolute={})", instruction.absolute);
         for (size_t i = 0; i < data.size(); i += 2)
