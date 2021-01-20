@@ -179,7 +179,7 @@ Vector<Capability> get_capabilities(Address address)
     Vector<Capability> capabilities;
     auto capability_pointer = capabilities_pointer.value();
     while (capability_pointer != 0) {
-        dbgln<debug_pci>("PCI: Reading in capability at {:#02x} for {}", capabilities_pointer, address);
+        dbgln<debug_pci>("PCI: Reading in capability at {:#02x} for {}", capability_pointer, address);
         u16 capability_header = PCI::read16(address, capability_pointer);
         u8 capability_id = capability_header & 0xff;
         capability_pointer = capability_header >> 8;
