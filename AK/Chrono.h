@@ -47,7 +47,11 @@ struct ClockRatio {
     static constexpr ClockRatio microseconds() { return { 1, 1'000'000 }; }
     static constexpr ClockRatio nanoseconds() { return { 1, 1'000'000'000 }; }
 
-    constexpr bool operator==(ClockRatio rhs) const { TODO(); }
+    constexpr bool operator<=(ClockRatio rhs) const { return nominator * rhs.denominator <= rhs.nominator * denominator; }
+    constexpr bool operator>=(ClockRatio rhs) const { return nominator * rhs.denominator >= rhs.nominator * denominator; }
+    constexpr bool operator<(ClockRatio rhs) const { return nominator * rhs.denominator < rhs.nominator * denominator; }
+    constexpr bool operator>(ClockRatio rhs) const { return nominator * rhs.denominator > rhs.nominator * denominator; }
+    constexpr bool operator==(ClockRatio rhs) const { return nominator * rhs.denominator == rhs.nominator * denominator; }
 };
 
 template<ClockRatio Ratio>
@@ -71,7 +75,9 @@ public:
     template<ClockRatio Ratio2>
     Duration<Ratio2> cast() const
     {
-        TODO();
+        // FIXME: Be careful with overflowing u64.
+        // FIXME: Be careful with floating point accuracy.
+        return { (ticks() * Ratio.denominator * Ratio2.nominator) / (Ratio.nominator * Ratio2.denominator) };
     }
 
     template<ClockRatio Ratio2>
@@ -106,16 +112,12 @@ public:
 
     template<ClockRatio Ratio2>
     bool operator<=(Duration<Ratio2> rhs) const { return (*this - rhs).ticks() <= 0; }
-
     template<ClockRatio Ratio2>
     bool operator>=(Duration<Ratio2> rhs) const { return (*this - rhs).ticks() >= 0; }
-
     template<ClockRatio Ratio2>
     bool operator<(Duration<Ratio2> rhs) const { return (*this - rhs).ticks() < 0; }
-
     template<ClockRatio Ratio2>
     bool operator>(Duration<Ratio2> rhs) const { return (*this - rhs).ticks() > 0; }
-
     template<ClockRatio Ratio2>
     bool operator==(Duration<Ratio2> rhs) const { return (*this - rhs).ticks() == 0; }
 
@@ -147,7 +149,9 @@ public:
     template<ClockRatio Ratio2>
     Instant<Ratio2> cast()
     {
-        TODO();
+        // FIXME: Be careful with overflowing u64.
+        // FIXME: Be careful with floating point accuracy.
+        return { (ticks() * Ratio.denominator * Ratio2.nominator) / (Ratio.nominator * Ratio2.denominator) };
     }
 
     template<ClockRatio Ratio2>
@@ -235,12 +239,14 @@ using DefaultDuration = Duration<ClockRatio::nanoseconds()>;
 using DefaultInstant = Instant<ClockRatio::nanoseconds()>;
 using DefaultClock = Clock<ClockRatio::nanoseconds()>;
 
+// FIXME: Not sure if this API works, because I don't know how this is implemented.
+//        I presume that the clock value is stored in some globally by everything
+//        accessible memory? Or registers?
 inline DefaultClock& monotonic_clock_mutable()
 {
     static DefaultClock clock { DefaultInstant::epoch() };
     return clock;
 }
-
 inline const DefaultClock& monotonic_clock()
 {
     return monotonic_clock_mutable();
