@@ -83,6 +83,7 @@ endpoint WindowServer = 2
     DismissMenu(i32 menu_id) => ()
 
     AsyncSetWallpaper(String path) =|
+    AsyncScreenshot() => (i32 screenshot_id)
 
     SetBackgroundColor(String background_color)  => ()
     SetWallpaperMode(String mode)  => ()

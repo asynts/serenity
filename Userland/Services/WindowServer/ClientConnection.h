@@ -121,6 +121,7 @@ private:
     virtual OwnPtr<Messages::WindowServer::MoveWindowToFrontResponse> handle(const Messages::WindowServer::MoveWindowToFront&) override;
     virtual OwnPtr<Messages::WindowServer::SetFullscreenResponse> handle(const Messages::WindowServer::SetFullscreen&) override;
     virtual void handle(const Messages::WindowServer::AsyncSetWallpaper&) override;
+    virtual OwnPtr<Messages::WindowServer::AsyncScreenshotResponse> handle(const Messages::WindowServer::AsyncScreenshot&) override;
     virtual OwnPtr<Messages::WindowServer::SetBackgroundColorResponse> handle(const Messages::WindowServer::SetBackgroundColor&) override;
     virtual OwnPtr<Messages::WindowServer::SetWallpaperModeResponse> handle(const Messages::WindowServer::SetWallpaperMode&) override;
     virtual OwnPtr<Messages::WindowServer::GetWallpaperResponse> handle(const Messages::WindowServer::GetWallpaper&) override;
@@ -159,6 +160,7 @@ private:
 
     int m_next_menubar_id { 10000 };
     int m_next_menu_id { 20000 };
+    int m_next_screenshot_id { 30000 };
     int m_next_window_id { 1982 };
 
     bool m_has_display_link { false };

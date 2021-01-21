@@ -25,6 +25,7 @@
  */
 
 #include <AK/Badge.h>
+#include <LibCore/AnonymousBuffer.h>
 #include <LibGfx/Bitmap.h>
 #include <LibGfx/StandardCursor.h>
 #include <LibGfx/SystemTheme.h>
@@ -311,6 +312,17 @@ void ClientConnection::handle(const Messages::WindowServer::AsyncSetWallpaper& m
     Compositor::the().set_wallpaper(message.path(), [&](bool success) {
         post_message(Messages::WindowClient::AsyncSetWallpaperFinished(success));
     });
+}
+
+OwnPtr<Messages::WindowServer::AsyncScreenshotResponse> ClientConnection::handle(const Messages::WindowServer::AsyncScreenshot&)
+{
+    i32 screenshot_id = m_next_screenshot_id++;
+
+    Compositor::the().screenshot([&](NonnullRefPtr<Gfx::Bitmap> bitmap) {
+        post_message(Messages::WindowClient::AsyncScreenshotFinished(screenshot_id, bitmap->to_shareable_bitmap()));
+    });
+
+    return make<Messages::WindowServer::AsyncScreenshotResponse>(screenshot_id);
 }
 
 OwnPtr<Messages::WindowServer::SetBackgroundColorResponse> ClientConnection::handle(const Messages::WindowServer::SetBackgroundColor& message)
