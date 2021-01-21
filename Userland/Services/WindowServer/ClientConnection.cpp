@@ -313,6 +313,17 @@ void ClientConnection::handle(const Messages::WindowServer::AsyncSetWallpaper& m
     });
 }
 
+OwnPtr<Messages::WindowServer::AsyncScreenshotResponse> ClientConnection::handle(const Messages::WindowServer::AsyncScreenshot&)
+{
+    i32 screenshot_id = m_next_screenshot_id++;
+
+    Compositor::the().screenshot([&](NonnullRefPtr<Gfx::Bitmap>) {
+        TODO();
+    });
+
+    return make<Messages::WindowServer::AsyncScreenshotResponse>(screenshot_id);
+}
+
 OwnPtr<Messages::WindowServer::SetBackgroundColorResponse> ClientConnection::handle(const Messages::WindowServer::SetBackgroundColor& message)
 {
     Compositor::the().set_background_color(message.background_color());

@@ -656,6 +656,11 @@ bool Compositor::set_wallpaper(const String& path, Function<void(bool)>&& callba
     return true;
 }
 
+void Compositor::screenshot(Function<void(NonnullRefPtr<Gfx::Bitmap>)>&&)
+{
+    TODO();
+}
+
 void Compositor::flip_buffers()
 {
     ASSERT(m_screen_can_set_buffer);

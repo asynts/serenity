@@ -307,6 +307,11 @@ void WindowServerConnection::handle(const Messages::WindowClient::AsyncSetWallpa
     // This is handled manually by Desktop::set_wallpaper().
 }
 
+void WindowServerConnection::handle(const Messages::WindowClient::AsyncScreenshotFinished&)
+{
+    TODO();
+}
+
 void WindowServerConnection::handle(const Messages::WindowClient::DragDropped& message)
 {
     if (auto* window = Window::from_window_id(message.window_id())) {

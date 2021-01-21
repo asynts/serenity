@@ -76,6 +76,8 @@ public:
 
     void did_construct_window_manager(Badge<WindowManager>);
 
+    void screenshot(Function<void(NonnullRefPtr<Gfx::Bitmap>)>&& callback);
+
 private:
     Compositor();
     void init_bitmaps();
