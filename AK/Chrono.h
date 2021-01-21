@@ -219,6 +219,47 @@ public:
     static Nanoseconds now();
 };
 
+class SplittedDuration {
+public:
+    explicit constexpr SplittedDuration(Nanoseconds value)
+    {
+        m_hours = value.in_hours();
+        value -= m_hours;
+
+        m_minutes = value.in_minutes();
+        value -= m_minutes;
+
+        m_seconds = value.in_seconds();
+        value -= m_seconds;
+
+        m_milliseconds = value.in_milliseconds();
+        value -= m_milliseconds;
+
+        m_microseconds = value.in_microseconds();
+        value -= m_microseconds;
+
+        m_nanoseconds = value.in_nanoseconds();
+        value -= m_nanoseconds;
+
+        ASSERT(value == 0s);
+    }
+
+    constexpr Chrono::Hours hours() const { return m_hours; }
+    constexpr Chrono::Minutes minutes() const { return m_minutes; }
+    constexpr Chrono::Seconds seconds() const { return m_seconds; }
+    constexpr Chrono::Milliseconds milliseconds() const { return m_milliseconds; }
+    constexpr Chrono::Microseconds microseconds() const { return m_microseconds; }
+    constexpr Chrono::Nanoseconds nanoseconds() const { return m_nanoseconds; }
+
+private:
+    Chrono::Hours m_hours;
+    Chrono::Minutes m_minutes;
+    Chrono::Seconds m_seconds;
+    Chrono::Milliseconds m_milliseconds;
+    Chrono::Microseconds m_microseconds;
+    Chrono::Nanoseconds m_nanoseconds;
+};
+
 }
 
 Chrono::Hours operator""h(u64 value) { return Chrono::Hours { value }; }

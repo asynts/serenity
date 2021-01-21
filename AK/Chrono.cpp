@@ -61,27 +61,7 @@ void AK::Formatter<Chrono::Nanoseconds>::format(FormatBuilder& fmtbuilder, Chron
 {
     GenericLexer lexer { m_specifier };
 
-    // FIXME: We need something like localtime.
-
-    const auto hours = value.in_hours();
-    value -= hours;
-
-    const auto minutes = value.in_minutes();
-    value -= minutes;
-
-    const auto seconds = value.in_seconds();
-    value -= seconds;
-
-    const auto milliseconds = value.in_milliseconds();
-    value -= milliseconds;
-
-    const auto microseconds = value.in_microseconds();
-    value -= microseconds;
-
-    const auto nanoseconds = value.in_nanoseconds();
-    value -= nanoseconds;
-
-    ASSERT(value == 0s);
+    Chrono::SplittedDuration splitted { value };
 
     StringBuilder& builder = fmtbuilder.builder();
     while (!lexer.is_eof()) {
@@ -93,25 +73,25 @@ void AK::Formatter<Chrono::Nanoseconds>::format(FormatBuilder& fmtbuilder, Chron
                 builder.append('%');
                 break;
             case 'H':
-                builder.appendf("{:02}", hours.ticks());
+                builder.appendf("{:02}", splitted.hours().ticks());
                 break;
             case 'M':
-                builder.appendf("{:02}", minutes.ticks());
+                builder.appendf("{:02}", splitted.minutes().ticks());
                 break;
             case 'S':
-                builder.appendf("{:02}", seconds.ticks());
+                builder.appendf("{:02}", splitted.seconds().ticks());
                 break;
             case 'm':
                 ASSERT(!zero_pad);
-                builder.append("{:03}", milliseconds.ticks());
+                builder.append("{:03}", splitted.milliseconds().ticks());
                 break;
             case 'u':
                 ASSERT(!zero_pad);
-                builder.append("{:06}", (microseconds + milliseconds).ticks());
+                builder.append("{:06}", (splitted.microseconds() + splitted.milliseconds()).ticks());
                 break;
             case 'n':
                 ASSERT(!zero_pad);
-                builder.append("{:09}", (nanoseconds + microseconds + milliseconds).ticks());
+                builder.append("{:09}", (splitted.nanoseconds() + splitted.microseconds() + splitted.milliseconds()).ticks());
                 break;
             default:
                 ASSERT_NOT_REACHED();
