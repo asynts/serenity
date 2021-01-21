@@ -28,7 +28,7 @@ endpoint WindowClient = 4
     WM_WindowRectChanged(i32 wm_id, i32 client_id, i32 window_id, Gfx::IntRect rect) =|
 
     AsyncSetWallpaperFinished(bool success) =|
-    AsyncScreenshotFinished(i32 screenshot_id, Core::AnonymousBuffer screenshot_buffer) =|
+    AsyncScreenshotFinished(i32 screenshot_id, Gfx::ShareableBitmap screenshot_buffer) =|
 
     DragAccepted() =|
     DragCancelled() =|

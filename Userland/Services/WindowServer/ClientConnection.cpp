@@ -25,6 +25,7 @@
  */
 
 #include <AK/Badge.h>
+#include <LibCore/AnonymousBuffer.h>
 #include <LibGfx/Bitmap.h>
 #include <LibGfx/StandardCursor.h>
 #include <LibGfx/SystemTheme.h>
@@ -317,8 +318,8 @@ OwnPtr<Messages::WindowServer::AsyncScreenshotResponse> ClientConnection::handle
 {
     i32 screenshot_id = m_next_screenshot_id++;
 
-    Compositor::the().screenshot([&](NonnullRefPtr<Gfx::Bitmap>) {
-        TODO();
+    Compositor::the().screenshot([&](NonnullRefPtr<Gfx::Bitmap> bitmap) {
+        post_message(Messages::WindowClient::AsyncScreenshotFinished(screenshot_id, bitmap->to_shareable_bitmap()));
     });
 
     return make<Messages::WindowServer::AsyncScreenshotResponse>(screenshot_id);
