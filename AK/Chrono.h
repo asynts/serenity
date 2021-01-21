@@ -208,46 +208,15 @@ private:
     u64 m_ticks;
 };
 
-template<ClockRatio Ratio>
-class Clock {
+struct MonotonicClock {
 public:
-    using InstantType = Instant<Ratio>;
-    using DurationType = Duration<Ratio>;
-
-    constexpr Clock() = default;
-
-    template<ClockRatio Ratio2>
-    explicit Clock(Instant<Ratio2> now)
-        : m_now(now.cast<Ratio>())
-    {
-    }
-
-    InstantType now() const { return m_now; }
-    ClockRatio ratio() const { return Ratio; }
-
-    void set(InstantType now) { m_now = now; }
-    void tick(u64 delta = 1) { m_now += DurationType { delta }; }
-
-private:
-    InstantType m_now;
+    static Nanoseconds now();
 };
 
-using DefaultDuration = Duration<ClockRatio::nanoseconds()>;
-using DefaultInstant = Instant<ClockRatio::nanoseconds()>;
-using DefaultClock = Clock<ClockRatio::nanoseconds()>;
-
-// FIXME: Not sure if this API works, because I don't know how this is implemented.
-//        I presume that the clock value is stored in some globally by everything
-//        accessible memory? Or registers?
-inline DefaultClock& monotonic_clock_mutable()
-{
-    static DefaultClock clock { DefaultInstant::epoch() };
-    return clock;
-}
-inline const DefaultClock& monotonic_clock()
-{
-    return monotonic_clock_mutable();
-}
+struct RealtimeClock {
+public:
+    static Nanoseconds now();
+};
 
 }
 
