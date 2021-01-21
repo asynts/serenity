@@ -46,6 +46,8 @@ public:
     {
     }
 
+    static Duration zero();
+
     i64 ticks() const { return m_ticks; }
     ClockRatio ratio() const { return m_ratio; }
 
@@ -75,7 +77,7 @@ public:
     {
     }
 
-    static Instant zero() { return { ClockRatio::optimal(), 0 }; }
+    static Instant epoch() { return { ClockRatio::optimal(), 0 }; }
 
     ClockRatio ratio() const { return m_ratio; }
 
