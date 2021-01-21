@@ -26,6 +26,7 @@
 
 #pragma once
 
+#include <AK/Function.h>
 #include <AK/Types.h>
 
 namespace Chrono {
@@ -101,6 +102,31 @@ public:
     void tick(u64 delta = 1);
 };
 
-// FIXME: Timers.
+class Stopwatch {
+public:
+    Stopwatch();
+
+    Duration elapsed() const;
+
+    void start();
+    void pause();
+    void reset();
+};
+
+class Timer {
+public:
+    Timer();
+    explicit Timer(Duration, bool single_shot = true);
+
+    Duration duration() const;
+
+    void start();
+    void start(Duration, bool single_shot = true);
+
+    void stop();
+    void stop(Duration);
+
+    Function<void(Instant)> on_timeout;
+};
 
 }
