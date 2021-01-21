@@ -26,12 +26,7 @@
 
 #pragma once
 
-#include <AK/Function.h>
-#include <AK/NumericLimits.h>
 #include <AK/Types.h>
-
-// FIXME: constexpr
-// FIXME: [[nodiscard]]
 
 namespace Chrono {
 
@@ -57,23 +52,23 @@ struct ClockRatio {
 template<ClockRatio Ratio>
 class Duration {
 public:
-    explicit Duration(i64 ticks = 0)
+    explicit constexpr Duration(i64 ticks = 0)
         : m_ticks(ticks)
     {
     }
 
     static constexpr Duration zero() { return { 0 }; }
 
-    i64 ticks() const { return m_ticks; }
-    ClockRatio ratio() const { return Ratio; }
+    constexpr i64 ticks() const { return m_ticks; }
+    constexpr ClockRatio ratio() const { return Ratio; }
 
-    Duration<ClockRatio::seconds()> in_seconds() const { return cast<ClockRatio::seconds()>(); }
-    Duration<ClockRatio::milliseconds()> in_milliseconds() const { return cast<ClockRatio::milliseconds()>(); }
-    Duration<ClockRatio::microseconds()> in_microseconds() const { return cast<ClockRatio::microseconds()>(); }
-    Duration<ClockRatio::nanoseconds()> in_nanoseconds() const { return cast<ClockRatio::nanoseconds()>(); }
+    constexpr Duration<ClockRatio::seconds()> in_seconds() const { return cast<ClockRatio::seconds()>(); }
+    constexpr Duration<ClockRatio::milliseconds()> in_milliseconds() const { return cast<ClockRatio::milliseconds()>(); }
+    constexpr Duration<ClockRatio::microseconds()> in_microseconds() const { return cast<ClockRatio::microseconds()>(); }
+    constexpr Duration<ClockRatio::nanoseconds()> in_nanoseconds() const { return cast<ClockRatio::nanoseconds()>(); }
 
     template<ClockRatio Ratio2>
-    Duration<Ratio2> cast() const
+    constexpr Duration<Ratio2> cast() const
     {
         // FIXME: Be careful with overflowing u64.
         // FIXME: Be careful with floating point accuracy.
@@ -81,7 +76,7 @@ public:
     }
 
     template<ClockRatio Ratio2>
-    Duration operator+(Duration<Ratio2> rhs) const
+    constexpr Duration operator+(Duration<Ratio2> rhs) const
     {
         if constexpr (Ratio == Ratio2)
             return { ticks() + rhs.ticks() };
@@ -90,7 +85,7 @@ public:
     }
 
     template<ClockRatio Ratio2>
-    Duration operator-(Duration<Ratio2> rhs) const
+    constexpr Duration operator-(Duration<Ratio2> rhs) const
     {
         if constexpr (Ratio == Ratio2)
             return { ticks() - rhs.ticks() };
@@ -99,27 +94,27 @@ public:
     }
 
     template<ClockRatio Ratio2>
-    Duration& operator+=(Duration<Ratio2> rhs)
+    constexpr Duration& operator+=(Duration<Ratio2> rhs)
     {
         return *this = *this + rhs;
     }
 
     template<ClockRatio Ratio2>
-    Duration& operator-=(Duration<Ratio2> rhs)
+    constexpr Duration& operator-=(Duration<Ratio2> rhs)
     {
         return *this = *this - rhs;
     }
 
     template<ClockRatio Ratio2>
-    bool operator<=(Duration<Ratio2> rhs) const { return (*this - rhs).ticks() <= 0; }
+    constexpr bool operator<=(Duration<Ratio2> rhs) const { return (*this - rhs).ticks() <= 0; }
     template<ClockRatio Ratio2>
-    bool operator>=(Duration<Ratio2> rhs) const { return (*this - rhs).ticks() >= 0; }
+    constexpr bool operator>=(Duration<Ratio2> rhs) const { return (*this - rhs).ticks() >= 0; }
     template<ClockRatio Ratio2>
-    bool operator<(Duration<Ratio2> rhs) const { return (*this - rhs).ticks() < 0; }
+    constexpr bool operator<(Duration<Ratio2> rhs) const { return (*this - rhs).ticks() < 0; }
     template<ClockRatio Ratio2>
-    bool operator>(Duration<Ratio2> rhs) const { return (*this - rhs).ticks() > 0; }
+    constexpr bool operator>(Duration<Ratio2> rhs) const { return (*this - rhs).ticks() > 0; }
     template<ClockRatio Ratio2>
-    bool operator==(Duration<Ratio2> rhs) const { return (*this - rhs).ticks() == 0; }
+    constexpr bool operator==(Duration<Ratio2> rhs) const { return (*this - rhs).ticks() == 0; }
 
 private:
     i64 m_ticks;
@@ -136,18 +131,18 @@ using Nanoseconds = Duration<ClockRatio::nanoseconds()>;
 template<ClockRatio Ratio>
 class Instant {
 public:
-    Instant(u64 ticks = 0)
+    explicit constexpr Instant(u64 ticks = 0)
         : m_ticks(ticks)
     {
     }
 
     static constexpr Instant epoch() { return { 0 }; }
 
-    ClockRatio ratio() const { return Ratio; }
-    u64 ticks() const { return m_ticks; }
+    constexpr ClockRatio ratio() const { return Ratio; }
+    constexpr u64 ticks() const { return m_ticks; }
 
     template<ClockRatio Ratio2>
-    Instant<Ratio2> cast()
+    constexpr Instant<Ratio2> cast()
     {
         // FIXME: Be careful with overflowing u64.
         // FIXME: Be careful with floating point accuracy.
@@ -155,7 +150,7 @@ public:
     }
 
     template<ClockRatio Ratio2>
-    Duration<Ratio> operator-(Instant rhs) const
+    constexpr Duration<Ratio> operator-(Instant rhs) const
     {
         if constexpr (Ratio == Ratio2)
             return { static_cast<i64>(ticks()) - static_cast<i64>(rhs.ticks()); }
@@ -164,7 +159,7 @@ public:
     }
 
     template<ClockRatio Ratio2>
-    Instant operator+(Duration<Ratio2> rhs) const
+    constexpr Instant operator+(Duration<Ratio2> rhs) const
     {
         if constexpr (Ratio == Ratio2)
             return { ticks() + rhs.ticks() };
@@ -173,7 +168,7 @@ public:
     }
 
     template<ClockRatio Ratio2>
-    Instant operator-(Duration<Ratio2> rhs) const
+    constexpr Instant operator-(Duration<Ratio2> rhs) const
     {
         if constexpr (Ratio == Ratio2)
             return { ticks() - rhs.ticks() };
@@ -182,32 +177,32 @@ public:
     }
 
     template<ClockRatio Ratio2>
-    Instant& operator+=(Duration<Ratio2> rhs)
+    constexpr Instant& operator+=(Duration<Ratio2> rhs)
     {
         return *this = *this + rhs;
         = ClockRatio::system()
     }
 
     template<ClockRatio Ratio2>
-    Instant& operator-=(Duration<Ratio2> rhs)
+    constexpr Instant& operator-=(Duration<Ratio2> rhs)
     {
         return *this = *this - rhs;
     }
 
     template<ClockRatio Ratio2>
-    bool operator<=(Instant<Ratio2> rhs) const { return (*this - rhs).ticks() <= Duration<Ratio>::zero(); }
+    constexpr bool operator<=(Instant<Ratio2> rhs) const { return (*this - rhs).ticks() <= Duration<Ratio>::zero(); }
 
     template<ClockRatio Ratio2>
-    bool operator>=(Instant<Ratio2> rhs) const { return (*this - rhs).ticks() >= Duration<Ratio>::zero(); }
+    constexpr bool operator>=(Instant<Ratio2> rhs) const { return (*this - rhs).ticks() >= Duration<Ratio>::zero(); }
 
     template<ClockRatio Ratio2>
-    bool operator<(Instant<Ratio2> rhs) const { return (*this - rhs).ticks() < Duration<Ratio>::zero(); }
+    constexpr bool operator<(Instant<Ratio2> rhs) const { return (*this - rhs).ticks() < Duration<Ratio>::zero(); }
 
     template<ClockRatio Ratio2>
-    bool operator>(Instant<Ratio2> rhs) const { return (*this - rhs).ticks() > Duration<Ratio>::zero(); }
+    constexpr bool operator>(Instant<Ratio2> rhs) const { return (*this - rhs).ticks() > Duration<Ratio>::zero(); }
 
     template<ClockRatio Ratio2>
-    bool operator==(Instant<Ratio2> rhs) const { return (*this - rhs).ticks() == Duration<Ratio>::zero(); }
+    constexpr bool operator==(Instant<Ratio2> rhs) const { return (*this - rhs).ticks() == Duration<Ratio>::zero(); }
 
 private:
     u64 m_ticks;
@@ -218,6 +213,8 @@ class Clock {
 public:
     using InstantType = Instant<Ratio>;
     using DurationType = Duration<Ratio>;
+
+    constexpr Clock() = default;
 
     template<ClockRatio Ratio2>
     explicit Clock(Instant<Ratio2> now)
