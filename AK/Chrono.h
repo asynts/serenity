@@ -33,17 +33,15 @@
 // FIXME: constexpr
 // FIXME: [[nodiscard]]
 
-// FIXME: Always store the duration in nanoseconds?
-
 namespace Chrono {
 
 struct ClockRatio {
     u64 nominator;
     u64 denominator;
 
-    // FIXME: We need to get the proper value somehow but that would only be known at runtime?
-    static constexpr ClockRatio system() { return { 1, NumericLimits<u64>::max() }; }
-
+    static constexpr ClockRatio days() { return { 24 * 60 * 60, 1 }; }
+    static constexpr ClockRatio hours() { return { 60 * 60, 1 }; }
+    static constexpr ClockRatio minutes() { return { 60, 1 }; }
     static constexpr ClockRatio seconds() { return { 1, 1 }; }
     static constexpr ClockRatio milliseconds() { return { 1, 1'000 }; }
     static constexpr ClockRatio microseconds() { return { 1, 1'000'000 }; }
@@ -52,13 +50,15 @@ struct ClockRatio {
     constexpr bool operator==(ClockRatio rhs) const { TODO(); }
 };
 
-template<ClockRatio Ratio = ClockRatio::system()>
+template<ClockRatio Ratio>
 class Duration {
 public:
     explicit Duration(i64 ticks = 0)
         : m_ticks(ticks)
     {
     }
+
+    static constexpr Duration zero() { return { 0 }; }
 
     i64 ticks() const { return m_ticks; }
     ClockRatio ratio() const { return Ratio; }
@@ -123,13 +123,23 @@ private:
     i64 m_ticks;
 };
 
-template<ClockRatio Ratio = ClockRatio::system()>
+using Days = Duration<ClockRatio::days()>;
+using Hours = Duration<ClockRatio::hours()>;
+using Minutes = Duration<ClockRatio::minutes()>;
+using Seconds = Duration<ClockRatio::seconds()>;
+using Milliseconds = Duration<ClockRatio::milliseconds()>;
+using Microseconds = Duration<ClockRatio::microseconds()>;
+using Nanoseconds = Duration<ClockRatio::nanoseconds()>;
+
+template<ClockRatio Ratio>
 class Instant {
 public:
     Instant(u64 ticks = 0)
         : m_ticks(ticks)
     {
     }
+
+    static constexpr Instant epoch() { return { 0 }; }
 
     ClockRatio ratio() const { return Ratio; }
     u64 ticks() const { return m_ticks; }
@@ -171,6 +181,7 @@ public:
     Instant& operator+=(Duration<Ratio2> rhs)
     {
         return *this = *this + rhs;
+        = ClockRatio::system()
     }
 
     template<ClockRatio Ratio2>
@@ -198,7 +209,7 @@ private:
     u64 m_ticks;
 };
 
-template<ClockRatio Ratio = ClockRatio::system()>
+template<ClockRatio Ratio>
 class Clock {
 public:
     using InstantType = Instant<Ratio>;
@@ -213,23 +224,34 @@ public:
     InstantType now() const { return m_now; }
     ClockRatio ratio() const { return Ratio; }
 
-    void tick(u64 delta = 1)
-    {
-        m_now += DurationType { delta };
-    }
+    void set(InstantType now) { m_now = now; }
+    void tick(u64 delta = 1) { m_now += DurationType { delta }; }
 
 private:
     InstantType m_now;
 };
 
-// FIXME: I don't like these names but we need some alias for it.
-using SystemDuration = Duration<ClockRatio::system()>;
-using SystemInstant = Instant<ClockRatio::system()>;
-using SystemClock = Clock<ClockRatio::system()>;
+using DefaultDuration = Duration<ClockRatio::nanoseconds()>;
+using DefaultInstant = Instant<ClockRatio::nanoseconds()>;
+using DefaultClock = Clock<ClockRatio::nanoseconds()>;
 
-SystemClock& system_clock()
+inline DefaultClock& monotonic_clock_mutable()
 {
-    TODO();
+    static DefaultClock clock { DefaultInstant::epoch() };
+    return clock;
+}
+
+inline const DefaultClock& monotonic_clock()
+{
+    return monotonic_clock_mutable();
 }
 
 }
+
+Chrono::Days operator""d(u64 value) { return Chrono::Days { value }; }
+Chrono::Hours operator""h(u64 value) { return Chrono::Hours { value }; }
+Chrono::Minutes operator"" m(u64 value) { return Chrono::Minutes { value }; }
+Chrono::Seconds operator""s(u64 value) { return Chrono::Seconds { value }; }
+Chrono::Milliseconds operator""ms(u64 value) { return Chrono::Milliseconds { value }; }
+Chrono::Microseconds operator""us(u64 value) { return Chrono::Microseconds { value }; }
+Chrono::Nanoseconds operator""ns(u64 value) { return Chrono::Nanoseconds { value }; }
