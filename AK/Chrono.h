@@ -26,6 +26,7 @@
 
 #pragma once
 
+#include <AK/Format.h>
 #include <AK/Types.h>
 
 namespace Chrono {
@@ -34,7 +35,6 @@ struct ClockRatio {
     u64 nominator;
     u64 denominator;
 
-    static constexpr ClockRatio days() { return { 24 * 60 * 60, 1 }; }
     static constexpr ClockRatio hours() { return { 60 * 60, 1 }; }
     static constexpr ClockRatio minutes() { return { 60, 1 }; }
     static constexpr ClockRatio seconds() { return { 1, 1 }; }
@@ -62,6 +62,8 @@ public:
     constexpr i64 ticks() const { return m_ticks; }
     constexpr ClockRatio ratio() const { return Ratio; }
 
+    constexpr Duration<ClockRatio::hours()> in_hours() const { return cast<ClockRatio::hours()>(); }
+    constexpr Duration<ClockRatio::minutes()> in_minutes() const { return cast<ClockRatio::minutes()>(); }
     constexpr Duration<ClockRatio::seconds()> in_seconds() const { return cast<ClockRatio::seconds()>(); }
     constexpr Duration<ClockRatio::milliseconds()> in_milliseconds() const { return cast<ClockRatio::milliseconds()>(); }
     constexpr Duration<ClockRatio::microseconds()> in_microseconds() const { return cast<ClockRatio::microseconds()>(); }
@@ -120,7 +122,6 @@ private:
     i64 m_ticks;
 };
 
-using Days = Duration<ClockRatio::days()>;
 using Hours = Duration<ClockRatio::hours()>;
 using Minutes = Duration<ClockRatio::minutes()>;
 using Seconds = Duration<ClockRatio::seconds()>;
@@ -220,10 +221,34 @@ public:
 
 }
 
-Chrono::Days operator""d(u64 value) { return Chrono::Days { value }; }
 Chrono::Hours operator""h(u64 value) { return Chrono::Hours { value }; }
 Chrono::Minutes operator"" m(u64 value) { return Chrono::Minutes { value }; }
 Chrono::Seconds operator""s(u64 value) { return Chrono::Seconds { value }; }
 Chrono::Milliseconds operator""ms(u64 value) { return Chrono::Milliseconds { value }; }
 Chrono::Microseconds operator""us(u64 value) { return Chrono::Microseconds { value }; }
 Chrono::Nanoseconds operator""ns(u64 value) { return Chrono::Nanoseconds { value }; }
+
+template<Chrono::ClockRatio Ratio>
+struct AK::Formatter<Chrono::Duration<Ratio>> : Formatter<Chrono::Nanoseconds> {
+    void format(FormatBuilder& builder, Chrono::Duration<Ratio> value)
+    {
+        return Formatter<Chrono::Nanoseconds>(builder, value.in_nanoseconds());
+    }
+};
+template<>
+struct AK::Formatter<Chrono::Nanoseconds> {
+    void parse(TypeErasedFormatParams&, FormatParser& parser)
+    {
+        // FIXME: Parse fill-and-align, width and precision.
+
+        // The specifier is a format string of it's own thus it makes more sense to parse it on the fly.
+        if (parser.is_eof())
+            m_specifier = "%H:%M:%S.%n";
+        else
+            m_specifier = parser.consume_all();
+    }
+
+    void format(FormatBuilder&, Chrono::Nanoseconds);
+
+    StringView m_specifier;
+};

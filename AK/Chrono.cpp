@@ -26,6 +26,7 @@
 
 #include <AK/Assertions.h>
 #include <AK/Chrono.h>
+#include <AK/StringBuilder.h>
 #include <time.h>
 
 namespace Chrono {
@@ -54,4 +55,69 @@ Nanoseconds MonotonicClock::now()
     return nanoseconds + seconds;
 }
 
+}
+
+void AK::Formatter<Chrono::Nanoseconds>::format(FormatBuilder& fmtbuilder, Chrono::Nanoseconds value)
+{
+    GenericLexer lexer { m_specifier };
+
+    // FIXME: We need something like localtime.
+
+    const auto hours = value.in_hours();
+    value -= hours;
+
+    const auto minutes = value.in_minutes();
+    value -= minutes;
+
+    const auto seconds = value.in_seconds();
+    value -= seconds;
+
+    const auto milliseconds = value.in_milliseconds();
+    value -= milliseconds;
+
+    const auto microseconds = value.in_microseconds();
+    value -= microseconds;
+
+    const auto nanoseconds = value.in_nanoseconds();
+    value -= nanoseconds;
+
+    ASSERT(value == 0s);
+
+    StringBuilder& builder = fmtbuilder.builder();
+    while (!lexer.is_eof()) {
+        if (lexer.consume_specific('%')) {
+            bool zero_pad = lexer.consume_specific('0');
+
+            switch (lexer.consume()) {
+            case '%':
+                builder.append('%');
+                break;
+            case 'H':
+                builder.appendf("{:02}", hours.ticks());
+                break;
+            case 'M':
+                builder.appendf("{:02}", minutes.ticks());
+                break;
+            case 'S':
+                builder.appendf("{:02}", seconds.ticks());
+                break;
+            case 'm':
+                ASSERT(!zero_pad);
+                builder.append("{:03}", milliseconds.ticks());
+                break;
+            case 'u':
+                ASSERT(!zero_pad);
+                builder.append("{:06}", (microseconds + milliseconds).ticks());
+                break;
+            case 'n':
+                ASSERT(!zero_pad);
+                builder.append("{:09}", (nanoseconds + microseconds + milliseconds).ticks());
+                break;
+            default:
+                ASSERT_NOT_REACHED();
+            }
+        } else {
+            builder.append(lexer.consume());
+        }
+    }
 }
