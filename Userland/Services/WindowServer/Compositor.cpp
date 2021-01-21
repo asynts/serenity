@@ -656,9 +656,26 @@ bool Compositor::set_wallpaper(const String& path, Function<void(bool)>&& callba
     return true;
 }
 
-void Compositor::screenshot(Function<void(NonnullRefPtr<Gfx::Bitmap>)>&&)
+void Compositor::screenshot(Function<void(NonnullRefPtr<Gfx::Bitmap>)>&& callback)
 {
-    TODO();
+    m_taking_screenshot.lock();
+    ASSERT(m_screenshot_bitmap.is_null());
+    m_screenshot_bitmap = Gfx::Bitmap::create(Gfx::BitmapFormat::RGB32, Screen::the().physical_size());
+
+    invalidate_screen();
+
+    LibThread::BackgroundAction<RefPtr<Gfx::Bitmap>>::create(
+        [this] {
+            m_screenshot_done.wait_until_fulfilled();
+
+            RefPtr<Gfx::Bitmap> bitmap = move(m_screenshot_bitmap);
+            m_taking_screenshot.unlock();
+
+            return bitmap;
+        },
+        [callback = move(callback)](RefPtr<Gfx::Bitmap> bitmap) {
+            callback(*bitmap);
+        });
 }
 
 void Compositor::flip_buffers()

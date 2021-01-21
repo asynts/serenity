@@ -31,6 +31,8 @@
 #include <LibCore/Object.h>
 #include <LibGfx/Color.h>
 #include <LibGfx/DisjointRectSet.h>
+#include <LibThread/Condition.h>
+#include <LibThread/Lock.h>
 
 namespace WindowServer {
 
@@ -110,6 +112,10 @@ private:
     OwnPtr<Gfx::Painter> m_back_painter;
     OwnPtr<Gfx::Painter> m_front_painter;
     OwnPtr<Gfx::Painter> m_temp_painter;
+
+    RefPtr<Gfx::Bitmap> m_screenshot_bitmap;
+    LibThread::Lock m_taking_screenshot;
+    LibThread::Condition m_screenshot_done;
 
     Gfx::DisjointRectSet m_dirty_screen_rects;
     Gfx::DisjointRectSet m_opaque_wallpaper_rects;
