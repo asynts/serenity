@@ -61,6 +61,11 @@ public:
     i64 ticks() const { return m_ticks; }
     ClockRatio ratio() const { return Ratio; }
 
+    Duration<ClockRatio::seconds()> in_seconds() const { return cast<ClockRatio::seconds()>(); }
+    Duration<ClockRatio::milliseconds()> in_milliseconds() const { return cast<ClockRatio::milliseconds()>(); }
+    Duration<ClockRatio::microseconds()> in_microseconds() const { return cast<ClockRatio::microseconds()>(); }
+    Duration<ClockRatio::nanoseconds()> in_nanoseconds() const { return cast<ClockRatio::nanoseconds()>(); }
+
     template<ClockRatio Ratio2>
     Duration<Ratio2> cast() const
     {
