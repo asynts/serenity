@@ -33,13 +33,17 @@
 // FIXME: constexpr
 // FIXME: [[nodiscard]]
 
+// FIXME: Always store the duration in nanoseconds?
+
 namespace Chrono {
 
 struct ClockRatio {
     u64 nominator;
     u64 denominator;
 
-    static constexpr ClockRatio optimal() { TODO(); }
+    // FIXME: We need to get the proper value somehow but that would only be known at runtime?
+    static constexpr ClockRatio system() { return { 1, NumericLimits<u64>::max() }; }
+
     static constexpr ClockRatio seconds() { return { 1, 1 }; }
     static constexpr ClockRatio milliseconds() { return { 1, 1'000 }; }
     static constexpr ClockRatio microseconds() { return { 1, 1'000'000 }; }
@@ -48,15 +52,13 @@ struct ClockRatio {
     constexpr bool operator==(ClockRatio rhs) const { TODO(); }
 };
 
-template<ClockRatio Ratio = ClockRatio::optimal()>
+template<ClockRatio Ratio = ClockRatio::system()>
 class Duration {
 public:
-    explicit Duration(i64 ticks)
+    explicit Duration(i64 ticks = 0)
         : m_ticks(ticks)
     {
     }
-
-    static Duration zero() { return { 0 }; }
 
     i64 ticks() const { return m_ticks; }
     ClockRatio ratio() const { return Ratio; }
@@ -121,15 +123,13 @@ private:
     i64 m_ticks;
 };
 
-template<ClockRatio Ratio>
+template<ClockRatio Ratio = ClockRatio::system()>
 class Instant {
 public:
-    Instant(u64 ticks)
+    Instant(u64 ticks = 0)
         : m_ticks(ticks)
     {
     }
-
-    static Instant epoch() { return { 0 }; }
 
     ClockRatio ratio() const { return Ratio; }
     u64 ticks() const { return m_ticks; }
@@ -198,43 +198,38 @@ private:
     u64 m_ticks;
 };
 
-// FIXME: Implement.
-
+template<ClockRatio Ratio = ClockRatio::system()>
 class Clock {
 public:
-    Clock(ClockRatio, Instant);
+    using InstantType = Instant<Ratio>;
+    using DurationType = Duration<Ratio>;
 
-    Instant now() const;
-    ClockRatio ratio() const;
+    template<ClockRatio Ratio2>
+    explicit Clock(Instant<Ratio2> now)
+        : m_now(now.cast<Ratio>())
+    {
+    }
 
-    void tick(u64 delta = 1);
+    InstantType now() const { return m_now; }
+    ClockRatio ratio() const { return Ratio; }
+
+    void tick(u64 delta = 1)
+    {
+        m_now += DurationType { delta };
+    }
+
+private:
+    InstantType m_now;
 };
 
-class Stopwatch {
-public:
-    Stopwatch();
+// FIXME: I don't like these names but we need some alias for it.
+using SystemDuration = Duration<ClockRatio::system()>;
+using SystemInstant = Instant<ClockRatio::system()>;
+using SystemClock = Clock<ClockRatio::system()>;
 
-    Duration elapsed() const;
-
-    void start();
-    void pause();
-    void reset();
-};
-
-class Timer {
-public:
-    Timer();
-    explicit Timer(Duration, bool single_shot = true);
-
-    Duration duration() const;
-
-    void start();
-    void start(Duration, bool single_shot = true);
-
-    void stop();
-    void stop(Duration);
-
-    Function<void(Instant)> on_timeout;
-};
+SystemClock& system_clock()
+{
+    TODO();
+}
 
 }
