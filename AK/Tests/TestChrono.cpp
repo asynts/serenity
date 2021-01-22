@@ -28,7 +28,7 @@
 
 #include <AK/Chrono.h>
 
-TEST_CASE(basic_arithmetric)
+TEST_CASE(basic_arithmetic)
 {
     Chrono::Nanoseconds duration1 { 23 };
     Chrono::Nanoseconds duration2 { 42 };
@@ -39,6 +39,27 @@ TEST_CASE(basic_arithmetric)
     EXPECT_EQ(duration2 - duration1, 19ns);
     EXPECT_EQ(duration3 + duration1, -1ns);
     EXPECT_EQ((instant1 - duration1) - instant1, -23ns);
+}
+
+TEST_CASE(cast_durations)
+{
+    Chrono::Nanoseconds duration1 { 23 };
+    Chrono::Milliseconds duration2 { 3 };
+
+    EXPECT_EQ(duration1.in_milliseconds(), 0ms);
+    EXPECT_EQ(duration2.in_nanoseconds(), 3'000'000ns);
+}
+
+TEST_CASE(weird_conversion_factors)
+{
+    constexpr Chrono::ClockRatio clock_ratio_1 { 1, 42 };
+    constexpr Chrono::ClockRatio clock_ratio_2 { 2, 13 };
+
+    Chrono::Duration<clock_ratio_1> duration1 { 123 };
+    Chrono::Duration<clock_ratio_2> duration2 { -13 };
+
+    EXPECT_EQ(duration1.cast<clock_ratio_2>().ticks(), 19);
+    EXPECT_EQ(duration2.cast<clock_ratio_1>().ticks(), -84);
 }
 
 TEST_MAIN(Chrono)
