@@ -46,6 +46,7 @@ set(AK_TEST_SOURCES
     TestUtf8.cpp
     TestVector.cpp
     TestWeakPtr.cpp
+    TestChrono.cpp
 )
 
 foreach(source ${AK_TEST_SOURCES})

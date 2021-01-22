@@ -71,6 +71,8 @@ public:
         return Duration<Ratio2> { (ticks() * i64(Ratio.denominator) * i64(Ratio2.nominator)) / (i64(Ratio.nominator) * i64(Ratio2.denominator)) };
     }
 
+    constexpr Duration operator-() const { return Duration { -ticks() }; }
+
     constexpr Duration operator+(Duration rhs) const { return Duration { ticks() + rhs.ticks() }; }
     constexpr Duration operator-(Duration rhs) const { return Duration { ticks() - rhs.ticks() }; }
 
