@@ -572,6 +572,13 @@ using MakeIntegerSequence = decltype(make_integer_sequence_impl<T, N>());
 template<unsigned N>
 using MakeIndexSequence = MakeIntegerSequence<unsigned, N>;
 
+template<typename T, typename S, typename = void>
+struct ImplicitlyConvertibleTo : FalseType {
+};
+template<typename T, typename S>
+struct ImplicitlyConvertibleTo<T, S, Void<decltype(S { declval<T>() })>> : TrueType {
+};
+
 }
 
 using AK::AddConst;
@@ -583,6 +590,7 @@ using AK::declval;
 using AK::DependentFalse;
 using AK::exchange;
 using AK::forward;
+using AK::ImplicitlyConvertibleTo;
 using AK::IndexSequence;
 using AK::IntegerSequence;
 using AK::is_trivial;

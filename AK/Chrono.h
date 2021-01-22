@@ -42,6 +42,12 @@ struct ClockRatio {
     static constexpr ClockRatio microseconds() { return { 1, 1'000'000 }; }
     static constexpr ClockRatio nanoseconds() { return { 1, 1'000'000'000 }; }
 
+    // FIXME: Is this the correct logic?
+    constexpr bool lossless_convertible_to(ClockRatio other)
+    {
+        return (denominator * other.nominator) % (nominator * other.denominator) == 0;
+    }
+
     constexpr bool operator<=(ClockRatio rhs) const { return nominator * rhs.denominator <= rhs.nominator * denominator; }
     constexpr bool operator>=(ClockRatio rhs) const { return nominator * rhs.denominator >= rhs.nominator * denominator; }
     constexpr bool operator<(ClockRatio rhs) const { return nominator * rhs.denominator < rhs.nominator * denominator; }
@@ -54,6 +60,11 @@ class Duration {
 public:
     explicit constexpr Duration(i64 ticks = 0)
         : m_ticks(ticks)
+    {
+    }
+    template<ClockRatio Ratio2>
+    constexpr Duration(Duration<Ratio2> other) requires(Ratio2.lossless_convertible_to(Ratio))
+        : Duration(other.cast<Ratio>())
     {
     }
 
@@ -77,35 +88,20 @@ public:
         return { (ticks() * Ratio.denominator * Ratio2.nominator) / (Ratio.nominator * Ratio2.denominator) };
     }
 
+    // clang-format off
     template<ClockRatio Ratio2>
+    requires (ImplicitlyConvertibleTo<Duration, Duration<Ratio2>>::value)
+    constexpr Duration<Ratio2> operator+(Duration<Ratio2> rhs) const
+    {
+        return { cast<Ratio2>().ticks() + rhs.ticks() };
+    }
+    template<ClockRatio Ratio2>
+    requires (ImplicitlyConvertibleTo<Duration<Ratio2>, Duration>::value)
     constexpr Duration operator+(Duration<Ratio2> rhs) const
     {
-        if constexpr (Ratio == Ratio2)
-            return { ticks() + rhs.ticks() };
-        else
-            return *this + rhs.cast<Ratio>();
+        return { ticks() + rhs.cast<Ratio>().ticks() };
     }
-
-    template<ClockRatio Ratio2>
-    constexpr Duration operator-(Duration<Ratio2> rhs) const
-    {
-        if constexpr (Ratio == Ratio2)
-            return { ticks() - rhs.ticks() };
-        else
-            return *this - rhs.cast<Ratio>();
-    }
-
-    template<ClockRatio Ratio2>
-    constexpr Duration& operator+=(Duration<Ratio2> rhs)
-    {
-        return *this = *this + rhs;
-    }
-
-    template<ClockRatio Ratio2>
-    constexpr Duration& operator-=(Duration<Ratio2> rhs)
-    {
-        return *this = *this - rhs;
-    }
+    // clang-format on
 
     template<ClockRatio Ratio2>
     constexpr bool operator<=(Duration<Ratio2> rhs) const { return (*this - rhs).ticks() <= 0; }
@@ -134,6 +130,11 @@ class Instant {
 public:
     explicit constexpr Instant(u64 ticks = 0)
         : m_ticks(ticks)
+    {
+    }
+    template<ClockRatio Ratio2>
+    constexpr Instant(Instant<Ratio2> other) requires(Ratio2.lossless_convertible_to(Ratio))
+        : Instant(other.cast<Ratio>())
     {
     }
 
