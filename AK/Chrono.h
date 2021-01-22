@@ -135,15 +135,16 @@ public:
 private:
     u64 m_ticks;
 };
+using NanosecondsSinceEpoch = Instant<ClockRatio::nanoseconds()>;
 
 struct MonotonicClock {
 public:
-    static Nanoseconds now();
+    static NanosecondsSinceEpoch now();
 };
 
 struct RealtimeClock {
 public:
-    static Nanoseconds now();
+    static NanosecondsSinceEpoch now();
 };
 
 class SplittedDuration {
@@ -185,6 +186,33 @@ private:
     Chrono::Milliseconds m_milliseconds;
     Chrono::Microseconds m_microseconds;
     Chrono::Nanoseconds m_nanoseconds;
+};
+
+class Stopwatch {
+public:
+    void start()
+    {
+        ASSERT(!m_started.has_value());
+        m_started = MonotonicClock::now();
+    }
+    void stop()
+    {
+        ASSERT(m_started.has_value());
+        m_elapsed += MonotonicClock::now() - *m_started;
+    }
+
+    bool active() const { return m_started.has_value(); }
+
+    Nanoseconds elapsed() const
+    {
+        if (m_started.has_value())
+            return MonotonicClock::now() - *m_started + m_elapsed;
+        return m_elapsed;
+    }
+
+private:
+    Nanoseconds m_elapsed;
+    Optional<NanosecondsSinceEpoch> m_started;
 };
 
 }
