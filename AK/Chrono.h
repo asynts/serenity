@@ -169,7 +169,6 @@ public:
         m_nanoseconds = value.in_nanoseconds();
         value -= m_nanoseconds;
 
-        // FIXME: Chrono literal.
         ASSERT(value == Nanoseconds { 0 });
     }
 
@@ -218,15 +217,17 @@ private:
 
 }
 
-/*
-// FIXME: Why doesn't this work?
-Chrono::Hours operator""h(i64 value) { return Chrono::Hours { value }; }
-Chrono::Minutes operator"" m(i64 value) { return Chrono::Minutes { value }; }
-Chrono::Seconds operator""s(i64 value) { return Chrono::Seconds { value }; }
-Chrono::Milliseconds operator""ms(i64 value) { return Chrono::Milliseconds { value }; }
-Chrono::Microseconds operator""us(i64 value) { return Chrono::Microseconds { value }; }
-Chrono::Nanoseconds operator""ns(i64 value) { return Chrono::Nanoseconds { value }; }
-*/
+// clang-format off
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wliteral-suffix"
+inline Chrono::Hours operator""h(unsigned long long value) { return Chrono::Hours { i64(value) }; }
+inline Chrono::Minutes operator""m(unsigned long long value) { return Chrono::Minutes { i64(value) }; }
+inline Chrono::Seconds operator""s(unsigned long long value) { return Chrono::Seconds { i64(value) }; }
+inline Chrono::Milliseconds operator""ms(unsigned long long value) { return Chrono::Milliseconds { i64(value) }; }
+inline Chrono::Microseconds operator""us(unsigned long long value) { return Chrono::Microseconds { i64(value) }; }
+inline Chrono::Nanoseconds operator""ns(unsigned long long value) { return Chrono::Nanoseconds { i64(value) }; }
+#pragma GCC diagnostic pop
+// clang-format on
 
 template<>
 struct AK::Formatter<Chrono::Nanoseconds> {
