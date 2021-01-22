@@ -68,14 +68,14 @@ public:
     {
         // FIXME: Be careful with overflowing u64.
         // FIXME: Be careful with floating point accuracy.
-        return { (ticks() * Ratio.denominator * Ratio2.nominator) / (Ratio.nominator * Ratio2.denominator) };
+        return Duration<Ratio2> { (ticks() * i64(Ratio.denominator) * i64(Ratio2.nominator)) / (i64(Ratio.nominator) * i64(Ratio2.denominator)) };
     }
 
-    constexpr Duration operator+(Duration rhs) const { return { ticks() + rhs.ticks() }; }
-    constexpr Duration operator-(Duration rhs) const { return { ticks() - rhs.ticks() }; }
+    constexpr Duration operator+(Duration rhs) const { return Duration { ticks() + rhs.ticks() }; }
+    constexpr Duration operator-(Duration rhs) const { return Duration { ticks() - rhs.ticks() }; }
 
-    constexpr Duration& operator+=(Duration rhs) const { return *this = *this + rhs; }
-    constexpr Duration& operator-=(Duration rhs) const { return *this = *this - rhs; }
+    constexpr Duration& operator+=(Duration rhs) { return *this = *this + rhs; }
+    constexpr Duration& operator-=(Duration rhs) { return *this = *this - rhs; }
 
     constexpr bool operator<=(Duration rhs) const { return (*this - rhs).ticks() <= 0; }
     constexpr bool operator>=(Duration rhs) const { return (*this - rhs).ticks() >= 0; }
@@ -102,7 +102,7 @@ public:
     {
     }
 
-    static constexpr Instant epoch() { return { 0 }; }
+    static constexpr Instant epoch() { return Instant { 0 }; }
 
     constexpr ClockRatio ratio() const { return Ratio; }
     constexpr u64 ticks() const { return m_ticks; }
@@ -117,11 +117,11 @@ public:
 
     constexpr Duration<Ratio> operator-(Instant rhs) const
     {
-        return { static_cast<i64>(ticks()) - static_cast<i64>(rhs.ticks()) };
+        return Duration<Ratio> { static_cast<i64>(ticks()) - static_cast<i64>(rhs.ticks()) };
     }
 
-    constexpr Instant operator+(Duration<Ratio> rhs) const { return { ticks() + rhs.ticks() }; }
-    constexpr Instant operator-(Duration<Ratio> rhs) const { return { ticks() - rhs.ticks() }; }
+    constexpr Instant operator+(Duration<Ratio> rhs) const { return Instant { ticks() + rhs.ticks() }; }
+    constexpr Instant operator-(Duration<Ratio> rhs) const { return Instant { ticks() - rhs.ticks() }; }
 
     constexpr Instant& operator+=(Duration<Ratio> rhs) { return *this = *this + rhs; }
     constexpr Instant& operator-=(Duration<Ratio> rhs) { return *this = *this - rhs; }
@@ -169,7 +169,8 @@ public:
         m_nanoseconds = value.in_nanoseconds();
         value -= m_nanoseconds;
 
-        ASSERT(value == 0ns);
+        // FIXME: Chrono literal.
+        ASSERT(value == Nanoseconds { 0 });
     }
 
     constexpr Chrono::Hours hours() const { return m_hours; }
@@ -217,20 +218,16 @@ private:
 
 }
 
-Chrono::Hours operator""h(u64 value) { return Chrono::Hours { value }; }
-Chrono::Minutes operator"" m(u64 value) { return Chrono::Minutes { value }; }
-Chrono::Seconds operator""s(u64 value) { return Chrono::Seconds { value }; }
-Chrono::Milliseconds operator""ms(u64 value) { return Chrono::Milliseconds { value }; }
-Chrono::Microseconds operator""us(u64 value) { return Chrono::Microseconds { value }; }
-Chrono::Nanoseconds operator""ns(u64 value) { return Chrono::Nanoseconds { value }; }
+/*
+// FIXME: Why doesn't this work?
+Chrono::Hours operator""h(i64 value) { return Chrono::Hours { value }; }
+Chrono::Minutes operator"" m(i64 value) { return Chrono::Minutes { value }; }
+Chrono::Seconds operator""s(i64 value) { return Chrono::Seconds { value }; }
+Chrono::Milliseconds operator""ms(i64 value) { return Chrono::Milliseconds { value }; }
+Chrono::Microseconds operator""us(i64 value) { return Chrono::Microseconds { value }; }
+Chrono::Nanoseconds operator""ns(i64 value) { return Chrono::Nanoseconds { value }; }
+*/
 
-template<Chrono::ClockRatio Ratio>
-struct AK::Formatter<Chrono::Duration<Ratio>> : Formatter<Chrono::Nanoseconds> {
-    void format(FormatBuilder& builder, Chrono::Duration<Ratio> value)
-    {
-        return Formatter<Chrono::Nanoseconds>(builder, value.in_nanoseconds());
-    }
-};
 template<>
 struct AK::Formatter<Chrono::Nanoseconds> {
     void parse(TypeErasedFormatParams&, FormatParser& parser)
@@ -246,4 +243,11 @@ struct AK::Formatter<Chrono::Nanoseconds> {
     void format(FormatBuilder&, Chrono::Nanoseconds);
 
     StringView m_specifier;
+};
+template<Chrono::ClockRatio Ratio>
+struct AK::Formatter<Chrono::Duration<Ratio>> : Formatter<Chrono::Nanoseconds> {
+    void format(FormatBuilder& builder, Chrono::Duration<Ratio> value)
+    {
+        return Formatter<Chrono::Nanoseconds>::format(builder, value.in_nanoseconds());
+    }
 };

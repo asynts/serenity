@@ -31,7 +31,7 @@
 
 namespace Chrono {
 
-Nanoseconds MonotonicClock::now()
+NanosecondsSinceEpoch MonotonicClock::now()
 {
     struct timespec ts;
     if (clock_gettime(CLOCK_MONOTONIC, &ts) < 0)
@@ -40,10 +40,10 @@ Nanoseconds MonotonicClock::now()
     Seconds seconds { ts.tv_sec };
     Nanoseconds nanoseconds { ts.tv_nsec };
 
-    return nanoseconds + seconds;
+    return NanosecondsSinceEpoch::epoch() + seconds.in_nanoseconds() + nanoseconds;
 }
 
-Nanoseconds MonotonicClock::now()
+NanosecondsSinceEpoch RealtimeClock::now()
 {
     struct timespec ts;
     if (clock_gettime(CLOCK_REALTIME, &ts) < 0)
@@ -52,7 +52,7 @@ Nanoseconds MonotonicClock::now()
     Seconds seconds { ts.tv_sec };
     Nanoseconds nanoseconds { ts.tv_nsec };
 
-    return nanoseconds + seconds;
+    return NanosecondsSinceEpoch::epoch() + seconds.in_nanoseconds() + nanoseconds;
 }
 
 }
@@ -73,25 +73,25 @@ void AK::Formatter<Chrono::Nanoseconds>::format(FormatBuilder& fmtbuilder, Chron
                 builder.append('%');
                 break;
             case 'H':
-                builder.appendf("{:02}", splitted.hours().ticks());
+                builder.appendff("{:02}", splitted.hours().ticks());
                 break;
             case 'M':
-                builder.appendf("{:02}", splitted.minutes().ticks());
+                builder.appendff("{:02}", splitted.minutes().ticks());
                 break;
             case 'S':
-                builder.appendf("{:02}", splitted.seconds().ticks());
+                builder.appendff("{:02}", splitted.seconds().ticks());
                 break;
             case 'm':
                 ASSERT(!zero_pad);
-                builder.append("{:03}", splitted.milliseconds().ticks());
+                builder.appendff("{:03}", splitted.milliseconds().ticks());
                 break;
             case 'u':
                 ASSERT(!zero_pad);
-                builder.append("{:06}", (splitted.microseconds() + splitted.milliseconds()).ticks());
+                builder.appendff("{:06}", (splitted.microseconds() + splitted.milliseconds().in_microseconds()).ticks());
                 break;
             case 'n':
                 ASSERT(!zero_pad);
-                builder.append("{:09}", (splitted.nanoseconds() + splitted.microseconds() + splitted.milliseconds()).ticks());
+                builder.appendff("{:09}", (splitted.nanoseconds() + splitted.microseconds().in_nanoseconds() + splitted.milliseconds().in_nanoseconds()).ticks());
                 break;
             default:
                 ASSERT_NOT_REACHED();
