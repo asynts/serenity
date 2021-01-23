@@ -94,7 +94,7 @@
 #cmakedefine01 SPAM_DEBUG
 #cmakedefine01 WRAPPER_GENERATOR_DEBUG
 #cmakedefine01 PARSER_DEBUG
-#cmakedefine01 TOKENIZER_TRACE
+#cmakedefine01 TOKENIZER_TRACE_DEBUG
 #cmakedefine01 IMAGE_LOADER_DEBUG
 #cmakedefine01 RESOURCE_DEBUG
 #cmakedefine01 CACHE_DEBUG

@@ -343,7 +343,7 @@ void WindowManager::notify_title_changed(Window& window)
     if (window.type() != WindowType::Normal)
         return;
 
-    dbgln<WINDOW_MANAGER_DEBUG>("[WM] Window({}) title set to '{}'", &window, window.title());
+    dbgln<WINDOWMANAGER_DEBUG>("[WM] Window({}) title set to '{}'", &window, window.title());
 
     if (m_switcher.is_visible())
         m_switcher.refresh();
@@ -356,7 +356,7 @@ void WindowManager::notify_modal_unparented(Window& window)
     if (window.type() != WindowType::Normal)
         return;
 
-    dbgln<WINDOW_MANAGER_DEBUG>("[WM] Window({}) was unparented", &window);
+    dbgln<WINDOWMANAGER_DEBUG>("[WM] Window({}) was unparented", &window);
 
     if (m_switcher.is_visible())
         m_switcher.refresh();
@@ -805,7 +805,7 @@ void WindowManager::start_menu_doubleclick(Window& window, const MouseEvent& eve
         // we either haven't clicked anywhere, or we haven't clicked on this
         // window. set the current click window, and reset the timers.
 
-        dbgln<DOUBLE_CLICK_DEBUG>("Initial mousedown on Window({}) for menus (previous was {})", &window, m_double_click_info.m_clicked_window);
+        dbgln<DOUBLECLICK_DEBUG>("Initial mousedown on Window({}) for menus (previous was {})", &window, m_double_click_info.m_clicked_window);
 
         m_double_click_info.m_clicked_window = window;
         m_double_click_info.reset();
@@ -837,7 +837,7 @@ void WindowManager::process_event_for_doubleclick(Window& window, MouseEvent& ev
     if (&window != m_double_click_info.m_clicked_window) {
         // we either haven't clicked anywhere, or we haven't clicked on this
         // window. set the current click window, and reset the timers.
-        dbgln<DOUBLE_CLICK_DEBUG>("Initial mouseup on Window({}) for menus (previous was {})", &window, m_double_click_info.m_clicked_window);
+        dbgln<DOUBLECLICK_DEBUG>("Initial mouseup on Window({}) for menus (previous was {})", &window, m_double_click_info.m_clicked_window);
 
         m_double_click_info.m_clicked_window = window;
         m_double_click_info.reset();
@@ -852,7 +852,7 @@ void WindowManager::process_event_for_doubleclick(Window& window, MouseEvent& ev
         // clock
         metadata.clock.start();
     } else {
-        dbgln<DOUBLE_CLICK_DEBUG>("Transforming MouseUp to MouseDoubleClick ({} < {})!", metadata.clock.elapsed(), m_double_click_speed);
+        dbgln<DOUBLECLICK_DEBUG>("Transforming MouseUp to MouseDoubleClick ({} < {})!", metadata.clock.elapsed(), m_double_click_speed);
 
         event = MouseEvent(Event::MouseDoubleClick, event.position(), event.buttons(), event.button(), event.modifiers(), event.wheel_delta());
         // invalidate this now we've delivered a doubleclick, otherwise
