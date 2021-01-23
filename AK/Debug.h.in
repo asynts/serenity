@@ -42,7 +42,7 @@
 #cmakedefine01 SMP_DEBUG
 #cmakedefine01 BXVGA_DEBUG
 #cmakedefine01 PS2MOUSE_DEBUG
-#cmakedefine01 VMWAREBACKDOOR_DEBUG
+#cmakedefine01 VMWARE_BACKDOOR_DEBUG
 #cmakedefine01 FILEDESCRIPTION_DEBUG
 #cmakedefine01 PROCFS_DEBUG
 #cmakedefine01 VFS_DEBUG
@@ -92,7 +92,7 @@
 #cmakedefine01 REGEX_DEBUG
 #cmakedefine01 TLS_DEBUG
 #cmakedefine01 SPAM_DEBUG
-#cmakedefine01 WRAPPER_GERNERATOR_DEBUG
+#cmakedefine01 WRAPPER_GENERATOR_DEBUG
 #cmakedefine01 PARSER_DEBUG
 #cmakedefine01 TOKENIZER_TRACE
 #cmakedefine01 IMAGE_LOADER_DEBUG
