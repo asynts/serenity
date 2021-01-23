@@ -38,7 +38,7 @@ namespace Web::SVG {
 
 static void print_instruction(const PathInstruction& instruction)
 {
-    ASSERT(debug_path);
+    ASSERT(PATH_DEBUG);
 
     auto& data = instruction.data;
 
