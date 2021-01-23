@@ -509,7 +509,7 @@ bool WindowManager::process_ongoing_window_move(MouseEvent& event, Window*& hove
         return true;
     }
     if (event.type() == Event::MouseMove) {
-        if constexpr (debug_move) {
+        if constexpr (MOVE_DEBUG) {
             dbgln("[WM] Moving, origin: {}, now: {}", m_move_origin, event.position());
             if (m_move_window->is_maximized())
                 dbgln("  [!] The window is still maximized. Not moving yet.");

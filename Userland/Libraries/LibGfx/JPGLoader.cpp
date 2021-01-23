@@ -383,7 +383,7 @@ static Optional<Vector<Macroblock>> decode_huffman_stream(JPGLoadingContext& con
     Vector<Macroblock> macroblocks;
     macroblocks.resize(context.mblock_meta.padded_total);
 
-    if constexpr (debug_jpg) {
+    if constexpr (JPG_DEBUG) {
         dbgln("Image width: {}", context.frame.width);
         dbgln("Image height: {}", context.frame.height);
         dbgln("Macroblocks in a row: {}", context.mblock_meta.hpadded_count);
@@ -422,7 +422,7 @@ static Optional<Vector<Macroblock>> decode_huffman_stream(JPGLoadingContext& con
             }
 
             if (!build_macroblocks(context, macroblocks, hcursor, vcursor)) {
-                if constexpr (debug_jpg) {
+                if constexpr (JPG_DEBUG) {
                     dbgln("Failed to build Macroblock {}", i);
                     dbgln("Huffman stream byte offset {}", context.huffman_stream.byte_offset);
                     dbgln("Huffman stream bit offset {}", context.huffman_stream.bit_offset);
@@ -683,7 +683,7 @@ static inline bool validate_luma_and_modify_context(const ComponentSpec& luma, J
         context.hsample_factor = luma.hsample_factor;
         context.vsample_factor = luma.vsample_factor;
 
-        if constexpr (debug_jpg) {
+        if constexpr (JPG_DEBUG) {
             dbgln("Horizontal Subsampling Factor: {}", luma.hsample_factor);
             dbgln("Vertical Subsampling Factor: {}", luma.vsample_factor);
         }

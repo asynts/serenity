@@ -84,7 +84,7 @@ void FutexQueue::vmobject_deleted(VMObject& vmobject)
     bool did_wake_all;
     auto wake_count = wake_all(did_wake_all);
 
-    if constexpr (debug_futex) {
+    if constexpr (FUTEX_DEBUG) {
         if (wake_count > 0)
             dbgln("Futex @ {} unblocked {} waiters due to vmobject free", this, wake_count);
     }

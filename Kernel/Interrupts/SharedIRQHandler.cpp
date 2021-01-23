@@ -85,7 +85,7 @@ void SharedIRQHandler::handle_interrupt(const RegisterState& regs)
 {
     ASSERT_INTERRUPTS_DISABLED();
 
-    if constexpr (debug_interrupt) {
+    if constexpr (INTERRUPT_DEBUG) {
         dbgln("Interrupt @ {}", interrupt_number());
         dbgln("Interrupt Handlers registered - {}", m_handlers.size());
     }

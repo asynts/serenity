@@ -411,7 +411,7 @@ bool IPv4Socket::did_receive(const IPv4Address& source_address, u16 source_port,
     }
     m_bytes_received += packet_size;
 
-    if constexpr (debug_ipv4_socket) {
+    if constexpr (IPV4_SOCKET_DEBUG) {
         if (buffer_mode() == BufferMode::Bytes)
             dbgln("IPv4Socket({}): did_receive {} bytes, total_received={}", this, packet_size, m_bytes_received);
         else

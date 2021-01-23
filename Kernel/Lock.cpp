@@ -80,7 +80,7 @@ void Lock::lock(Mode mode)
                         break;
                     ASSERT(m_shared_holders.is_empty());
 
-                    if constexpr (debug_lock_trace) {
+                    if constexpr (LOCK_TRACE_DEBUG) {
                         if (mode == Mode::Exclusive)
                             dbgln("Lock::lock @ {}: acquire {}, currently exclusive, holding: {}", this, mode_to_string(mode), m_times_locked);
                         else
@@ -139,7 +139,7 @@ void Lock::unlock()
     for (;;) {
         if (m_lock.exchange(true, AK::memory_order_acq_rel) == false) {
             Mode current_mode = m_mode;
-            if constexpr (debug_lock_trace) {
+            if constexpr (LOCK_TRACE_DEBUG) {
                 if (current_mode == Mode::Shared)
                     dbgln("Lock::unlock @ {}: release {}, locks held: {}", this, mode_to_string(current_mode), m_times_locked);
                 else

@@ -214,7 +214,7 @@ RegexResult Matcher<Parser>::match(const Vector<RegexStringView> views, Optional
                     continue;
                 }
 
-                if constexpr (debug_regex) {
+                if constexpr (REGEX_DEBUG) {
                     dbgln("state.string_position={}, view_index={}", state.string_position, view_index);
                     dbgln("[match] Found a match (length={}): '{}'", state.string_position - view_index, input.view.substring_view(view_index, state.string_position - view_index));
                 }

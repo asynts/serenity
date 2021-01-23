@@ -226,7 +226,7 @@ void page_fault_handler(TrapFrame* trap)
     asm("movl %%cr2, %%eax"
         : "=a"(fault_address));
 
-    if constexpr (debug_page_fault) {
+    if constexpr (PAGE_FAULT_DEBUG) {
         u32 fault_page_directory = read_cr3();
         dbgln("CPU #{} ring {} {} page fault in PD={:#x}, {}{} {}",
             Processor::is_initialized() ? Processor::current().id() : 0,
@@ -1461,7 +1461,7 @@ u32 Processor::init_context(Thread& thread, bool leave_crit)
     stack_top -= sizeof(u32); // pointer to TrapFrame
     *reinterpret_cast<u32*>(stack_top) = stack_top + 4;
 
-    if constexpr (debug_context_switch) {
+    if constexpr (CONTEXT_SWITCH_DEBUG) {
         if (return_to_user) {
             dbgln("init_context {} ({}) set up to execute at eip={}:{}, esp={}, stack_top={}, user_top={}:{}",
                 thread,

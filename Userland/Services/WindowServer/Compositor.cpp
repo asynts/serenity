@@ -194,7 +194,7 @@ void Compositor::compose()
     if (m_custom_background_color.has_value())
         background_color = m_custom_background_color.value();
 
-    if constexpr (debug_compose) {
+    if constexpr (COMPOSE_DEBUG) {
         dbgln("COMPOSE: invalidated: window: {} cursor: {}, any: {}", m_invalidated_window, m_invalidated_cursor, m_invalidated_any);
         for (auto& r : dirty_screen_rects.rects())
             dbgln("dirty screen: {}", r);
@@ -360,7 +360,7 @@ void Compositor::compose()
 
         auto& dirty_rects = window.dirty_rects();
 
-        if constexpr (debug_compose) {
+        if constexpr (COMPOSE_DEBUG) {
             for (auto& dirty_rect : dirty_rects.rects())
                 dbgln("    dirty: {}", dirty_rect);
             for (auto& r : window.opaque_rects().rects())
@@ -1001,7 +1001,7 @@ void Compositor::recompute_occlusions()
         m_opaque_wallpaper_rects = move(visible_rects);
     }
 
-    if constexpr (debug_occlusions) {
+    if constexpr (OCCLUSIONS_DEBUG) {
         for (auto& r : m_opaque_wallpaper_rects.rects())
             dbgln("  wallpaper opaque: {}", r);
     }
@@ -1011,7 +1011,7 @@ void Compositor::recompute_occlusions()
         if (w.is_minimized() || window_frame_rect.is_empty())
             return IterationDecision::Continue;
 
-        if constexpr (debug_occlusions) {
+        if constexpr (OCCLUSIONS_DEBUG) {
             dbgln("  Window {} frame rect: {}", w.title(), window_frame_rect);
             for (auto& r : w.opaque_rects().rects())
                 dbgln("    opaque: {}", r);

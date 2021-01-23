@@ -283,7 +283,7 @@ KResultOr<size_t> PS2MouseDevice::read(FileDescription&, size_t, UserOrKernelBuf
         auto packet = m_queue.dequeue();
         lock.unlock();
 
-        if constexpr (debug_ps2mouse) {
+        if constexpr (PS2MOUSE_DEBUG) {
             dbgln("PS2 Mouse Read: Buttons {:x}", packet.buttons);
             dbgln("PS2 Mouse: X {}, Y {}, Z {}, Relative {}", packet.x, packet.y, packet.z, packet.buttons);
             dbgln("PS2 Mouse Read: Filter packets");

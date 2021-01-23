@@ -490,7 +490,7 @@ static bool decode_bmp_header(BMPLoadingContext& context)
     streamer.drop_bytes(4);
     context.data_offset = streamer.read_u32();
 
-    if constexpr (debug_bmp) {
+    if constexpr (BMP_DEBUG) {
         dbgln("BMP file size: {}", context.file_size);
         dbgln("BMP data offset: {}", context.data_offset);
     }
@@ -549,7 +549,7 @@ static bool decode_bmp_core_dib(BMPLoadingContext& context, Streamer& streamer)
         return false;
     }
 
-    if constexpr (debug_bmp) {
+    if constexpr (BMP_DEBUG) {
         dbgln("BMP width: {}", core.width);
         dbgln("BMP height: {}", core.height);
         dbgln("BMP bits_per_pixel: {}", core.bpp);
@@ -598,7 +598,7 @@ static bool decode_bmp_osv2_dib(BMPLoadingContext& context, Streamer& streamer, 
         return false;
     }
 
-    if constexpr (debug_bmp) {
+    if constexpr (BMP_DEBUG) {
         dbgln("BMP width: {}", core.width);
         dbgln("BMP height: {}", core.height);
         dbgln("BMP bits_per_pixel: {}", core.bpp);
@@ -638,7 +638,7 @@ static bool decode_bmp_osv2_dib(BMPLoadingContext& context, Streamer& streamer, 
     // ColorEncoding (4) + Identifier (4)
     streamer.drop_bytes(8);
 
-    if constexpr (debug_bmp) {
+    if constexpr (BMP_DEBUG) {
         dbgln("BMP compression: {}", info.compression);
         dbgln("BMP image size: {}", info.image_size);
         dbgln("BMP horizontal res: {}", info.horizontal_resolution);
@@ -678,7 +678,7 @@ static bool decode_bmp_info_dib(BMPLoadingContext& context, Streamer& streamer)
     if (info.number_of_important_palette_colors == 0)
         info.number_of_important_palette_colors = info.number_of_palette_colors;
 
-    if constexpr (debug_bmp) {
+    if constexpr (BMP_DEBUG) {
         dbgln("BMP compression: {}", info.compression);
         dbgln("BMP image size: {}", info.image_size);
         dbgln("BMP horizontal res: {}", info.horizontal_resolution);
@@ -699,7 +699,7 @@ static bool decode_bmp_v2_dib(BMPLoadingContext& context, Streamer& streamer)
     context.dib.info.masks.append(streamer.read_u32());
     context.dib.info.masks.append(streamer.read_u32());
 
-    if constexpr (debug_bmp) {
+    if constexpr (BMP_DEBUG) {
         dbgln("BMP red mask: {:#08x}", context.dib.info.masks[0]);
         dbgln("BMP green mask: {:#08x}", context.dib.info.masks[1]);
         dbgln("BMP blue mask: {:#08x}", context.dib.info.masks[2]);
@@ -745,7 +745,7 @@ static bool decode_bmp_v4_dib(BMPLoadingContext& context, Streamer& streamer)
     v4.blue_endpoint = { streamer.read_i32(), streamer.read_i32(), streamer.read_i32() };
     v4.gamma_endpoint = { streamer.read_u32(), streamer.read_u32(), streamer.read_u32() };
 
-    if constexpr (debug_bmp) {
+    if constexpr (BMP_DEBUG) {
         dbgln("BMP color space: {}", v4.color_space);
         dbgln("BMP red endpoint: {}", v4.red_endpoint);
         dbgln("BMP green endpoint: {}", v4.green_endpoint);
@@ -766,7 +766,7 @@ static bool decode_bmp_v5_dib(BMPLoadingContext& context, Streamer& streamer)
     v5.profile_data = streamer.read_u32();
     v5.profile_size = streamer.read_u32();
 
-    if constexpr (debug_bmp) {
+    if constexpr (BMP_DEBUG) {
         dbgln("BMP intent: {}", v5.intent);
         dbgln("BMP profile data: {}", v5.profile_data);
         dbgln("BMP profile size: {}", v5.profile_size);

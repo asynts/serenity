@@ -129,13 +129,13 @@ bool Scheduler::pick_next()
         // Scheduler::enter_current because we don't want to allow it to
         // transition back to user mode.
 
-        if constexpr (debug_scheduler)
+        if constexpr (SCHEDULER_DEBUG)
             dbgln("Scheduler[{}]: Thread {} is dying", Processor::current().id(), *current_thread);
 
         current_thread->set_state(Thread::Dying);
     }
 
-    if constexpr (debug_scheduler_runnable) {
+    if constexpr (SCHEDULER_RUNNABLE_DEBUG) {
         dbgln("Scheduler[{}j]: Non-runnables:", Processor::current().id());
         Scheduler::for_each_nonrunnable([&](Thread& thread) -> IterationDecision {
             if (thread.state() == Thread::Dying) {
@@ -224,7 +224,7 @@ bool Scheduler::pick_next()
     if (!thread_to_schedule)
         thread_to_schedule = Processor::current().idle_thread();
 
-    if constexpr (debug_scheduler) {
+    if constexpr (SCHEDULER_DEBUG) {
         dbgln("Scheduler[{}]: Switch to {} @ {:04x}:{:08x}",
             Processor::current().id(),
             *thread_to_schedule,
@@ -263,7 +263,7 @@ bool Scheduler::yield()
     if (!Scheduler::pick_next())
         return false;
 
-    if constexpr (debug_scheduler)
+    if constexpr (SCHEDULER_DEBUG)
         dbgln("Scheduler[{}]: yield returns to thread {} in_irq={}", Processor::current().id(), *current_thread, Processor::current().in_irq());
     return true;
 }

@@ -156,7 +156,7 @@ void DHCPv4Client::handle_offer(const DHCPv4Packet& packet, const ParsedDHCPv4Op
 
 void DHCPv4Client::handle_ack(const DHCPv4Packet& packet, const ParsedDHCPv4Options& options)
 {
-    if constexpr (debug_dhcpv4_client) {
+    if constexpr (DHCPV4_CLIENT_DEBUG) {
         dbgln("The DHCP server handed us {}", packet.yiaddr().to_string());
         dbgln("Here are the options: {}", options.to_string());
     }
@@ -239,7 +239,7 @@ void DHCPv4Client::dhcp_discover(const InterfaceDescriptor& iface, IPv4Address p
 {
     auto transaction_id = rand();
 
-    if constexpr (debug_dhcpv4_client) {
+    if constexpr (DHCPV4_CLIENT_DEBUG) {
         dbgln("Trying to lease an IP for {} with ID {}", iface.m_ifname, transaction_id);
         if (!previous.is_zero())
             dbgln("going to request the server to hand us {}", previous.to_string());

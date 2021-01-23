@@ -51,7 +51,7 @@ static ByteBuffer handle_content_encoding(const ByteBuffer& buf, const String& c
             return buf;
         }
 
-        if constexpr (debug_job) {
+        if constexpr (JOB_DEBUG) {
             dbgln("Job::handle_content_encoding: Gzip::decompress() successful.");
             dbgln("  Input size: {}", buf.size());
             dbgln("  Output size: {}", uncompressed.value().size());
@@ -103,7 +103,7 @@ void Job::on_socket_connected()
         m_sent_data = true;
         auto raw_request = m_request.to_raw_request();
 
-        if constexpr (debug_job) {
+        if constexpr (JOB_DEBUG) {
             dbgln("Job: raw_request:");
             dbgln("{}", String::copy(raw_request));
         }
@@ -301,7 +301,7 @@ void Job::on_socket_connected()
                     // we've read everything, now let's get the next chunk
                     size = -1;
 
-                    if constexpr (debug_job)
+                    if constexpr (JOB_DEBUG)
                         dbgln("Line following (should be empty): '{}'", read_line(PAGE_SIZE));
                 }
                 m_current_chunk_remaining_size = size;

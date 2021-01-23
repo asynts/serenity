@@ -233,7 +233,7 @@ Optional<MousePacket> VMWareBackdoor::receive_mouse_packet()
     int y = (command.cx);
     int z = (command.dx);
 
-    if constexpr (debug_ps2mouse) {
+    if constexpr (PS2MOUSE_DEBUG) {
         dbgln("Absolute Mouse: Buttons {:x}", buttons);
         dbgln("Mouse: x={}, y={}, z={}", x, y, z);
     }

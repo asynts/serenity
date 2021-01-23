@@ -569,7 +569,7 @@ void TLSv12::consume(ReadonlyBytes record)
         }
         auto consumed = handle_message(m_context.message_buffer.bytes().slice(index, length));
 
-        if constexpr (debug_tls) {
+        if constexpr (TLS_DEBUG) {
             if (consumed > 0)
                 dbgln("consumed {} bytes", consumed);
             else

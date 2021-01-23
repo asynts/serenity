@@ -59,7 +59,7 @@ Thread::Thread(NonnullRefPtr<Process> process)
     } else {
         m_tid = Process::allocate_pid().value();
     }
-    if constexpr (debug_thread)
+    if constexpr (THREAD_DEBUG)
         dbgln("Created new thread {}({}:{})", m_process->name(), m_process->pid().value(), m_tid.value());
     set_default_signal_dispositions();
     m_fpu_state = (FPUState*)kmalloc_aligned<16>(sizeof(FPUState));
@@ -480,7 +480,7 @@ void Thread::send_signal(u8 signal, [[maybe_unused]] Process* sender)
         return;
     }
 
-    if constexpr (debug_signal) {
+    if constexpr (SIGNAL_DEBUG) {
         if (sender)
             dbgln("Signal: {} sent {} to {}", *sender, signal, process());
         else

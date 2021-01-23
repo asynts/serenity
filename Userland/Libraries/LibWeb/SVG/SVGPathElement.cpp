@@ -463,7 +463,7 @@ Gfx::Path& SVGPathElement::get_path()
         auto& absolute = instruction.absolute;
         auto& data = instruction.data;
 
-        if constexpr (debug_path) {
+        if constexpr (PATH_DEBUG) {
             print_instruction(instruction);
         }
 

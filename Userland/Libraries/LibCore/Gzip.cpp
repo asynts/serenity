@@ -122,7 +122,7 @@ Optional<ByteBuffer> Gzip::decompress(const ByteBuffer& data)
     while (true) {
         unsigned long destination_len = destination.size();
 
-        if constexpr (debug_gzip) {
+        if constexpr (GZIP_DEBUG) {
             dbgln("Gzip::decompress: Calling puff()");
             dbgln("  destination_data = {}", destination.data());
             dbgln("  destination_len = {}", destination_len);

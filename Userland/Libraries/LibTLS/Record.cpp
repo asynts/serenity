@@ -216,7 +216,7 @@ ByteBuffer TLSv12::hmac_message(const ReadonlyBytes& buf, const Optional<Readonl
     auto digest = hmac.digest();
     auto mac = ByteBuffer::copy(digest.immutable_data(), digest.data_length());
 
-    if constexpr (debug_tls) {
+    if constexpr (TLS_DEBUG) {
         dbgln("HMAC of the block for sequence number {}", sequence_number);
         print_buffer(mac);
     }
@@ -241,7 +241,7 @@ ssize_t TLSv12::handle_message(ReadonlyBytes buffer)
 
     // FIXME: Read the version and verify it
 
-    if constexpr (debug_tls) {
+    if constexpr (TLS_DEBUG) {
         auto version = (Version) * (const u16*)buffer.offset_pointer(buffer_position);
         dbgln("type={}, version={}", (u8)type, (u16)version);
     }
@@ -263,7 +263,7 @@ ssize_t TLSv12::handle_message(ReadonlyBytes buffer)
     ByteBuffer decrypted;
 
     if (m_context.cipher_spec_set && type != MessageType::ChangeCipher) {
-        if constexpr (debug_tls) {
+        if constexpr (TLS_DEBUG) {
             dbgln("Encrypted: ");
             print_buffer(buffer.slice(header_size, length));
         }
@@ -416,7 +416,7 @@ ssize_t TLSv12::handle_message(ReadonlyBytes buffer)
     case MessageType::Alert:
         dbgln<TLS_DEBUG>("alert message of length {}", length);
         if (length >= 2) {
-            if constexpr (debug_tls)
+            if constexpr (TLS_DEBUG)
                 print_buffer(plain);
 
             auto level = plain[0];

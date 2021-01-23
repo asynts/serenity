@@ -201,12 +201,12 @@ void IOAPIC::configure_redirection_entry(int index, u8 interrupt_vector, u8 deli
     u32 redirection_entry2 = destination << 24;
     write_register((index << 1) + IOAPIC_REDIRECTION_ENTRY_OFFSET, redirection_entry1);
 
-    if constexpr (debug_ioapic)
+    if constexpr (IOAPIC_DEBUG)
         dbgln("IOAPIC Value: {:#x}", read_register((index << 1) + IOAPIC_REDIRECTION_ENTRY_OFFSET));
 
     write_register((index << 1) + IOAPIC_REDIRECTION_ENTRY_OFFSET + 1, redirection_entry2);
 
-    if constexpr (debug_ioapic)
+    if constexpr (IOAPIC_DEBUG)
         dbgln("IOAPIC Value: {:#x}", read_register((index << 1) + 0x11));
 }
 
