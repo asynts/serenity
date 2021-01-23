@@ -113,7 +113,7 @@
 #cmakedefine01 RESIZE_DEBUG
 #cmakedefine01 MOVE_DEBUG
 #cmakedefine01 DOUBLECLICK_DEBUG
-#cmakedefine01 DISASM_DUMP
+#cmakedefine01 DISASM_DUMP_DEBUG
 #cmakedefine01 PATH_DEBUG
 #cmakedefine01 LOCK_TRACE_DEBUG
 #cmakedefine01 LOCK_RESTORE_DEBUG
