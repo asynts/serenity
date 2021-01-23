@@ -196,7 +196,7 @@ bool Scheduler::pick_next()
         // but since we're still holding the scheduler lock we're still in a critical section
         critical.leave();
 
-        dbgln<debug_scheduler>("Processing pending donate to {} reason={}", *thread_to_schedule, reason);
+        dbgln<SCHEDULER_DEBUG>("Processing pending donate to {} reason={}", *thread_to_schedule, reason);
         return donate_to_and_switch(thread_to_schedule, reason);
     }
 
@@ -250,7 +250,7 @@ bool Scheduler::yield()
     scheduler_data.m_pending_donate_reason = nullptr;
 
     auto current_thread = Thread::current();
-    dbgln<debug_scheduler>("Scheduler[{}]: yielding thread {} in_irq={}", proc.id(), *current_thread, proc.in_irq());
+    dbgln<SCHEDULER_DEBUG>("Scheduler[{}]: yielding thread {} in_irq={}", proc.id(), *current_thread, proc.in_irq());
     ASSERT(current_thread != nullptr);
     if (proc.in_irq() || proc.in_critical()) {
         // If we're handling an IRQ we can't switch context, or we're in
@@ -280,7 +280,7 @@ bool Scheduler::donate_to_and_switch(Thread* beneficiary, [[maybe_unused]] const
         return Scheduler::yield();
 
     unsigned ticks_to_donate = min(ticks_left - 1, time_slice_for(*beneficiary));
-    dbgln<debug_scheduler>("Scheduler[{}]: Donating {} ticks to {}, reason={}", proc.id(), ticks_to_donate, *beneficiary, reason);
+    dbgln<SCHEDULER_DEBUG>("Scheduler[{}]: Donating {} ticks to {}, reason={}", proc.id(), ticks_to_donate, *beneficiary, reason);
     beneficiary->set_ticks_left(ticks_to_donate);
 
     return Scheduler::context_switch(beneficiary);

@@ -100,7 +100,7 @@ GHash::TagType GHash::process(ReadonlyBytes aad, ReadonlyBytes cipher)
     tag[2] ^= high(cipher_bits);
     tag[3] ^= low(cipher_bits);
 
-    dbgln<debug_ghash_process>("Tag bits: {} : {} : {} : {}", tag[0], tag[1], tag[2], tag[3]);
+    dbgln<GHASH_PROCESS_DEBUG>("Tag bits: {} : {} : {} : {}", tag[0], tag[1], tag[2], tag[3]);
 
     galois_multiply(tag, m_key, tag);
 

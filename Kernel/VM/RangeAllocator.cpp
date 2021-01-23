@@ -129,13 +129,13 @@ Range RangeAllocator::allocate_anywhere(size_t size, size_t alignment)
 
         Range allocated_range(VirtualAddress(aligned_base), size);
         if (available_range == allocated_range) {
-            dbgln<debug_vra>("VRA: Allocated perfect-fit anywhere({}, {}): {}", size, alignment, allocated_range.base().get());
+            dbgln<VRA_DEBUG>("VRA: Allocated perfect-fit anywhere({}, {}): {}", size, alignment, allocated_range.base().get());
             m_available_ranges.remove(i);
             return allocated_range;
         }
         carve_at_index(i, allocated_range);
         if constexpr (debug_vra) {
-            dbgln<debug_vra>("VRA: Allocated anywhere({}, {}): {}", size, alignment, allocated_range.base().get());
+            dbgln<VRA_DEBUG>("VRA: Allocated anywhere({}, {}): {}", size, alignment, allocated_range.base().get());
             dump();
         }
         return allocated_range;
