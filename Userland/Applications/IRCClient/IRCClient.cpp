@@ -31,6 +31,7 @@
 #include "IRCQuery.h"
 #include "IRCWindow.h"
 #include "IRCWindowListModel.h"
+#include <AK/Debug.h>
 #include <AK/QuickSort.h>
 #include <AK/StringBuilder.h>
 #include <LibCore/DateTime.h>
@@ -38,10 +39,6 @@
 #include <pwd.h>
 #include <stdio.h>
 #include <strings.h>
-
-#ifndef IRC_DEBUG
-#    define IRC_DEBUG
-#endif
 
 enum IRCNumeric {
     RPL_WELCOME = 1,

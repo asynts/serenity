@@ -24,6 +24,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <AK/Debug.h>
 #include <LibCore/EventLoop.h>
 #include <LibGemini/GeminiJob.h>
 #include <LibGemini/GeminiResponse.h>

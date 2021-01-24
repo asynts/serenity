@@ -25,6 +25,7 @@
  */
 
 #include <AK/Badge.h>
+#include <AK/Debug.h>
 #include <AK/HashTable.h>
 #include <AK/StackInfo.h>
 #include <AK/TemporaryChange.h>

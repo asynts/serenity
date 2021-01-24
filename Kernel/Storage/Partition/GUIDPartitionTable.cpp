@@ -28,10 +28,6 @@
 #include <AK/Array.h>
 #include <Kernel/Storage/Partition/GUIDPartitionTable.h>
 
-#ifndef GPT_DEBUG
-#    define GPT_DEBUG
-#endif
-
 namespace Kernel {
 
 #define GPT_SIGNATURE2 0x54524150

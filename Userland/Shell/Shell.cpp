@@ -27,6 +27,7 @@
 #include "Shell.h"
 #include "Execution.h"
 #include "Formatter.h"
+#include <AK/Debug.h>
 #include <AK/Function.h>
 #include <AK/LexicalPath.h>
 #include <AK/ScopeGuard.h>

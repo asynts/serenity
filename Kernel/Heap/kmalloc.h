@@ -26,6 +26,7 @@
 
 #pragma once
 
+#include <AK/Debug.h>
 #include <AK/Types.h>
 
 #define KMALLOC_SCRUB_BYTE 0xbb

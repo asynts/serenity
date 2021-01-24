@@ -26,6 +26,7 @@
 
 #include <AK/Badge.h>
 #include <AK/ByteBuffer.h>
+#include <AK/Debug.h>
 #include <AK/IDAllocator.h>
 #include <AK/JsonObject.h>
 #include <AK/JsonValue.h>

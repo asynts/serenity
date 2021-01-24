@@ -27,6 +27,7 @@
 #include "DNSResponse.h"
 #include "DNSPacket.h"
 #include "DNSRequest.h"
+#include <AK/Debug.h>
 #include <AK/IPv4Address.h>
 #include <AK/StringBuilder.h>
 

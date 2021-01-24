@@ -26,6 +26,7 @@
  */
 
 #include "Lexer.h"
+#include <AK/Debug.h>
 #include <AK/HashMap.h>
 #include <AK/StringBuilder.h>
 #include <ctype.h>

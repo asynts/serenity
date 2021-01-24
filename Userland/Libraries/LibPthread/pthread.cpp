@@ -26,6 +26,7 @@
 
 #include <AK/Assertions.h>
 #include <AK/Atomic.h>
+#include <AK/Debug.h>
 #include <AK/StdLibExtras.h>
 #include <Kernel/API/Syscall.h>
 #include <limits.h>

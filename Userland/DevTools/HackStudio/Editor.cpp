@@ -30,6 +30,7 @@
 #include "HackStudio.h"
 #include "Language.h"
 #include <AK/ByteBuffer.h>
+#include <AK/Debug.h>
 #include <AK/LexicalPath.h>
 #include <LibCore/DirIterator.h>
 #include <LibCore/File.h>

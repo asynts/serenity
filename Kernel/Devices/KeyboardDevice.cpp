@@ -26,6 +26,7 @@
 
 #include <AK/Assertions.h>
 #include <AK/ByteBuffer.h>
+#include <AK/Debug.h>
 #include <AK/Singleton.h>
 #include <AK/StringView.h>
 #include <AK/Types.h>
