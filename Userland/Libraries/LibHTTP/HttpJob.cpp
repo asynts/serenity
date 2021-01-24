@@ -24,6 +24,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <AK/Debug.h>
 #include <LibCore/Gzip.h>
 #include <LibCore/TCPSocket.h>
 #include <LibHTTP/HttpJob.h>

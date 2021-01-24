@@ -24,6 +24,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <AK/Debug.h>
 #include <AK/String.h>
 #include <AK/TemporaryChange.h>
 #include <LibJS/Heap/Heap.h>

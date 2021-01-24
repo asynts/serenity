@@ -25,11 +25,8 @@
  */
 
 #include <AK/ByteBuffer.h>
+#include <AK/Debug.h>
 #include <Kernel/Storage/Partition/MBRPartitionTable.h>
-
-#ifndef MBR_DEBUG
-#    define MBR_DEBUG
-#endif
 
 namespace Kernel {
 

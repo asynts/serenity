@@ -26,6 +26,7 @@
 
 #include "TaskbarWindow.h"
 #include "TaskbarButton.h"
+#include <AK/Debug.h>
 #include <LibCore/ConfigFile.h>
 #include <LibCore/StandardPaths.h>
 #include <LibDesktop/AppFile.h>

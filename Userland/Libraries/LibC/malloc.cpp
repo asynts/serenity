@@ -24,6 +24,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <AK/Debug.h>
 #include <AK/InlineLinkedList.h>
 #include <AK/LogStream.h>
 #include <AK/ScopedValueRollback.h>
@@ -39,7 +40,6 @@
 #include <sys/mman.h>
 
 // FIXME: Thread safety.
-
 
 #define PAGE_ROUND_UP(x) ((((size_t)(x)) + PAGE_SIZE - 1) & (~(PAGE_SIZE - 1)))
 

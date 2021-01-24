@@ -25,6 +25,7 @@
  */
 
 #include <AK/Assertions.h>
+#include <AK/Debug.h>
 #include <AK/Memory.h>
 #include <AK/Singleton.h>
 #include <AK/StringView.h>

@@ -24,6 +24,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <AK/Debug.h>
 #include <AK/HashMap.h>
 #include <AK/Singleton.h>
 #include <Kernel/Net/LoopbackAdapter.h>

@@ -25,6 +25,7 @@
  */
 
 #include "HexEditor.h"
+#include <AK/Debug.h>
 #include <AK/StringBuilder.h>
 #include <LibGUI/Action.h>
 #include <LibGUI/Clipboard.h>

@@ -24,6 +24,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <AK/Debug.h>
 #include <AK/NumericLimits.h>
 #include <AK/OwnPtr.h>
 #include <LibAudio/Buffer.h>

@@ -25,6 +25,7 @@
  */
 
 #include <AK/Bitmap.h>
+#include <AK/Debug.h>
 #include <AK/HashMap.h>
 #include <AK/MemoryStream.h>
 #include <AK/StdLibExtras.h>

@@ -26,11 +26,8 @@
 
 #include <AK/AllOf.h>
 #include <AK/Array.h>
+#include <AK/Debug.h>
 #include <Kernel/Storage/Partition/GUIDPartitionTable.h>
-
-#ifndef GPT_DEBUG
-#    define GPT_DEBUG
-#endif
 
 namespace Kernel {
 
