@@ -258,7 +258,7 @@ void TreeView::paint_event(PaintEvent& event)
         auto rect = a_rect.translated(0, y_offset);
         auto toggle_rect = a_toggle_rect.translated(0, y_offset);
 
-#ifdef DEBUG_ITEM_RECTS
+#ifdef ITEM_RECTS_DEBUG
         painter.fill_rect(rect, Color::WarmGray);
 #endif
 

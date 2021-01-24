@@ -43,7 +43,7 @@ Vector<GUI::AutocompleteProvider::Entry> AutoComplete::get_suggestions(const Str
 
     auto suggestions = identifier_prefixes(lines, tokens, index_of_target_token.value());
 
-#ifdef DEBUG_AUTOCOMPLETE
+#ifdef AUTOCOMPLETE_DEBUG
     for (auto& suggestion : suggestions) {
         dbgln("suggestion: {}", suggestion.completion);
     }
